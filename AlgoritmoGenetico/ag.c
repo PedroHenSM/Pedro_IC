@@ -9,7 +9,7 @@ Autor: Pedro Henrique Santos
 #define TAM_POPULACAO 50
 #define NUM_FILHOS_GERADOS 1
 #define TAM_POPULACAO_FILHOS TAM_POPULACAO*NUM_FILHOS_GERADOS
-#define MAX_CALC_OBJ 100000// 100000 original
+#define MAX_CALC_OBJ 15000// 100000 original
 #define TAM_X 10
 #define TAM_X_MAXIMO 30
 #define MEDIA 0
@@ -18,13 +18,13 @@ Autor: Pedro Henrique Santos
 #define ELITISMO 5
 #define GERA_ARQUIVO 1
 #define PROB_CROSSOVER 100// 100 = 100% , 80 = 80%
-#define TIPO_CROSSOVER 0 // 0 - Simples , 1 - SBX
+#define TIPO_CROSSOVER 1 // 0 - Simples , 1 - SBX
 #define TIPO_PROBLEMA 0 // 0 - Rosenbrock , 1 - Holder, 2 - Rastrigin
 #define N_EM_BETA 2 // Normalmente entre 2 e 5. Quanto maior , maior a chance de gerar filhos mais 'pr�ximo' do pai
 #define N_EM_MUTACAOREAL 4 // Para mutação Real (slide SBX)
 #define DELTA_MAX 10 // Para mutação Real (slide SBX)
-#define TIPO_FUNCAO 13 // Funcoes com restricao 14 e 13 = 3g,0h | 01 = 2g,0h
-#define NUM_RESTRICOES_G 3
+#define TIPO_FUNCAO 1 // Funcoes com restricao 14 e 13 = 3g,0h | 01 = 2g,0h
+#define NUM_RESTRICOES_G 2
 #define NUM_RESTRICOES_H 0
 #define CR 0.8 // Crossover Probability , DE [0,1]
 #define F 0.7 // Differential Weight , DE [0,2]
@@ -44,10 +44,10 @@ void imprimeContaObj(int contaObj){
 
 void imprimeIndividuo(Individuo ind,int tamanhoX){ // Imprimindo em arquivo(1), ou cmd(0)
     int i;
-    /*for(i=0;i<tamanhoX;i++){
+    for(i=0;i<tamanhoX;i++){
         printf("%f\t",ind.x[i]);
-    }*/
-    printf("FO:%f\tV:%f\n",ind.funcaoObjetivo[0],ind.violacao);
+    }
+    printf("FO:%f\n",ind.funcaoObjetivo[0]);
 }
 
 void imprimePopulacao(Individuo pop[],int tamanhoX,int tamanhoPop){
@@ -216,9 +216,10 @@ void selecaoRestricao(Individuo populacao[],Individuo filhos[],int tamanhoX){ //
     int i,j; // Passa os ''melhores'' para filhos
     for(i=0;i<TAM_POPULACAO_FILHOS;i++){ // Sele��o
         int indice1,indice2;
-        indice1= rand () % TAM_POPULACAO;
-        indice2= rand () % TAM_POPULACAO;
+        indice1 = rand () % TAM_POPULACAO;
+        indice2 = rand () % TAM_POPULACAO;
         //printf("indice1: %i //// indice2: %i  \n ",indice1,indice2);
+
         if(populacao[indice1].violacao < populacao[indice2].violacao){
             for(j=0;j<tamanhoX;j++){
                 filhos[i].x[j] = populacao[indice1].x[j];
@@ -243,6 +244,20 @@ void selecaoRestricao(Individuo populacao[],Individuo filhos[],int tamanhoX){ //
             }
             filhos[i].funcaoObjetivo[0]=populacao[indice2].funcaoObjetivo[0];
         }
+        /// O bloco abaixo faz a mesma coisa que os ifs de cima, porem eh mais lento.
+        /*
+        if(populacao[indice1].violacao < populacao[indice2].violacao){
+            filhos[i] = populacao[indice1];
+        }
+        else if(populacao[indice1].violacao > populacao[indice2].violacao){
+            filhos[i] = populacao[indice2];
+        }
+        else if(populacao[indice1].funcaoObjetivo[0] < populacao[indice2].funcaoObjetivo[0]){
+            filhos[i] = populacao[indice1];
+        }
+        else{
+            filhos[i] = populacao[indice2];
+        }*/
     }
 }
 
@@ -521,7 +536,7 @@ int comparaViolacaoRestricaoMinimizacao(const void *a, const void *b){
     if((*(Individuo*)a).violacao < (*(Individuo*)b).violacao){
         return -1; // vem antes
     }
-    else if((*(Individuo*)a).violacao >(*(Individuo*)b).violacao){
+    else if((*(Individuo*)a).violacao > (*(Individuo*)b).violacao){
         return 1; // vem depois
     }
     else if((*(Individuo*)a).funcaoObjetivo[0] < (*(Individuo*)b).funcaoObjetivo[0]){
@@ -562,6 +577,7 @@ void inicializaPopulacaoRestricao(Individuo populacao[],int tamanhoX,int tamanho
             //float val = eq * (rand() % 2001 - 1000); // Valores decimais entre [-1000,1000] C03
             populacao[i].x[j] = val;
         }
+
         for(j=0;j<NUM_RESTRICOES_G;j++){
             populacao[i].g[j]=0;
         }
@@ -708,7 +724,7 @@ void C14 (float *x, float *f, float *g, float *h, int nx, int nf, int ng, int nh
     for (j = 0; j < nx; j++){
       g1 = g1 - e[j] * cos(sqrt(fabs(e[j])));
 	  g2 = g2 + e[j] * cos(sqrt(fabs(e[j])));
-	  g3 = g3 + e[j] * sin(sqrt(fabs(e[j])));;
+	  g3 = g3 + e[j] * sin(sqrt(fabs(e[j])));
     }
     f[0] = f1;
     g[0] = g1 -((float) nx);
@@ -936,6 +952,28 @@ int selecionaPopulacao(int solucao,int ch [],int tamanhoPop){
     return indice;
 }
 
+int selecionaPopulacaoDE(int solucao, int ch[], int tamanhoPop){
+    int indice;
+    int igual;
+    int a;
+    while(1){
+        igual = 0;
+        indice = rand() % tamanhoPop;
+        if(indice != solucao){
+            for(a=0;a<3;a++){
+                if(indice == ch[a]){
+                    igual = 1;
+                    break;
+                }
+            }
+            if(igual == 0){
+                break;
+            }
+        }
+    }
+    return indice;
+}
+
 void selecaoDE(Individuo populacao[],Individuo filhos[],int tamanhoPop){
     int i; // No DE implementado, cada pai gera apenas um filho.
     for(i=0;i<tamanhoPop;i++){
@@ -960,16 +998,20 @@ void algoritmoDE(Individuo *melhorDE){
     somaViolacoes(populacao,TAM_POPULACAO);
     while(numIteracoes < MAX_CALC_OBJ){
         selecaoRestricao(populacao,filhos,TAM_X);
-        int ch[4] = {-1,-1,-1,-1}; // Vetor de indices, Poderia ser de tamanho 3?
+        int ch[3] = {-1,-1,-1}; // Vetor de indices, Poderia ser de tamanho 3?
         for(i=0;i<TAM_POPULACAO;i++){
             for(a=0;a<3;++a){ // Preenche vetor de indices
-                ch[a] = selecionaPopulacao(i,ch,TAM_POPULACAO);
+                //ch[a] = selecionaPopulacao(i,ch,TAM_POPULACAO);
+                ch[a] = selecionaPopulacaoDE(i,ch,TAM_POPULACAO);
             }
             int R = rand() % TAM_X; // Indice aleatorio, baseado na dimensao do problema
             for(j=0;j<TAM_X;j++){ // Altera valor de x
                 float Ri = (rand() / (float)(RAND_MAX));
                 if(Ri < CR || j == R){
                     filhos[i].x[j] = populacao[ch[0]].x[j] + F * (populacao[ch[1]].x[j] - populacao[ch[2]].x[j]);
+                }
+                else{
+                    filhos[i].x[j] = populacao[i].x[j];
                 }
             }
         }
@@ -987,16 +1029,32 @@ void algoritmoDE(Individuo *melhorDE){
 
 int main()
 {
-    Individuo melhorAG,melhorDE;
-    //AG N 'X' POP 'Y' PROB CROSSOVER 'Z'
+        //AG N 'X' POP 'Y' PROB CROSSOVER 'Z'
     //geraDados();
     //algoritmoGenetico(); // 0.001934sbx 0.000280normal
+
+    /// AG Restricao
+    /*
+    Individuo melhorAG;
     algoritmoGeneticoRestricao(&melhorAG);
-    algoritmoDE(&melhorDE);
     printf("Melhor individuo do AG: \n");
     imprimeInformacoesIndividuo(melhorAG);
+    */
+    /// DE Restricao
+
+    Individuo melhorDE;
+    algoritmoDE(&melhorDE);
+    printf("Melhor individuo do DE: \n");
+    imprimeInformacoesIndividuo(melhorDE);
+
+
+    /*algoritmoDE(&melhorDE);
+    printf("Melhor individuo do AG: \n")
+    imprimeInformacoesIndividuo(melhorAG);
+    printf("UAIPORRA");
     printf("Melhor Individuo do DE: \n");
     imprimeInformacoesIndividuo(melhorDE);
+    */
     return 0;
 }
 
