@@ -23,9 +23,11 @@ Autor: Pedro Henrique Santos
 #define N_EM_BETA 2 // Normalmente entre 2 e 5. Quanto maior , maior a chance de gerar filhos mais 'pr�ximo' do pai
 #define N_EM_MUTACAOREAL 4 // Para mutação Real (slide SBX)
 #define DELTA_MAX 10 // Para mutação Real (slide SBX)
-#define TIPO_FUNCAO 14 // Funcoes com restricao 14 e 13 = 3g,0h | 01 = 2g,0h
+#define TIPO_FUNCAO 13 // Funcoes com restricao 14 e 13 = 3g,0h | 01 = 2g,0h
 #define NUM_RESTRICOES_G 3
 #define NUM_RESTRICOES_H 0
+#define CR 0.8 // Crossover Probability , DE [0,1]
+#define F 0.7 // Differential Weight , DE [0,2]
 
 typedef struct {
     float x[TAM_X_MAXIMO];
@@ -42,9 +44,9 @@ void imprimeContaObj(int contaObj){
 
 void imprimeIndividuo(Individuo ind,int tamanhoX){ // Imprimindo em arquivo(1), ou cmd(0)
     int i;
-    for(i=0;i<tamanhoX;i++){
+    /*for(i=0;i<tamanhoX;i++){
         printf("%f\t",ind.x[i]);
-    }
+    }*/
     printf("FO:%f\tV:%f\n",ind.funcaoObjetivo[0],ind.violacao);
 }
 
@@ -533,7 +535,7 @@ int comparaViolacaoRestricaoMinimizacao(const void *a, const void *b){
     }
 }
 
-void inicializaPopoulacaoRestricao(Individuo populacao[],int tamanhoX,int tamanhoPop,int tipoFuncao){
+void inicializaPopulacaoRestricao(Individuo populacao[],int tamanhoX,int tamanhoPop,int tipoFuncao){
     int i,j;
     for(i=0;i<tamanhoPop;i++){
         for(j=0;j<tamanhoX;j++){
@@ -839,7 +841,23 @@ void imprimeInformacoesPopulacao(Individuo populacao[],int tamanhoPop){
     }
 }
 
-void algoritmoGeneticoRestricao(){
+Individuo melhorIndividuoRestricao(Individuo populacao[],int tamanhoPop){
+    int i;
+    Individuo melhor = populacao[0];
+    for(i=1;i<tamanhoPop;i++){
+        if(populacao[i].violacao < melhor.violacao){
+            melhor = populacao[i];
+        }
+        else if(populacao[i].violacao == melhor.violacao){
+            if(populacao[i].funcaoObjetivo[0] < melhor.funcaoObjetivo[0]){
+                melhor = populacao[i];
+            }
+        }
+    }
+    return melhor;
+}
+
+void algoritmoGeneticoRestricao(Individuo *melhorAG){
     //int contaObj=0;
     int numIteracoes=0;
     Individuo populacao[TAM_POPULACAO];
@@ -847,8 +865,7 @@ void algoritmoGeneticoRestricao(){
     srand(SEED);
     //inicializaPopulacao(populacao,TAM_X);
     //avaliaFuncao(populacao,&contaObj,TAM_X,TAM_POPULACAO);
-    inicializaPopoulacaoRestricao(populacao,TAM_X,TAM_POPULACAO,TIPO_FUNCAO);
-    corrigeLimitesX(populacao,TAM_X,TIPO_FUNCAO,TAM_POPULACAO);
+    inicializaPopulacaoRestricao(populacao,TAM_X,TAM_POPULACAO,TIPO_FUNCAO);
     avaliaFuncaoRestricao(populacao,TIPO_FUNCAO,TAM_POPULACAO);
     somaViolacoes(populacao,TAM_POPULACAO);
     printf("POP\n");
@@ -887,18 +904,99 @@ void algoritmoGeneticoRestricao(){
         //exit(1);
         // Pegar melhor individuo
         ordenaMelhoresRestricao(populacao,filhos); // eh necessario ordenar de novo? *podem ser copiados filhos melhores que pais*
-        printf("Iteracao %i\n",numIteracoes);
+        printf("Iteracao AG: %i\n",numIteracoes);
         imprimeInformacoesIndividuo(populacao[0]);
         numIteracoes++;
     }
+    (*melhorAG) = melhorIndividuoRestricao(populacao,TAM_POPULACAO);
+}
+
+int selecionaPopulacao(int solucao,int ch [],int tamanhoPop){
+    int indice;
+    int achou = 1;
+    while(1){
+        indice = rand() % tamanhoPop;
+        if(indice != solucao){
+            int a = 0;
+            while(ch[a] != -1){
+                if(indice == ch[a]){ // Já está na lista
+                    achou = 0;
+                    break;
+                }
+                ++a;
+            }
+            if(achou == 1){
+                break;
+            }
+            else{
+                achou = 1;
+            }
+        }
+    }
+    return indice;
+}
+
+void selecaoDE(Individuo populacao[],Individuo filhos[],int tamanhoPop){
+    int i; // No DE implementado, cada pai gera apenas um filho.
+    for(i=0;i<tamanhoPop;i++){
+        if(filhos[i].violacao < populacao[i].violacao){ // Filho melhor que pai
+            populacao[i] = filhos[i];
+        }
+        else if(filhos[i].violacao == populacao[i].violacao){
+            if(filhos[i].funcaoObjetivo[0] < populacao[i].funcaoObjetivo[0]){ // Filho melhor que pai
+                populacao[i] = filhos[i];
+            }
+        }
+    }
+}
+
+void algoritmoDE(Individuo *melhorDE){
+    int a,i,j,numIteracoes = 0;
+    Individuo populacao[TAM_POPULACAO];
+    Individuo filhos[TAM_POPULACAO_FILHOS];
+    srand(SEED);
+    inicializaPopulacaoRestricao(populacao,TAM_X,TAM_POPULACAO,TIPO_FUNCAO);
+    avaliaFuncaoRestricao(populacao,TIPO_FUNCAO,TAM_POPULACAO);
+    somaViolacoes(populacao,TAM_POPULACAO);
+    while(numIteracoes < MAX_CALC_OBJ){
+        selecaoRestricao(populacao,filhos,TAM_X);
+        int ch[4] = {-1,-1,-1,-1}; // Vetor de indices, Poderia ser de tamanho 3?
+        for(i=0;i<TAM_POPULACAO;i++){
+            for(a=0;a<3;++a){ // Preenche vetor de indices
+                ch[a] = selecionaPopulacao(i,ch,TAM_POPULACAO);
+            }
+            int R = rand() % TAM_X; // Indice aleatorio, baseado na dimensao do problema
+            for(j=0;j<TAM_X;j++){ // Altera valor de x
+                float Ri = (rand() / (float)(RAND_MAX));
+                if(Ri < CR || j == R){
+                    filhos[i].x[j] = populacao[ch[0]].x[j] + F * (populacao[ch[1]].x[j] - populacao[ch[2]].x[j]);
+                }
+            }
+        }
+        corrigeLimitesX(filhos,TAM_X,TIPO_FUNCAO,TAM_POPULACAO_FILHOS);
+        avaliaFuncaoRestricao(filhos,TIPO_FUNCAO,TAM_POPULACAO_FILHOS);
+        somaViolacoes(filhos,TAM_POPULACAO_FILHOS);
+        selecaoDE(populacao,filhos,TAM_POPULACAO_FILHOS);
+        //imprimeIndividuo(melhorIndividuoDE(populacao,TAM_POPULACAO),TAM_X);
+        imprimeInformacoesIndividuo(melhorIndividuoRestricao(populacao,TAM_POPULACAO));
+        printf("Iteracao DE: %i\n",numIteracoes);
+        numIteracoes++;
+    }
+    (*melhorDE) = melhorIndividuoRestricao(populacao,TAM_POPULACAO);
 }
 
 int main()
 {
+    Individuo melhorAG,melhorDE;
     //AG N 'X' POP 'Y' PROB CROSSOVER 'Z'
     //geraDados();
     //algoritmoGenetico(); // 0.001934sbx 0.000280normal
-    algoritmoGeneticoRestricao();
+    algoritmoGeneticoRestricao(&melhorAG);
+    algoritmoDE(&melhorDE);
+    printf("Melhor individuo do AG: \n");
+    imprimeInformacoesIndividuo(melhorAG);
+    printf("Melhor Individuo do DE: \n");
+    imprimeInformacoesIndividuo(melhorDE);
     return 0;
 }
 
