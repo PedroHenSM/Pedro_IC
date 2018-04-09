@@ -9,7 +9,7 @@ Autor: Pedro Henrique Santos
 #define TAM_POPULACAO 50
 #define NUM_FILHOS_GERADOS 1
 #define TAM_POPULACAO_FILHOS TAM_POPULACAO*NUM_FILHOS_GERADOS
-#define MAX_CALC_OBJ 20// 100000 original
+#define MAX_CALC_OBJ 20000// 100000 original
 #define TAM_X 10
 #define TAM_X_MAXIMO 30
 #define MEDIA 0
@@ -29,8 +29,8 @@ Autor: Pedro Henrique Santos
 #define NUM_RESTRICOES_G 2
 #define NUM_RESTRICOES_H 0
 #define EPSILON 0.0001 // Modulo da restricao de igualdade tem que ser menor que epsilon
-#define CR 0.9 // Crossover Probability , DE [0,1]
-#define F 0.7 // Differential Weight , DE [0,2]
+#define CR 0.7 // Crossover Probability , DE [0,1]
+#define F 0.5 // Differential Weight , DE [0,2]
 
 typedef struct Individuo {
     float x[TAM_X_MAXIMO];
@@ -861,9 +861,10 @@ void C14 (float *x, float *f, float *g, float *h, int nx, int nf, int ng, int nh
     g[2] = g3 - 10 *((float) nx);
 }
 
-void avaliaFuncaoRestricao(Individuo populacao[],int tipoFuncao,int tamanhoPop){
+void avaliaFuncaoRestricao(Individuo populacao[],int tipoFuncao,int tamanhoPop,int *fe){
     int i;
     for(i=0;i<tamanhoPop;i++){ // parametros tam_x,tamFuncObj,tam_g,tam_h
+        (*fe)++;
         if(tipoFuncao == 1){
             C01(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,2,0);
         }
@@ -1027,7 +1028,7 @@ Individuo melhorIndividuoRestricao(Individuo populacao[],int tamanhoPop){
 }
 
 void algoritmoGeneticoRestricaoDEBUG(Individuo *melhorAG){
-    //int contaObj=0;
+    int fe=0;
     int numIteracoes=0;
     Individuo populacao[TAM_POPULACAO];
     Individuo filhos[TAM_POPULACAO_FILHOS];
@@ -1035,7 +1036,7 @@ void algoritmoGeneticoRestricaoDEBUG(Individuo *melhorAG){
     //inicializaPopulacao(populacao,TAM_X);
     //avaliaFuncao(populacao,&contaObj,TAM_X,TAM_POPULACAO);
     inicializaPopulacaoRestricao(populacao,TAM_X,TAM_POPULACAO,TIPO_FUNCAO);
-    avaliaFuncaoRestricao(populacao,TIPO_FUNCAO,TAM_POPULACAO);
+    avaliaFuncaoRestricao(populacao,TIPO_FUNCAO,TAM_POPULACAO,&fe);
     somaViolacoes(populacao,TAM_POPULACAO);
     printf("POP\n");
     imprimePopulacao(populacao,TAM_X,TAM_POPULACAO);
@@ -1056,7 +1057,7 @@ void algoritmoGeneticoRestricaoDEBUG(Individuo *melhorAG){
         mutacao(filhos,TAM_X);
         //avaliaFuncao(filhos,&contaObj,TAM_X,TAM_POPULACAO_FILHOS);
         corrigeLimitesX(filhos,TAM_X,TIPO_FUNCAO,TAM_POPULACAO_FILHOS);
-        avaliaFuncaoRestricao(filhos,TIPO_FUNCAO,TAM_POPULACAO_FILHOS);
+        avaliaFuncaoRestricao(filhos,TIPO_FUNCAO,TAM_POPULACAO_FILHOS,&fe);
         somaViolacoes(filhos,TAM_POPULACAO_FILHOS);
         printf("FILHOS\n");
         imprimePopulacao(filhos,TAM_X,TAM_POPULACAO_FILHOS);
@@ -1083,18 +1084,17 @@ void algoritmoGeneticoRestricaoDEBUG(Individuo *melhorAG){
     (*melhorAG) = melhorIndividuoRestricao(populacao,TAM_POPULACAO);
 }
 
-void algoritmoGeneticoRestricao(Individuo *melhorAG){
-    //int contaObj=0;
-    int numIteracoes=0;
+void AGRestricao(Individuo *melhorAG){
+    int fe=0; // Function Evaluation
     Individuo populacao[TAM_POPULACAO];
     Individuo filhos[TAM_POPULACAO_FILHOS];
     srand(SEED);
     //inicializaPopulacao(populacao,TAM_X);
     //avaliaFuncao(populacao,&contaObj,TAM_X,TAM_POPULACAO);
     inicializaPopulacaoRestricao(populacao,TAM_X,TAM_POPULACAO,TIPO_FUNCAO);
-    avaliaFuncaoRestricao(populacao,TIPO_FUNCAO,TAM_POPULACAO);
+    avaliaFuncaoRestricao(populacao,TIPO_FUNCAO,TAM_POPULACAO,&fe);
     somaViolacoes(populacao,TAM_POPULACAO);
-    while(numIteracoes < MAX_CALC_OBJ){
+    while(fe < MAX_CALC_OBJ){
         selecaoRestricao(populacao,filhos,TAM_X);
         if(probabilidadeCrossover(PROB_CROSSOVER) == 1){
             if(TIPO_CROSSOVER == 0){
@@ -1106,15 +1106,14 @@ void algoritmoGeneticoRestricao(Individuo *melhorAG){
         }
         mutacao(filhos,TAM_X);
         corrigeLimitesX(filhos,TAM_X,TIPO_FUNCAO,TAM_POPULACAO_FILHOS);
-        avaliaFuncaoRestricao(filhos,TIPO_FUNCAO,TAM_POPULACAO_FILHOS);
+        avaliaFuncaoRestricao(filhos,TIPO_FUNCAO,TAM_POPULACAO_FILHOS,&fe);
         somaViolacoes(filhos,TAM_POPULACAO_FILHOS);
         ordenaMelhoresRestricao(populacao,filhos);
         elitismoRestricao(filhos,populacao,TAM_X,TAM_POPULACAO);
         // Pegar melhor individuo
         ordenaMelhoresRestricao(populacao,filhos);
+        printf("FE: %i\n",fe);
         imprimeInformacoesIndividuo(populacao[0]);
-        printf("Iteracao: %i",numIteracoes);
-        numIteracoes++;
     }
     (*melhorAG) = melhorIndividuoRestricao(populacao,TAM_POPULACAO);
 }
@@ -1155,24 +1154,20 @@ void selecaoDE(Individuo populacao[],Individuo filhos[],int tamanhoPop){
     }
 }
 
-void algoritmoDE(Individuo *melhorDE){
-    int a,i,j,numIteracoes = 0;
+void DERestricao(Individuo *melhorDE){
+    int fe=0;
+    int a,i,j;
     Individuo populacao[TAM_POPULACAO];
     Individuo filhos[TAM_POPULACAO_FILHOS];
     srand(SEED);
     inicializaPopulacaoRestricao(populacao,TAM_X,TAM_POPULACAO,TIPO_FUNCAO);
-    avaliaFuncaoRestricao(populacao,TIPO_FUNCAO,TAM_POPULACAO);
+    avaliaFuncaoRestricao(populacao,TIPO_FUNCAO,TAM_POPULACAO,&fe);
     somaViolacoes(populacao,TAM_POPULACAO);
-    /// TESTE
-    //selecaoDE(populacao,filhos,TAM_POPULACAO);
-    //imprimeInformacoesIndividuo(melhorIndividuoRestricao(populacao,TAM_POPULACAO));
-    //exit(1);
-    while(numIteracoes < MAX_CALC_OBJ){
+    while(fe < MAX_CALC_OBJ){
         selecaoRestricao(populacao,filhos,TAM_X);
         int ch[3] = {-1,-1,-1}; // Vetor de indices, Poderia ser de tamanho 3?
         for(i=0;i<TAM_POPULACAO;i++){
             for(a=0;a<3;++a){ // Preenche vetor de indices
-                //ch[a] = selecionaPopulacao(i,ch,TAM_POPULACAO);
                 ch[a] = selecionaPopulacaoDE(i,ch,TAM_POPULACAO);
             }
             int R = rand() % TAM_X; // Indice aleatorio, baseado na dimensao do problema
@@ -1187,13 +1182,12 @@ void algoritmoDE(Individuo *melhorDE){
             }
         }
         corrigeLimitesX(filhos,TAM_X,TIPO_FUNCAO,TAM_POPULACAO_FILHOS);
-        avaliaFuncaoRestricao(filhos,TIPO_FUNCAO,TAM_POPULACAO_FILHOS);
+        avaliaFuncaoRestricao(filhos,TIPO_FUNCAO,TAM_POPULACAO_FILHOS,&fe);
         somaViolacoes(filhos,TAM_POPULACAO_FILHOS);
         selecaoDE(populacao,filhos,TAM_POPULACAO_FILHOS);
         //imprimeIndividuo(melhorIndividuoDE(populacao,TAM_POPULACAO),TAM_X);
+        printf("FE: %i\n",fe);
         imprimeInformacoesIndividuo(melhorIndividuoRestricao(populacao,TAM_POPULACAO));
-        printf("Iteracao DE: %i\n",numIteracoes);
-        numIteracoes++;
     }
     (*melhorDE) = melhorIndividuoRestricao(populacao,TAM_POPULACAO);
 }
@@ -1325,14 +1319,14 @@ void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tip
 
 void ESRestricao(){
     int i=0,j=0;
-    int numIteracoes=0;
+    int fe=0;
     Individuo populacao[TAM_POPULACAO];
     Individuo filhos[TAM_POPULACAO_FILHOS];
     srand(SEED);
     inicializaPopulacaoRestricao(populacao,TAM_X,TAM_POPULACAO,TIPO_FUNCAO);
     corrigeLimitesX(populacao,TAM_X,TIPO_FUNCAO,TAM_POPULACAO); // No caso de C01 x[-10,10]
     // Avalia funcao
-    avaliaFuncaoRestricao(populacao,TIPO_FUNCAO,TAM_POPULACAO);
+    avaliaFuncaoRestricao(populacao,TIPO_FUNCAO,TAM_POPULACAO,&fe);
     somaViolacoes(populacao,TAM_POPULACAO); // Preenche vetor 'v' de violacoes e seta variavel violacao, que eh a soma das violacoes
     inicalizaEstrategiaEvolutiva(populacao,filhos,TAM_X,SIGMA_GLOBAL);
     for(i=0;i<TAM_POPULACAO_FILHOS;i++,j++){ // Copia populacao para filhos
@@ -1342,11 +1336,11 @@ void ESRestricao(){
         }
     }
     //imprimeInformacoesPopulacao(filhos,TAM_POPULACAO_FILHOS);
-    while(numIteracoes < MAX_CALC_OBJ){
+    while(fe < MAX_CALC_OBJ){
         autoAdaptacaoSigma(populacao,filhos,TAM_X,SIGMA_GLOBAL);
         // Avalia funcao
         corrigeLimitesX(filhos,TAM_X,TIPO_FUNCAO,TAM_POPULACAO_FILHOS);
-        avaliaFuncaoRestricao(filhos,TIPO_FUNCAO,TAM_POPULACAO_FILHOS);
+        avaliaFuncaoRestricao(filhos,TIPO_FUNCAO,TAM_POPULACAO_FILHOS,&fe);
         somaViolacoes(filhos,TAM_POPULACAO_FILHOS);
         ordenaMelhoresRestricao(populacao,filhos);
         //ordenaMelhores(populacao,filhos);// NOTE e necessario?
@@ -1355,11 +1349,10 @@ void ESRestricao(){
         // Pegar melhor individuo
         //imprimeContaObj(contaObj);
         //imprimeIndividuo(populacao[0],TAM_X);
-        printf("Iteracao %i\n",numIteracoes);
+        printf("FE: %i\n",fe);
         //printf("O melhor individuo: %f\n",populacao[0].funcaoObjetivo[0]);
         imprimeInformacoesIndividuo(populacao[0]);
         //imprimeMelhores(populacao,filhos,TAM_X);
-        numIteracoes++;
     }
     //qsort(populacao,TAM_POPULACAO,sizeof(Individuo),comparaFuncaoObjetivo0);
     //imprimeInformacoesIndividuo(populacao[0]);
@@ -1373,23 +1366,20 @@ int main()
 
     /// AG Restricao
 
-    //Individuo melhorAG;
-    //algoritmoGeneticoRestricao(&melhorAG);
+    Individuo melhorAG;
+    AGRestricao(&melhorAG);
     //printf("Melhor individuo do AG: \n");
     //imprimeInformacoesIndividuo(melhorAG);
 
     /// DE Restricao
 
     //Individuo melhorDE;
-    //algoritmoDE(&melhorDE);
+    //DERestricao(&melhorDE);
     //printf("Melhor individuo do DE: \n");
     //imprimeInformacoesIndividuo(melhorDE);
 
-    /// ES1 Restricao
-    //ES1Restricao();
-    ESRestricao();
-    /// ES2 Restricao
-    //ES2Restricao();
+    /// ES Restricao
+    //ESRestricao();
 
     /*algoritmoDE(&melhorDE);
     printf("Melhor individuo do AG: \n")
