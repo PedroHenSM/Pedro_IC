@@ -24,22 +24,21 @@ Autor: Pedro Henrique Santos
 #define N_EM_BETA 2 // Normalmente entre 2 e 5. Quanto maior , maior a chance de gerar filhos mais 'pr�ximo' do pai
 #define N_EM_MUTACAOREAL 4 // Para mutação Real (slide SBX)
 #define DELTA_MAX 10 // Para mutação Real (slide SBX)
-#define TIPO_FUNCAO 1 // Funcoes com restricao 14 e 13 = 3g,0h | 01 = 2g,0h
 #define TIPO_ES 0 // Se 0: es+ Se 1:es, Se 2: es, modificado
 #define SIGMA_GLOBAL 2 // Se sigma global == 1, sigma global, se nao, vetor de sigmas[]
-#define NUM_RESTRICOES_G 2
-#define NUM_RESTRICOES_H 0
+#define NUM_RESTRICOES 10
 #define EPSILON 0.0001 // Modulo da restricao de igualdade tem que ser menor que epsilon
 #define CR 0.9 // Crossover Probability , DE [0,1] 0.9
 #define F 0.5 // Differential Weight , DE [0,2] 0.7
+
 
 typedef struct Individuo {
     float x[TAM_X_MAXIMO];
     float sigma[TAM_X_MAXIMO]; // Strategy Parameters ( Parametros de Controle )
     float funcaoObjetivo[TAM_X_MAXIMO];
-    float g[NUM_RESTRICOES_G];
-    float h[NUM_RESTRICOES_H];
-    float v[NUM_RESTRICOES_G+NUM_RESTRICOES_H]; // Vetor de violacoes
+    float g[NUM_RESTRICOES];
+    float h[NUM_RESTRICOES];
+    float v[2*NUM_RESTRICOES]; // Vetor de violacoes
     float violacao; // Soma das violacoes // Soma das violacoes
 }Individuo;
 
@@ -371,9 +370,9 @@ void mutacaoReal(Individuo populacao[],Individuo filhos[],int tamanhoX){ // Slid
     }
 }
 
-void mutacao(Individuo filhos[],int tamanhoX){
+void mutacao(Individuo filhos[],int tamanhoX,int tamanhoPopFilhos){
     int i,j;
-    for(i=0;i<TAM_POPULACAO_FILHOS;i++){// Muta��o
+    for(i=0;i<tamanhoPopFilhos;i++){// Muta��o
         for(j=0;j<tamanhoX;j++){
             filhos[i].x[j] += randNormal(MEDIA,DESVIO_PADRAO);//Preenche o vetor com os valores de x com  a distruibuicao normal
         }
@@ -467,42 +466,6 @@ void elitismoRestricao(Individuo filhos[],Individuo populacao[],int tamanhoX,int
     copiaIndividuosRestricao(filhos,populacao,ELITISMO,tamanhoX,tamanhoPop);
 }
 
-void geraDados(){
-    int s,n;
-    for(n=2;n<11;n++){ // TamanhoProblema
-        for(s=1;s<31;s++){// seed
-            //algoritmoGeneticoGeraDados(n,s);
-        }
-    }
-}
-
-void algoritmoGenetico(){
-    int contaObj=0;
-    Individuo populacao[TAM_POPULACAO];
-    Individuo filhos[TAM_POPULACAO_FILHOS];
-    srand(SEED);
-    inicializaPopulacao(populacao,TAM_X);
-    avaliaFuncao(populacao,&contaObj,TAM_X,TAM_POPULACAO);
-    while(contaObj < MAX_CALC_OBJ){
-        selecao(populacao,filhos,TAM_X);
-        if(probabilidadeCrossover(PROB_CROSSOVER) == 1){
-            if(TIPO_CROSSOVER == 0){
-                crossover(filhos,TAM_X,TAM_POPULACAO_FILHOS);
-            }
-            else if(TIPO_CROSSOVER == 1){
-                crossoverSBX(populacao,filhos,TAM_X,TAM_POPULACAO,NUM_FILHOS_GERADOS);
-            }
-        }
-        mutacao(filhos,TAM_X);
-        avaliaFuncao(filhos,&contaObj,TAM_X,TAM_POPULACAO_FILHOS);
-        ordenaMelhores(populacao,filhos,TIPO_PROBLEMA);
-        elitismo(filhos,populacao,TAM_X,TAM_POPULACAO);
-        // Pegar melhor individuo
-        imprimeContaObj(contaObj);
-        imprimeMelhores(populacao,filhos,TAM_X);
-    }
-}
-
 int comparaViolacaoRestricaoMinimizacao(const void *a, const void *b){
     if((*(Individuo*)a).violacao < (*(Individuo*)b).violacao){
         return -1; // vem antes
@@ -527,36 +490,47 @@ void inicializaPopulacaoRestricao(Individuo populacao[],int tamanhoX,int tamanho
         for(j=0;j<tamanhoX;j++){
             float eq = (rand()/(float)(RAND_MAX)); // gera valores entre [0,1]
             float val;
-            if (tipoFuncao == 1){
-                val = eq * (rand() % 11); // Valores decimais entre [0,10]
-            }
-            else if(tipoFuncao == 2){
-                val = eq * (rand() % 11 - 5); // Gera valores decimais entre [-5,5]
-            }
-            else if(tipoFuncao == 3 || tipoFuncao == 12 || tipoFuncao == 14 || tipoFuncao == 15){
-                val = eq * (rand() % 2001 - 1000); // Valores decimais entre [-1000,1000]
-            }
-            else if(tipoFuncao == 4 || tipoFuncao == 18){
-                val = eq * (rand() % 101 - 50); // Valores decimais entre [-50,50]
-            }
-            else if(tipoFuncao == 5 || tipoFuncao == 6){
-                val = eq * (rand() % 1201 - 600); // Valores decimais entre [-600,600]
-            }
-            else if(tipoFuncao == 7 || tipoFuncao == 8){
-                val = eq * (rand() % 281 - 140); // Valores decimais entre [-140,140]
-            }
-            else if(tipoFuncao == 9 || tipoFuncao == 10 || tipoFuncao == 13){
-                val = eq * (rand() % 1001 - 500); // valores decimais entre [-500,500]
-            }
-            else if(tipoFuncao == 11){
-                val = eq * (rand() % 201 - 100); // valores decimais entre [-100,100]
-            }
-            else if(tipoFuncao == 16 || tipoFuncao == 17){
-                val = eq * (rand() % 21 - 10); // valores decimais entre [-10,10]
-            }
-            else{
-                printf("Funcao nao encontrada\n");
-                exit(0);
+            switch(tipoFuncao){
+                case 1:
+                    val = eq * (rand() % 11); // Valores decimais entre [0,10]
+                    break;
+                case 2:
+                    val = eq * (rand() % 11 - 5); // Gera valores decimais entre [-5,5]
+                    break;
+                case 3:
+                case 12:
+                case 14:
+                case 15:
+                    val = eq * (rand() % 2001 - 1000); // Valores decimais entre [-1000,1000]
+                    break;
+                case 4:
+                case 18:
+                    val = eq * (rand() % 101 - 50); // Valores decimais entre [-50,50]
+                    break;
+                case 5:
+                case 6:
+                    val = eq * (rand() % 1201 - 600); // Valores decimais entre [-600,600]
+                    break;
+                case 7:
+                case 8:
+                    val = eq * (rand() % 281 - 140); // Valores decimais entre [-140,140]
+                    break;
+                case 9:
+                case 10:
+                case 13:
+                    val = eq * (rand() % 1001 - 500); // valores decimais entre [-500,500]
+                    break;
+                case 11:
+                    val = eq * (rand() % 201 - 100); // valores decimais entre [-100,100]
+                    break;
+                case 16:
+                case 17:
+                    val = eq * (rand() % 21 - 10); // valores decimais entre [-10,10]
+                    break;
+                default:
+                    printf("Tipo funcao nao encontrado\n");
+                    exit(1);
+                    break;
             }
             populacao[i].x[j] = val;
         }
@@ -609,7 +583,6 @@ void C18 (float *x, float *f, float *g, float *h, int nx, int nf, int ng, int nh
 void inicializaRestricoes(int tipoFuncao,int *numRestricoesG,int *numRestricoesH){ ///Inicializa tipos de restricoes
     switch(tipoFuncao){
         case 1:
-            printf("entrou caso 1 inicializa restricao\n");
             (*numRestricoesG) = 2;
             (*numRestricoesH) = 0;
             break;
@@ -687,99 +660,70 @@ void inicializaRestricoes(int tipoFuncao,int *numRestricoesG,int *numRestricoesH
     }
 }
 
-void avaliaFuncaoRestricao(Individuo populacao[],int tipoFuncao,int tamanhoPop,int *numG,int *numH,int *fe){
+void avaliaFuncaoRestricao(Individuo populacao[],int tipoFuncao,int tamanhoPop,int numG,int numH,int *fe){
     int i;
-    printf("tipoFuncao em avaliaFuncao: %i\n",tipoFuncao);
-    printf("tamPOp em avaliaFuncao: %i\n",tamanhoPop);
-    printf("numG: %i\n",(*numG));
-    printf("numH: %i\n",(*numH));
-    printf("wtt");
     for(i=0;i<tamanhoPop;i++){ // parametros tam_x,tamFuncObj,tam_g,tam_h
         (*fe)++;
-        //printf("entrou for\n");
         switch(tipoFuncao){
         case 1:
-            //printf("entrou caso 1\n");
-            C01(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C01(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 2:
-            C02(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C02(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 3:
-            C03(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C03(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 4:
-            C04(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C04(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 5:
-            C05(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C05(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 6:
-            C06(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C06(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 7:
-            C07(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C07(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 8:
-            C08(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C08(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 9:
-            C09(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C09(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 10:
-            C10(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C10(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 11:
-            C11(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C11(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 12:
-            C12(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C12(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 13:
-            C13(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C13(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 14:
-            C14(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C14(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 15:
-            C15(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C15(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 16:
-            C16(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C16(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 17:
-            C17(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C17(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         case 18:
-            C18(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,(*numG),(*numH));
+            C18(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,numG,numH);
             break;
         default:
             printf("Funcao nao encontrada\n");
             exit(1);
         }
     }
-        /*if(tipoFuncao == 1){
-            C01(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,2,0);
-        }
-        else if(tipoFuncao == 2){
-            C02(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,2,1);
-        }
-        else if(tipoFuncao == 3){
-            C03(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,0,1);
-        }
-        else if(tipoFuncao == 4){
-            C04(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,0,4);
-        }
-        else if(tipoFuncao == 10){
-            C10(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,0,1);
-        }
-        else if(tipoFuncao == 13){
-            C13(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,3,0);
-        }
-        else if(tipoFuncao == 14){
-            C14(populacao[i].x,populacao[i].funcaoObjetivo,populacao[i].g,populacao[i].h,TAM_X,1,3,0);
-        }
-    }*/
 }
 
 float maiorValorArray(float g[],int tam){ // Pega maior valor do array, se for maior que 0
@@ -810,6 +754,58 @@ float somaValoresArray(float v[],int tam){
 void corrigeLimitesX(Individuo populacao[],int tamanhoX,int tipoFuncao,int tamanhoPop){ // Arruma limites para os valores x
     float xmin,xmax;
     int i,j;
+    switch(tipoFuncao){
+        case 1:
+            xmin = 0;
+            xmax = 10;
+            break;
+        case 2:
+            xmin = -5.12;
+            xmax = 5.12;
+            break;
+        case 3:
+        case 12:
+        case 14:
+        case 15:
+            xmin = -1000;
+            xmax = 1000;
+            break;
+        case 4:
+        case 18:
+            xmin = -50;
+            xmax = 50;
+            break;
+        case 5:
+        case 6:
+            xmin = -600;
+            xmax = 600;
+            break;
+        case 7:
+        case 8:
+            xmin = -140;
+            xmax = 140;
+            break;
+        case 9:
+        case 10:
+        case 13:
+            xmin = -500;
+            xmax = 500;
+            break;
+        case 11:
+            xmin = -100;
+            xmax = 100;
+            break;
+        case 16:
+        case 17:
+            xmin = -10;
+            xmax = 10;
+            break;
+        default:
+            printf("Tipo funcao nao encontrado\n");
+            exit(1);
+            break;
+    }
+    /*
     if(tipoFuncao == 1){
         xmin = 0;
         xmax = 10;
@@ -829,7 +825,7 @@ void corrigeLimitesX(Individuo populacao[],int tamanhoX,int tipoFuncao,int taman
     else if(tipoFuncao == 3 || tipoFuncao == 14){
         xmin = -1000;
         xmax = 1000;
-    }
+    }*/
     for(i=0;i<tamanhoPop;i++){
         for(j=0;j<tamanhoX;j++){
             if(populacao[i].x[j] > xmax){
@@ -842,23 +838,12 @@ void corrigeLimitesX(Individuo populacao[],int tamanhoX,int tipoFuncao,int taman
     }
 }
 
-void consertaIgualdades(Individuo populacao[],int tamanhoPop){ // Faz o calculo das restricoes com igualdades e transforma em desigualdade
-    if(NUM_RESTRICOES_H != 0){ // Possui igualdade.
-        int i,indH;
-        for(i=0;i<tamanhoPop;i++){
-            for(indH=0;indH<NUM_RESTRICOES_H;indH++){
-                populacao[i].h[indH] = fabs(populacao[i].h[indH]) - 0.0001;
-            }
-        }
-    }
-}
-
-void somaViolacoes(Individuo populacao[],int tamanhoPop,int *numG,int *numH){ // Coloca as violacoes g e h no vetor 'v' de violacoes
+void somaViolacoes(Individuo populacao[],int tamanhoPop,int numG,int numH){ // Coloca as violacoes g e h no vetor 'v' de violacoes
     int i,j;
     int indG,indH;
     for(i=0;i<tamanhoPop;i++){
         indG=0,indH=0; // Indice do vetor g e h
-        for(j=0;j<(*numG)+(*numH);j++){ // Percorrer vetor 'v' de violacao
+        for(j=0;j<numG+numH;j++){ // Percorrer vetor 'v' de violacao
             if(j < numG){
                 populacao[i].v[j] = populacao[i].g[indG];
                 indG++;
@@ -868,23 +853,23 @@ void somaViolacoes(Individuo populacao[],int tamanhoPop,int *numG,int *numH){ //
                 indH++;
             }
         }
-        populacao[i].violacao = somaValoresArray(populacao[i].v,(*numG)+(*numH));
+        populacao[i].violacao = somaValoresArray(populacao[i].v,numG+numH);
     }
 }
 
-void imprimeInformacoesIndividuo(Individuo ind){
+void imprimeInformacoesIndividuo(Individuo ind,int tamX,int numG,int numH){
     int j;
-    for(j=0;j<TAM_X;j++){
+    for(j=0;j<tamX;j++){
         printf("Os valores de x[] : %f\n",ind.x[j]);
     }
     printf("Os valores de funcaoObj: %e\n",ind.funcaoObjetivo[0]);
-    for(j=0;j<NUM_RESTRICOES_G;j++){
+    for(j=0;j<numG;j++){
         printf("Os valores de g[]: %f\n",ind.g[j]);
     }
-    for(j=0;j<NUM_RESTRICOES_H;j++){
+    for(j=0;j<numH;j++){
         printf("Os valores de h[]: %f\n",ind.h[j]);
     }
-    for(j=0;j<NUM_RESTRICOES_G+NUM_RESTRICOES_H;j++){
+    for(j=0;j<numG+numH;j++){
         printf("O valor de v[]: %f\n",ind.v[j]);
     }
     printf("O valor de violacao: %f\n",ind.violacao);
@@ -895,10 +880,10 @@ void imprimeVioleFO(Individuo ind){
     printf("V\t%f\tFO\t%f\n",ind.violacao,ind.funcaoObjetivo[0]);
 }
 
-void imprimeInformacoesPopulacao(Individuo populacao[],int tamanhoPop){
+void imprimeInformacoesPopulacao(Individuo populacao[],int tamanhoPop,int tamX,int numG,int numH){
     int i=0;
     for(i=0;i<tamanhoPop;i++){
-        imprimeInformacoesIndividuo(populacao[i]);
+        imprimeInformacoesIndividuo(populacao[i],tamX,numG,numH);
     }
 }
 
@@ -954,9 +939,9 @@ void selecaoDE(Individuo populacao[],Individuo filhos[],int tamanhoPop){
     }
 }
 
-void inicalizaEstrategiaEvolutiva(Individuo populacao[], Individuo filhos[],int tamanhoX,int sigmaGlobal){
+void inicalizaEstrategiaEvolutiva(Individuo populacao[], Individuo filhos[],int tamanhoX,int tamanhoPop,int tamanhoPopFilhos,int sigmaGlobal){
     int i,j;
-    for(i=0;i<TAM_POPULACAO;i++){// Para Estratégia Evolutiva (ES)
+    for(i=0;i<tamanhoPop;i++){// Para Estratégia Evolutiva (ES)
         if(sigmaGlobal == 1){
             populacao[i].sigma[0] = DESVIO_PADRAO;
         }
@@ -966,7 +951,7 @@ void inicalizaEstrategiaEvolutiva(Individuo populacao[], Individuo filhos[],int 
             }
         }
     }
-    for(i=0;i<TAM_POPULACAO_FILHOS;i++){
+    for(i=0;i<tamanhoPopFilhos;i++){
         if(sigmaGlobal == 1){
             filhos[i].sigma[0] = DESVIO_PADRAO;
         }
@@ -978,7 +963,7 @@ void inicalizaEstrategiaEvolutiva(Individuo populacao[], Individuo filhos[],int 
     }
 }
 
-void autoAdaptacaoSigma(Individuo populacao[],Individuo filhos[],int tamanhoX,int sigmaGlobal){
+void autoAdaptacaoSigma(Individuo populacao[],Individuo filhos[],int tamanhoX,int tamanhoPop,int numFilhosGerados,int sigmaGlobal){
     /*int i,j;
     float epsilon,tau; // global step-size
     for(i=0;i<TAM_POPULACAO;i++){
@@ -992,8 +977,8 @@ void autoAdaptacaoSigma(Individuo populacao[],Individuo filhos[],int tamanhoX,in
     }*/
     int i,j,k,l=0;
     float epsilon,tau;
-    for(i=0;i<TAM_POPULACAO;i++){
-        for(j=0;j<NUM_FILHOS_GERADOS;j++){ // Cada pai deve gerar X filhos
+    for(i=0;i<tamanhoPop;i++){
+        for(j=0;j<numFilhosGerados;j++){ // Cada pai deve gerar X filhos
             tau = 1/sqrt(tamanhoX);
             epsilon = tau*randNormal(0,1);
             if(sigmaGlobal == 1){
@@ -1014,12 +999,12 @@ void autoAdaptacaoSigma(Individuo populacao[],Individuo filhos[],int tamanhoX,in
     }
 }
 
-void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tipoES){
+void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tipoES,int tamanhoPop,int tamanhoPopFilhos,int numFilhosGerados){
     if(tipoES == 0){ // Es + Junta pais e filhos, e pega os melhores.
         int i,k=0;
-        Individuo aux[TAM_POPULACAO+TAM_POPULACAO_FILHOS];
-        for(i=0;i<TAM_POPULACAO+TAM_POPULACAO_FILHOS;i++){
-            if(i<TAM_POPULACAO){ // Copia populacao para aux
+        Individuo aux[tamanhoPop+tamanhoPopFilhos];
+        for(i=0;i<tamanhoPop+tamanhoPopFilhos;i++){
+            if(i<tamanhoPop){ // Copia populacao para aux
                 aux[i]=populacao[i];
             }
             else{ // Copia filhos para aux
@@ -1027,16 +1012,16 @@ void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tip
                 k++;
             }
         }
-        qsort(aux,(TAM_POPULACAO+TAM_POPULACAO_FILHOS),sizeof(Individuo),comparaViolacaoRestricaoMinimizacao); // Ordena auxiliar
-        for(i=0;i<TAM_POPULACAO;i++){
+        qsort(aux,(tamanhoPop+tamanhoPopFilhos),sizeof(Individuo),comparaViolacaoRestricaoMinimizacao); // Ordena auxiliar
+        for(i=0;i<tamanhoPop;i++){
             populacao[i]=aux[i]; // Copia os melhores de aux para populacao
         }
     }
     else if (tipoES == 1){ // Es , O período de vida de cada indivíduo está restrito a uma geração. Pega o melhor filho de cada pai
         int i,j=0;
-        for(i=0;i<TAM_POPULACAO;i++){
+        for(i=0;i<tamanhoPop;i++){
             Individuo melhor = filhos[j];
-            while(j<NUM_FILHOS_GERADOS*(i+1)){ // Percorre os X filhos de cada pai
+            while(j<numFilhosGerados*(i+1)){ // Percorre os X filhos de cada pai
                 if(filhos[j].violacao < melhor.violacao){ // Seleciona o melhor filho
                     melhor = filhos[j];
                 }
@@ -1050,13 +1035,13 @@ void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tip
             }
             populacao[i] = melhor;
         }
-        qsort(populacao,TAM_POPULACAO,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
+        qsort(populacao,tamanhoPop,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
     }
     else if(tipoES == 2){ // Es , Adaptado (Seleciona melhor filho de cada pai, e se for melhor que o pai, substitui)
         int i,j=0;
-        for(i=0;i<TAM_POPULACAO;i++){
+        for(i=0;i<tamanhoPop;i++){
             Individuo melhor = filhos[j];
-            while(j<NUM_FILHOS_GERADOS*(i+1)){ // Pega o melhor filho de cada pai
+            while(j<numFilhosGerados*(i+1)){ // Pega o melhor filho de cada pai
                 if(filhos[j].funcaoObjetivo[0] < melhor.funcaoObjetivo[0]){
                     melhor = filhos[j];
                 }
@@ -1071,7 +1056,7 @@ void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tip
                 }
             }
         }
-        qsort(populacao,TAM_POPULACAO,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
+        qsort(populacao,tamanhoPop,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
     }
     else{
         printf("Es nao reconhecido\n");
@@ -1079,7 +1064,7 @@ void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tip
     }
 }
 
-void AG(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int tipoES,int sigmaGlobal,int probCrossover){
+void AG(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int probCrossover,int tipoES,int sigmaGlobal){
     int fe=0; // Function Evaluation
     int tamPopulacaoFilhos = tamPopulacao*numFilhosGerados;
     int numG,numH;
@@ -1088,11 +1073,11 @@ void AG(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
     srand(seed);
     inicializaRestricoes(tipoFuncao,&numG,&numH);
     inicializaPopulacaoRestricao(populacao,tamX,tamPopulacao,tipoFuncao);
-    avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,&fe,numG,numH);
+    avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,numG,numH,&fe);
     somaViolacoes(populacao,tamPopulacao,numG,numH);
     while(fe < maxFE){
         selecaoRestricao(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos);
-        if(probabilidadeCrossover(PROB_CROSSOVER) == 1){
+        if(probabilidadeCrossover(probCrossover) == 1){
             if(TIPO_CROSSOVER == 0){
                 crossover(filhos,tamX,tamPopulacaoFilhos);
             }
@@ -1100,44 +1085,33 @@ void AG(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
                 crossoverSBX(populacao,filhos,tamX,tamPopulacao,numFilhosGerados);
             }
         }
-        mutacao(filhos,tamX);
+        mutacao(filhos,tamX,tamPopulacaoFilhos);
         corrigeLimitesX(filhos,tamX,tipoFuncao,tamPopulacaoFilhos);
-        avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,&fe,numG,numH);
+        avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacao,numG,numH,&fe);
         somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
         ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos);
         elitismoRestricao(filhos,populacao,tamX,tamPopulacao);
         // Pegar melhor individuo
         ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos);
         //printf("FE: %i\n",fe);
-        //imprimeInformacoesIndividuo(populacao[0]);
+        imprimeInformacoesIndividuo(populacao[0],tamX,numG,numH);
     }
     //(*melhorAG) = melhorIndividuoRestricao(populacao,TAM_POPULACAO);
 }
 
-void DE(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int tipoES,int sigmaGlobal,int probCrossover){
+void DE(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int probCrossover,int tipoES,int sigmaGlobal){
     int fe=0;
     int a,i,j;
     int tamPopulacaoFilhos = tamPopulacao*numFilhosGerados;
-    int numG;
-    int numH;
-    printf("pop filhos: %i\n",tamPopulacaoFilhos);
-    printf("numG: %i\nnumH:%i\n",numG,numH);
+    int numG,numH;
     Individuo populacao[tamPopulacao];
     Individuo filhos[tamPopulacaoFilhos];
     srand(seed);
     inicializaRestricoes(tipoFuncao,&numG,&numH);
-    printf("numG: %i\nnumH:%i\n",numG,numH);
     inicializaPopulacaoRestricao(populacao,tamX,tamPopulacao,tipoFuncao);
-        printf("opa\n");
-
-    avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,&numG,&numH,&fe);
-        printf("opa\n");
-
-    somaViolacoes(populacao,tamPopulacao,&numG,&numH);
-        printf("opa\n");
-    exit(1);
+    avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,numG,numH,&fe);
+    somaViolacoes(populacao,tamPopulacao,numG,numH);
     while(fe < maxFE){
-    //while(iteracoes< MAX_CALC_OBJ){
         selecaoRestricao(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos);
         int ch[3] = {-1,-1,-1}; // Vetor de indices, Poderia ser de tamanho 3?
         for(i=0;i<tamPopulacao;i++){
@@ -1156,18 +1130,14 @@ void DE(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
             }
         }
         corrigeLimitesX(filhos,tamX,tipoFuncao,tamPopulacaoFilhos);
-        avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,&numG,&numH,&fe);
-        somaViolacoes(filhos,tamPopulacaoFilhos,&numG,&numH);
+        avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacao,numG,numH,&fe);
+        somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
         selecaoDE(populacao,filhos,tamPopulacaoFilhos);
-        //imprimeIndividuo(melhorIndividuoDE(populacao,TAM_POPULACAO),TAM_X);
-        //printf("FE: %i\n",fe);
-        //printf("Iteracao: %i\n",iteracoes);
-        imprimeInformacoesIndividuo(melhorIndividuoRestricao(populacao,tamPopulacao));
+        imprimeInformacoesIndividuo(melhorIndividuoRestricao(populacao,tamPopulacao),tamX,numG,numH);
     }
-    //(*melhorDE) = melhorIndividuoRestricao(populacao,tamPopulacao);
 }
 
-void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int tipoES,int sigmaGlobal,int probCrossover){
+void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int probCrossover,int tipoES,int sigmaGlobal){
     int i,j=0;
     int fe=0;
     int tamPopulacaoFilhos = tamPopulacao*numFilhosGerados;
@@ -1179,10 +1149,11 @@ void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
     inicializaPopulacaoRestricao(populacao,tamX,tamPopulacao,tipoFuncao);
     corrigeLimitesX(populacao,tamX,tipoFuncao,tamPopulacao); // No caso de C01 x[-10,10]
     // Avalia funcao
-    avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,&fe,&numG,&numH);
+    avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,numG,numH,&fe);
     somaViolacoes(populacao,tamPopulacao,numG,numH); // Preenche vetor 'v' de violacoes e seta variavel violacao, que eh a soma das violacoes
-    inicalizaEstrategiaEvolutiva(populacao,filhos,tamX,sigmaGlobal);
+    inicalizaEstrategiaEvolutiva(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos,sigmaGlobal);
     /// TODO: MELHORAR FOR ABAIXO
+    printf("uai kct\n");
     for(i=0;i<tamPopulacaoFilhos;i++,j++){ // Copia populacao para filhos
         filhos[i]=populacao[j];
         if(j >=tamPopulacao){ // Acessaria lixo
@@ -1192,22 +1163,22 @@ void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
     //imprimeInformacoesPopulacao(filhos,TAM_POPULACAO_FILHOS);
     while(fe < MAX_CALC_OBJ){
     //while(numIteracoes <MAX_CALC_OBJ){
-        autoAdaptacaoSigma(populacao,filhos,tamX,sigmaGlobal);
+        autoAdaptacaoSigma(populacao,filhos,tamX,tamPopulacao,numFilhosGerados,sigmaGlobal);
         // Avalia funcao
         corrigeLimitesX(filhos,tamX,tipoFuncao,tamPopulacaoFilhos);
-        avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,&fe,numG,numH);
+        avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacao,numG,numH,&fe);
         somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
         ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos);
         //ordenaMelhores(populacao,filhos);// NOTE e necessario?
-        selecionaMelhoresRestricao(populacao,filhos,tipoES);
-        //selecionaMelhores(populacao,filhos,TIPO_ES);
+        selecionaMelhoresRestricao(populacao,filhos,tipoES,tamPopulacao,tamPopulacaoFilhos,numFilhosGerados);
+        //Individuo populacao[],Individuo filhos[],int tipoES,int tamanhoPop,int tamanhoPopFilhos,int numFilhosGerados
         // Pegar melhor individuo
         //imprimeContaObj(contaObj);
         //imprimeIndividuo(populacao[0],TAM_X);
         //printf("FE: %i\n",fe);
         //printf("iteracao: %i\n",numIteracoes);
         //printf("O melhor individuo: %f\n",populacao[0].funcaoObjetivo[0]);
-        imprimeInformacoesIndividuo(populacao[0]); //Melhor Individuo
+        imprimeInformacoesIndividuo(populacao[0],tamX,numG,numH); //Melhor Individuo
         //imprimeMelhores(populacao,filhos,TAM_X);
     }
     //(*melhorES) = populacao[0];
@@ -1216,7 +1187,13 @@ void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
 }
 
 int main(){
+    /// Se 0: es+ Se 1:es, Se 2: es, modificado
+    /// Se sigma global == 1, sigma global, se nao, vetor de sigmas[]
+    /// Parametros tipoFuncao|seed|tamPopulacao|tamX|numFilhosGerados|maxFE|probCrossover|tipoES|sigmaGlobal
     DE(1,1,50,10,1,20000,0,0,0);
+    //AG(1,1,50,10,1,20000,100,0,0);
+    //ES(1,1,25,10,100,20000,0,1,0);
+    //ES(1,1,3,10,9,20000,0,1,0)
     return 0;
 }
 
