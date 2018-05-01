@@ -6,6 +6,7 @@ Autor: Pedro Henrique Santos
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <unistd.h>
 #include "functions.h"
 #define TAM_POPULACAO 50
 #define NUM_FILHOS_GERADOS 1
@@ -877,7 +878,7 @@ void imprimeInformacoesIndividuo(Individuo ind,int tamX,int numG,int numH){
 }
 
 void imprimeVioleFO(Individuo ind){
-    printf("V\t%f\tFO\t%f\n",ind.violacao,ind.funcaoObjetivo[0]);
+    printf("V\t%e\tFO\t%e\n",ind.violacao,ind.funcaoObjetivo[0]);
 }
 
 void imprimeInformacoesPopulacao(Individuo populacao[],int tamanhoPop,int tamX,int numG,int numH){
@@ -1133,7 +1134,8 @@ void DE(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
         avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacao,numG,numH,&fe);
         somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
         selecaoDE(populacao,filhos,tamPopulacaoFilhos);
-        imprimeInformacoesIndividuo(melhorIndividuoRestricao(populacao,tamPopulacao),tamX,numG,numH);
+        //imprimeInformacoesIndividuo(melhorIndividuoRestricao(populacao,tamPopulacao),tamX,numG,numH);
+        imprimeVioleFO(melhorIndividuoRestricao(populacao,tamPopulacao));
     }
 }
 
@@ -1186,11 +1188,37 @@ void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
     //imprimeInformacoesIndividuo(populacao[0]);
 }
 
-int main(){
+int main(int argc,char* argv[]){
     /// Se 0: es+ Se 1:es, Se 2: es, modificado
     /// Se sigma global == 1, sigma global, se nao, vetor de sigmas[]
     /// Parametros tipoFuncao|seed|tamPopulacao|tamX|numFilhosGerados|maxFE|probCrossover|tipoES|sigmaGlobal
-    DE(1,1,50,10,1,20000,0,0,0);
+    int tipoFuncao = 1;
+    int seed = 2;
+    int tamPopulacao = 50;
+    int tamX = 10;
+    int numFilhosGerados = 1;
+    int maxFE = 200000;
+    int probCrossover = 0;
+    int tipoES = 0;
+    int sigmaGlobal = 0;
+    //DE(1,1,50,10,1,20000,0,0,0);
+    int opt;
+    while ((opt = getopt(argc, argv, "f:s:p:x:g:m:c:e:t:")) != -1) {
+    	switch (opt) {
+    	    case 'f': tipoFuncao = atoi(optarg); break;
+			case 's': seed = atoi(optarg); break;
+			case 'p': tamPopulacao = atoi(optarg); break;
+			case 'x': tamX = atoi(optarg); break;
+			case 'g': numFilhosGerados = atoi(optarg); break;
+			case 'm': maxFE = atoi(optarg); break;
+            case 'c': probCrossover = atoi(optarg); break;
+			case 'e': tipoES = atoi(optarg); break;
+			case 't': sigmaGlobal = atoi(optarg); break;
+			default: abort();
+    	}
+    }
+
+    DE(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
     //AG(1,1,50,10,1,20000,100,0,0);
     //ES(1,1,25,10,100,20000,0,1,0);
     //ES(1,1,3,10,9,20000,0,1,0)
