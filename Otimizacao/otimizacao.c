@@ -7,6 +7,7 @@ Autor: Pedro Henrique Santos
 #include <math.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 #include "functions.h"
 #define TAM_POPULACAO 50
 #define NUM_FILHOS_GERADOS 1
@@ -1211,18 +1212,18 @@ int main(int argc,char* argv[]){
     	}
     }
 
-    method = "ES";
+    //method = "AG";
     if(!strcmp(method,"DE")){ // Retorna 0 se str1 == str2
-            DE(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
+        DE(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
     }
     else if(!strcmp(method,"ES")){
-            ES(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
+        ES(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
     }
-    else if(!strcmp(method,"AG")){;
-            AG(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
+    else if(!strcmp(method,"AG")){
+        AG(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
     }
     else{
-        printf("Metodo nao encontrado\n");
+        printf("Metodo nao encontrado, impresso no codigo em C\n");
         exit(1);
     }
     //AG(1,1,50,10,1,20000,100,0,0);
