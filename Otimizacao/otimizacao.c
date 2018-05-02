@@ -1061,7 +1061,7 @@ void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tip
     }
     else{
         printf("Es nao reconhecido\n");
-        exit(0);
+        exit(1);
     }
 }
 
@@ -1095,7 +1095,7 @@ void AG(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
         // Pegar melhor individuo
         ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos);
         //printf("FE: %i\n",fe);
-        imprimeInformacoesIndividuo(populacao[0],tamX,numG,numH);
+        imprimeVioleFO(populacao[0]);
     }
     //(*melhorAG) = melhorIndividuoRestricao(populacao,TAM_POPULACAO);
 }
@@ -1155,7 +1155,6 @@ void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
     somaViolacoes(populacao,tamPopulacao,numG,numH); // Preenche vetor 'v' de violacoes e seta variavel violacao, que eh a soma das violacoes
     inicalizaEstrategiaEvolutiva(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos,sigmaGlobal);
     /// TODO: MELHORAR FOR ABAIXO
-    printf("uai kct\n");
     for(i=0;i<tamPopulacaoFilhos;i++,j++){ // Copia populacao para filhos
         filhos[i]=populacao[j];
         if(j >=tamPopulacao){ // Acessaria lixo
@@ -1173,15 +1172,7 @@ void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
         ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos);
         //ordenaMelhores(populacao,filhos);// NOTE e necessario?
         selecionaMelhoresRestricao(populacao,filhos,tipoES,tamPopulacao,tamPopulacaoFilhos,numFilhosGerados);
-        //Individuo populacao[],Individuo filhos[],int tipoES,int tamanhoPop,int tamanhoPopFilhos,int numFilhosGerados
-        // Pegar melhor individuo
-        //imprimeContaObj(contaObj);
-        //imprimeIndividuo(populacao[0],TAM_X);
-        //printf("FE: %i\n",fe);
-        //printf("iteracao: %i\n",numIteracoes);
-        //printf("O melhor individuo: %f\n",populacao[0].funcaoObjetivo[0]);
-        imprimeInformacoesIndividuo(populacao[0],tamX,numG,numH); //Melhor Individuo
-        //imprimeMelhores(populacao,filhos,TAM_X);
+        imprimeVioleFO(populacao[0]);
     }
     //(*melhorES) = populacao[0];
     //qsort(populacao,TAM_POPULACAO,sizeof(Individuo),comparaFuncaoObjetivo0);
@@ -1192,6 +1183,7 @@ int main(int argc,char* argv[]){
     /// Se 0: es+ Se 1:es, Se 2: es, modificado
     /// Se sigma global == 1, sigma global, se nao, vetor de sigmas[]
     /// Parametros tipoFuncao|seed|tamPopulacao|tamX|numFilhosGerados|maxFE|probCrossover|tipoES|sigmaGlobal
+    char* method = "null";
     int tipoFuncao = 1;
     int seed = 2;
     int tamPopulacao = 50;
@@ -1200,11 +1192,12 @@ int main(int argc,char* argv[]){
     int maxFE = 200000;
     int probCrossover = 0;
     int tipoES = 0;
-    int sigmaGlobal = 0;
+    int sigmaGlobal = 1;
     //DE(1,1,50,10,1,20000,0,0,0);
     int opt;
-    while ((opt = getopt(argc, argv, "f:s:p:x:g:m:c:e:t:")) != -1) {
+    while ((opt = getopt(argc, argv, "n:f:s:p:x:g:m:c:e:t:")) != -1) {
     	switch (opt) {
+    	    case 'n': method = optarg; break;
     	    case 'f': tipoFuncao = atoi(optarg); break;
 			case 's': seed = atoi(optarg); break;
 			case 'p': tamPopulacao = atoi(optarg); break;
@@ -1218,7 +1211,20 @@ int main(int argc,char* argv[]){
     	}
     }
 
-    DE(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
+    method = "ES";
+    if(!strcmp(method,"DE")){ // Retorna 0 se str1 == str2
+            DE(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
+    }
+    else if(!strcmp(method,"ES")){
+            ES(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
+    }
+    else if(!strcmp(method,"AG")){;
+            AG(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
+    }
+    else{
+        printf("Metodo nao encontrado\n");
+        exit(1);
+    }
     //AG(1,1,50,10,1,20000,100,0,0);
     //ES(1,1,25,10,100,20000,0,1,0);
     //ES(1,1,3,10,9,20000,0,1,0)
