@@ -879,7 +879,7 @@ void imprimeInformacoesIndividuo(Individuo ind,int tamX,int numG,int numH){
 }
 
 void imprimeVioleFO(Individuo ind){
-    printf("V\t%e\tFO\t%e\n",ind.violacao,ind.funcaoObjetivo[0]);
+    printf("\nV\t%e\tFO\t%e",ind.violacao,ind.funcaoObjetivo[0]);
 }
 
 void imprimeInformacoesPopulacao(Individuo populacao[],int tamanhoPop,int tamX,int numG,int numH){

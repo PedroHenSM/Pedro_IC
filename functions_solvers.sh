@@ -93,7 +93,7 @@ do
 											fi
 										elif [ ${methods[m]} = AG -a $es -eq 0 -a $sig -eq 0 ];
 										then
-											# DE FUNC _ SEED _ POP _ X _ FILHOS _ FE _ PROBCROSSOVER  ** IMPRESSAO TXT **
+											# AG FUNC _ SEED _ POP _ X _ FILHOS _ FE _ PROBCROSSOVER  ** IMPRESSAO TXT **
 											echo "Executando AG"
 											/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fi]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/AG/AG_${functions[func]}_${seeds[s]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fi]}_${functionEvaluations[fe]}_${probCrossovers[c]}.txt
 										else
