@@ -1,20 +1,100 @@
 # -*- coding: utf-8 -*-
-import sys
+#import sys
 #print (sys.version_info) # Versão python
 import  numpy as np
 
-def cabecalho():
-    print("C01\tMean\t\tStd\t\tBest\t\tWorst")
+def cabecalho(functions,func):
+    print("C{:02}\tMean\t\tStd\t\tBest\t\tWorst".format(functions[func]))
+    
+def headerLatex(functions,func):
+    print ("\\begin{table}[h]") # h de Here
+    print("\centering")
+    print("\caption{{Function C{:02}}}".format(functions[func]))
+    print("\\vspace{0.5cm}")
+    print("\\begin{tabular}{@{} l | r r r r @{}}") # r Divide primeira coluna das outras e rl alinha a direita
+    print("Algorithm & Mean & Std & Best & Worst \\\\")
+    print("\hline")
+    
+def footerLatex():
+    print("\end{tabular}")
+    print("\end{table}")
+
+
+def latexModel():
+    headerLatex(functions,func)
+    footerLatex()
 
 def imprime(de,es01,es02,es11,es12,ag):
-    print("AG\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(ag),np.std(ag),np.amin(ag),np.amax(ag)))
     print("DE\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(de),np.std(de),np.amin(de),np.amax(de)))
+    print("AG\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(ag),np.std(ag),np.amin(ag),np.amax(ag)))
     print("ES + G\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es01),np.std(es01),np.amin(es01),np.amax(es01)))
     print("ES + I\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es02),np.std(es02),np.amin(es02),np.amax(es02)))
     print("ES , G\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es11),np.std(es11),np.amin(es11),np.amax(es11)))
     print("ES , I\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es12),np.std(es12),np.amin(es12),np.amax(es12)))
+    
+def printLatex(de,es01,es02,es11,es12,ag):
+    algorithmsStr = ["DE","AG", "ES + G","ES + I","ES , G","ES , I"]
+    
+    algorithms = []
+    algorithms.append(de)
+    algorithms.append(ag)
+    algorithms.append(es01)
+    algorithms.append(es02)
+    algorithms.append(es11)
+    algorithms.append(es12)
 
-totalMethods = 3 
+    
+    #print(algorithms)
+
+    means = []
+    stds = []
+    bests = []
+    worsts = []
+    for i in range (6):
+        means.append(np.mean(algorithms[i]))
+        stds.append(np.std(algorithms[i]))
+        bests.append(np.amin(algorithms[i]))
+        worsts.append(np.amax(algorithms[i]))
+        
+    values = []
+    values.append(means)
+    values.append(stds)
+    values.append(bests)
+    values.append(worsts)
+
+    #print(values)
+    #print(values[1][0])
+    bestValues = [np.mean(de),np.std(de),np.amin(de),np.amax(de)]
+    #print(bestValues)
+    for m in range (1,6): # Pick best means | stds | bests | worsts
+        if np.mean(algorithms[m]) < bestValues[0]: # Mean
+            bestValues[0] = np.mean(algorithms[m])
+        if np.std(algorithms[m]) < bestValues[1]: # Std
+            bestValues[1] = np.std(algorithms[m])
+        if np.amin(algorithms[m]) < bestValues[2]: # Best
+            bestValues[2] = np.amin(algorithms[m])
+        if np.amax(algorithms[m]) < bestValues[3]: # Worst
+            bestValues[3] = np.amax(algorithms[m])
+
+    headerLatex(functions,func)
+    
+    for m in range(6):
+        print(algorithmsStr[m]+" &", end = ' ')
+        for p in range(4):
+            #if bestValues[p] == values[p][m]:
+                #print("\\text{{{:e}}}\t".format(values[p][m]), end = ' ')
+            #else:
+                #print("{:e}\t".format(values[p][m]),end = ' ')
+            if p == 3:
+                print("{:e}".format(values[p][m]),end = ' ')
+            else:
+                print("{:e} &".format(values[p][m]),end = ' ')    
+        print("\\\\")
+
+    footerLatex()
+    
+    
+totalMethods = 3
 methods = ['DE','ES','AG']
 m = 0
 
@@ -28,7 +108,6 @@ seeds = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27
 s = 0
 
 totalPopulation=1 # Tamanho Populacao
-#populations=(50 25)
 populations = [50,25]
 p = 0
 
@@ -61,10 +140,7 @@ sig = 0
 
 
 #DE FUNC _ SEED _ POP _ X _ FILHOS _ FE  ** IMPRESSAO TXT **
-deFo= []
-deV = []
 
-cabecalho()
 '''
 for func in range (totalFunctions):
     for s in range (totalSeeds):
@@ -133,7 +209,9 @@ for func in range (totalFunctions):
                         ag.append(float(values[-1])) # Adiciona FO ao vetor
                         
                 #print("DE\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(deFo),np.std(deFo),np.amin(deFo),np.amax(deFo)))
-    imprime(de,es_0_1,es_0_2,es_1_1,es_1_2,ag)
+    #cabecalho(functions,func)
+    #imprime(de,es_0_1,es_0_2,es_1_1,es_1_2,ag)
+    printLatex(de,es_0_1,es_0_2,es_1_1,es_1_2,ag)
     #print("DE\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(de),np.std(de),np.amin(de),np.amax(de)))
     #print("AG\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(ag),np.std(ag),np.amin(ag),np.amax(ag)))
     #print("ES01\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es01),np.std(es01),np.amin(es01),np.amax(es01)))
@@ -141,7 +219,9 @@ for func in range (totalFunctions):
     #print("ES11\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es11),np.std(es11),np.amin(es11),np.amax(es11)))
     #print("ES12\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es12),np.std(es12),np.amin(es12),np.amax(es12)))
 
-print("DE\t\\textbf{{{:e}}}\t{:e}\t{:e}\t{:e}".format(np.mean(de),np.std(de),np.amin(de),np.amax(de)))
+latexModel()
+#adicionaNegrito
+#print("DE\t\\textbf{{{:e}}}\t{:e}\t{:e}\t{:e}".format(np.mean(de),np.std(de),np.amin(de),np.amax(de)))
 #\textbf
 '''
 texto = file.readlines() # Le arquivo txt
