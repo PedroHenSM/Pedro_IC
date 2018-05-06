@@ -7,9 +7,10 @@ def cabecalho(functions,func):
     print("C{:02}\tMean\t\tStd\t\tBest\t\tWorst".format(functions[func]))
     
 def headerLatex(functions,func):
-    print ("\\begin{table}[h]") # h de Here
+    print("\\begin{table}[h]") # h de Here
     print("\centering")
     print("\caption{{Function C{:02}}}".format(functions[func]))
+    #print("\\label{Label}")
     print("\\vspace{0.5cm}")
     print("\\begin{tabular}{@{} l | r r r r @{}}") # r Divide primeira coluna das outras e rl alinha a direita
     print("Algorithm & Mean & Std & Best & Worst \\\\")
@@ -18,7 +19,8 @@ def headerLatex(functions,func):
 def footerLatex():
     print("\end{tabular}")
     print("\end{table}")
-
+    print("\\textbf{{N}}: {}\t\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Children/Gen.}}: {}\t\\textbf{{Crossover}}: {}\% \\\\ ".format(dimensions[d],functionEvaluations[fe],populations[p],filhosGerados[fi],probCrossovers[c]))
+    print("\n\n")
 
 def latexModel():
     headerLatex(functions,func)
@@ -81,14 +83,19 @@ def printLatex(de,es01,es02,es11,es12,ag):
     for m in range(6):
         print(algorithmsStr[m]+" &", end = ' ')
         for p in range(4):
-            #if bestValues[p] == values[p][m]:
+            if bestValues[p] == values[p][m]:
+                if p == 3:
+                    print("\\textbf{{{:e}}}".format(values[p][m]),end = ' ')
                 #print("\\text{{{:e}}}\t".format(values[p][m]), end = ' ')
+                else:
+                    print("\\textbf{{{:e}}} &".format(values[p][m]),end = ' ')
             #else:
                 #print("{:e}\t".format(values[p][m]),end = ' ')
-            if p == 3:
-                print("{:e}".format(values[p][m]),end = ' ')
             else:
-                print("{:e} &".format(values[p][m]),end = ' ')    
+                if p == 3:
+                    print("{:e}".format(values[p][m]),end = ' ')
+                else:
+                    print("{:e} &".format(values[p][m]),end = ' ')    
         print("\\\\")
 
     footerLatex()
@@ -98,16 +105,16 @@ totalMethods = 3
 methods = ['DE','ES','AG']
 m = 0
 
-totalFunctions = 1 # Funcoes
+totalFunctions = 18 # Funcoes
 functions = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]
 func = 0
 
 
-totalSeeds = 5 # Seeds
+totalSeeds = 30 # Seeds
 seeds = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30] 
 s = 0
 
-totalPopulation=1 # Tamanho Populacao
+totalPopulation = 2 # Tamanho Populacao
 populations = [50,25]
 p = 0
 
@@ -116,7 +123,7 @@ totalDimensions = 1 # TamX
 dimensions=[10,30]
 d = 0
 
-totalFilhosGerados = 1
+totalFilhosGerados = 2
 #filhosGerados=(1 100)
 filhosGerados = [1,100]
 fi = 0
@@ -138,24 +145,6 @@ totalSigma = 2 # Sigma global
 sigmas = [1,2] # 1 sigmaGlobal | (!=1)sigmaIndividual
 sig = 0
 
-
-#DE FUNC _ SEED _ POP _ X _ FILHOS _ FE  ** IMPRESSAO TXT **
-
-'''
-for func in range (totalFunctions):
-    for s in range (totalSeeds):
-        for p in range (totalPopulation):
-            for d in range(totalDimensions):
-                for fi in range (totalFilhosGerados):
-                    for fe in range (totalFE):
-                        file = open("/home/pedrohen/Documentos/PedroIC/Resultados/DE/DE_{}_{}_{}_{}_{}_{}.txt".format(functions[func],seeds[s],populations[p],dimensions[d],filhosGerados[fi],functionEvaluations[fe]),"r")
-                        text = file.readlines() # Le arquivo txt
-                        lastLine = text[-1] # Ultima linha do txt
-                        values = lastLine.split("\t") # Separa ultima linha em valores e salva em array
-                        deFo.append(float(values[-1])) # Adiciona FO ao vetor
-                        deV.append(float(values[1])) # Adiciona violacao ao vetor
-                        print("DE\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(deFo),np.std(deFo),np.amin(deFo),np.amax(deFo)))
-'''
 
 for func in range (totalFunctions):
     de = [] # DE
@@ -207,22 +196,8 @@ for func in range (totalFunctions):
                         lastLine = text[-1] # Ultima linha do txt
                         values = lastLine.split("\t") # Separa ultima linha em valores e salva em array
                         ag.append(float(values[-1])) # Adiciona FO ao vetor
-                        
-                #print("DE\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(deFo),np.std(deFo),np.amin(deFo),np.amax(deFo)))
-    #cabecalho(functions,func)
-    #imprime(de,es_0_1,es_0_2,es_1_1,es_1_2,ag)
     printLatex(de,es_0_1,es_0_2,es_1_1,es_1_2,ag)
-    #print("DE\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(de),np.std(de),np.amin(de),np.amax(de)))
-    #print("AG\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(ag),np.std(ag),np.amin(ag),np.amax(ag)))
-    #print("ES01\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es01),np.std(es01),np.amin(es01),np.amax(es01)))
-    #print("ES02\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es02),np.std(es02),np.amin(es02),np.amax(es02)))
-    #print("ES11\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es11),np.std(es11),np.amin(es11),np.amax(es11)))
-    #print("ES12\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es12),np.std(es12),np.amin(es12),np.amax(es12)))
 
-latexModel()
-#adicionaNegrito
-#print("DE\t\\textbf{{{:e}}}\t{:e}\t{:e}\t{:e}".format(np.mean(de),np.std(de),np.amin(de),np.amax(de)))
-#\textbf
 '''
 texto = file.readlines() # Le arquivo txt
 line = texto[-1] # Pega ultima linha
