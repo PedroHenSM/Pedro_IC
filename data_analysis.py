@@ -147,6 +147,62 @@ sig = 0
 
 
 for func in range (totalFunctions):
+    for fi in range (totalFilhosGerados):
+        for p in range(totalPopulation):
+            de = [] # DE
+            es_0_1 = [] # ES 0 sigma global (+ 1)
+            es_0_2 = [] # ES 0 sigma indivudal (+ 2)
+            es_1_1 = [] # ES 1 sigma global (, 1)
+            es_1_2 = [] # ES 1 sigma individual (, 2)
+            ag = [] # AG
+            for m in range(totalMethods):
+                for es in range(totalTipoES):
+                    for sig in range(totalSigma):
+                        for s in range (totalSeeds):
+                            if methods[m] == 'DE' and es == 0 and sig == 0:
+                                file = open("/home/pedrohen/Documentos/PedroIC/Resultados/DE/DE_{}_{}_{}_{}_{}_{}.txt".format(functions[func],seeds[s],populations[p],dimensions[d],filhosGerados[fi],functionEvaluations[fe]),"r")
+                                text = file.readlines() # Le arquivo txt
+                                lastLine = text[-1] # Ultima linha do txt
+                                values = lastLine.split("\t") # Separa ultima linha em valores e salva em array
+                                de.append(float(values[-1])) # Adiciona FO ao vetor
+                            elif methods[m] == 'ES': #ES_FUNC _ SEED _ POP _ X _ FILHOS _ FE _ TIPOES _ SIGMAGLOBAL
+                                if tipoES[es] == 0: # Es0 +
+                                    if sigmas[sig] == 1: # Sigma Global
+                                        file = open("/home/pedrohen/Documentos/PedroIC/Resultados/ES/ES0/sigmaGlobal/ES_{}_{}_{}_{}_{}_{}_{}_{}.txt".format(functions[func],seeds[s],populations[p],dimensions[d],filhosGerados[fi],functionEvaluations[fe],tipoES[es],sigmas[sig]),"r")
+                                        text = file.readlines() # Le arquivo txt
+                                        lastLine = text[-1] # Ultima linha do txt
+                                        values = lastLine.split("\t") # Separa ultima linha em valores e salva em array
+                                        es_0_1.append(float(values[-1])) # Adiciona FO ao vetor
+                                    elif sigmas[sig] == 2: # Sigma Individual
+                                        file = open("/home/pedrohen/Documentos/PedroIC/Resultados/ES/ES0/sigmaIndividual/ES_{}_{}_{}_{}_{}_{}_{}_{}.txt".format(functions[func],seeds[s],populations[p],dimensions[d],filhosGerados[fi],functionEvaluations[fe],tipoES[es],sigmas[sig]),"r")
+                                        text = file.readlines() # Le arquivo txt
+                                        lastLine = text[-1] # Ultima linha do txt
+                                        values = lastLine.split("\t") # Separa ultima linha em valores e salva em array
+                                        es_0_2.append(float(values[-1])) # Adiciona FO ao vetor
+                                elif tipoES[es] == 1: # Es1 ,
+                                    if sigmas[sig] == 1: # Sigma Global
+                                        file = open("/home/pedrohen/Documentos/PedroIC/Resultados/ES/ES1/sigmaGlobal/ES_{}_{}_{}_{}_{}_{}_{}_{}.txt".format(functions[func],seeds[s],populations[p],dimensions[d],filhosGerados[fi],functionEvaluations[fe],tipoES[es],sigmas[sig]),"r")
+                                        text = file.readlines() # Le arquivo txt
+                                        lastLine = text[-1] # Ultima linha do txt
+                                        values = lastLine.split("\t") # Separa ultima linha em valores e salva em array
+                                        es_1_1.append(float(values[-1])) # Adiciona FO ao vetor
+                                    elif sigmas[sig] == 2: # Sigma Individual
+                                        file = open("/home/pedrohen/Documentos/PedroIC/Resultados/ES/ES1/sigmaIndividual/ES_{}_{}_{}_{}_{}_{}_{}_{}.txt".format(functions[func],seeds[s],populations[p],dimensions[d],filhosGerados[fi],functionEvaluations[fe],tipoES[es],sigmas[sig]),"r")
+                                        text = file.readlines() # Le arquivo txt
+                                        lastLine = text[-1] # Ultima linha do txt
+                                        values = lastLine.split("\t") # Separa ultima linha em valores e salva em array
+                                        es_1_2.append(float(values[-1])) # Adiciona FO ao vetor
+                            elif methods[m] == 'AG' and es == 0 and sig == 0: #AG_FUNC _ SEED _ POP _ X _ FILHOS _ FE _ PROBCROSSOVER
+                                file = open("/home/pedrohen/Documentos/PedroIC/Resultados/AG/AG_{}_{}_{}_{}_{}_{}_{}.txt".format(functions[func],seeds[s],populations[p],dimensions[d],filhosGerados[fi],functionEvaluations[fe],probCrossovers[c]),"r")
+                                text = file.readlines() # Le arquivo txt
+                                lastLine = text[-1] # Ultima linha do txt
+                                values = lastLine.split("\t") # Separa ultima linha em valores e salva em array
+                                ag.append(float(values[-1])) # Adiciona FO ao vetor
+            printLatex(de,es_0_1,es_0_2,es_1_1,es_1_2,ag)
+
+
+'''
+for func in range (totalFunctions):
     de = [] # DE
     es_0_1 = [] # ES 0 sigma global (+ 1)
     es_0_2 = [] # ES 0 sigma indivudal (+ 2)
@@ -197,6 +253,9 @@ for func in range (totalFunctions):
                         values = lastLine.split("\t") # Separa ultima linha em valores e salva em array
                         ag.append(float(values[-1])) # Adiciona FO ao vetor
     printLatex(de,es_0_1,es_0_2,es_1_1,es_1_2,ag)
+'''
+
+
 
 '''
 texto = file.readlines() # Le arquivo txt

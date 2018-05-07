@@ -1089,7 +1089,7 @@ void AG(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
         }
         mutacao(filhos,tamX,tamPopulacaoFilhos);
         corrigeLimitesX(filhos,tamX,tipoFuncao,tamPopulacaoFilhos);
-        avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacao,numG,numH,&fe);
+        avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacaoFilhos,numG,numH,&fe);
         somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
         ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos);
         elitismoRestricao(filhos,populacao,tamX,tamPopulacao);
@@ -1104,6 +1104,7 @@ void AG(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
 void DE(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int probCrossover,int tipoES,int sigmaGlobal){
     int fe=0;
     int a,i,j;
+    numFilhosGerados=1; // Sempre gera apenas um filho
     int tamPopulacaoFilhos = tamPopulacao*numFilhosGerados;
     int numG,numH;
     Individuo populacao[tamPopulacao];
@@ -1113,6 +1114,7 @@ void DE(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
     inicializaPopulacaoRestricao(populacao,tamX,tamPopulacao,tipoFuncao);
     avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,numG,numH,&fe);
     somaViolacoes(populacao,tamPopulacao,numG,numH);
+
     while(fe < maxFE){
         selecaoRestricao(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos);
         int ch[3] = {-1,-1,-1}; // Vetor de indices, Poderia ser de tamanho 3?
@@ -1132,7 +1134,7 @@ void DE(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
             }
         }
         corrigeLimitesX(filhos,tamX,tipoFuncao,tamPopulacaoFilhos);
-        avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacao,numG,numH,&fe);
+        avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacaoFilhos,numG,numH,&fe);
         somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
         selecaoDE(populacao,filhos,tamPopulacaoFilhos);
         //imprimeInformacoesIndividuo(melhorIndividuoRestricao(populacao,tamPopulacao),tamX,numG,numH);
@@ -1168,7 +1170,7 @@ void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
         autoAdaptacaoSigma(populacao,filhos,tamX,tamPopulacao,numFilhosGerados,sigmaGlobal);
         // Avalia funcao
         corrigeLimitesX(filhos,tamX,tipoFuncao,tamPopulacaoFilhos);
-        avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacao,numG,numH,&fe);
+        avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacaoFilhos,numG,numH,&fe);
         somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
         ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos);
         //ordenaMelhores(populacao,filhos);// NOTE e necessario?
@@ -1186,10 +1188,10 @@ int main(int argc,char* argv[]){
     /// Parametros tipoFuncao|seed|tamPopulacao|tamX|numFilhosGerados|maxFE|probCrossover|tipoES|sigmaGlobal
     char* method = "null";
     int tipoFuncao = 1;
-    int seed = 2;
+    int seed = 1;
     int tamPopulacao = 50;
     int tamX = 10;
-    int numFilhosGerados = 1;
+    int numFilhosGerados = 10;
     int maxFE = 200000;
     int probCrossover = 0;
     int tipoES = 0;
@@ -1212,7 +1214,7 @@ int main(int argc,char* argv[]){
     	}
     }
 
-    //method = "AG";
+    //method = "DE";
     if(!strcmp(method,"DE")){ // Retorna 0 se str1 == str2
         DE(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
     }
