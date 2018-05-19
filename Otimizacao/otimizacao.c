@@ -9,6 +9,7 @@ Autor: Pedro Henrique Santos
 #include <unistd.h>
 #include <string.h>
 #include "functions.h"
+#include "apm.c"
 #define TAM_POPULACAO 50
 #define NUM_FILHOS_GERADOS 1
 #define TAM_POPULACAO_FILHOS TAM_POPULACAO*NUM_FILHOS_GERADOS
@@ -40,6 +41,9 @@ typedef struct Individuo {
     float funcaoObjetivo[TAM_X_MAXIMO];
     float g[NUM_RESTRICOES];
     float h[NUM_RESTRICOES];
+    //float penaltyCoefficients[NUM_RESTRICOES]; // For APM
+    float fitness; // Fitness for APM
+    //float avgObjFunc; // For APM
     float v[2*NUM_RESTRICOES]; // Vetor de violacoes
     float violacao; // Soma das violacoes // Soma das violacoes
 }Individuo;
@@ -267,6 +271,29 @@ void selecaoRestricao(Individuo populacao[],Individuo filhos[],int tamanhoX,int 
     }
 }
 
+void selecaoRestricaoAPM(Individuo populacao[],Individuo filhos[],int tamanhoX,int tamanhoPop,int tamanhoPopFilhos){
+    int i,j;
+    for(i=0;i<tamanhoPopFilhos;i++){ // Selecao
+        int indice1,indice2;
+        indice1 = rand () % tamanhoPop;
+        indice2 = rand () % tamanhoPop;
+        //printf("indice1: %i //// indice2: %i  \n ",indice1,indice2);
+
+        if(populacao[indice1].fitness < populacao[indice2].fitness){
+            for(j=0;j<tamanhoX;j++){
+                filhos[i].x[j] = populacao[indice1].x[j];
+            }
+            filhos[i].funcaoObjetivo[0]=populacao[indice1].funcaoObjetivo[0];
+        }
+        else if(populacao[indice1].fitness >= populacao[indice2].fitness){
+            for(j=0;j<tamanhoX;j++){
+                filhos[i].x[j] = populacao[indice2].x[j];
+            }
+            filhos[i].funcaoObjetivo[0]=populacao[indice2].funcaoObjetivo[0];
+        }
+    }
+}
+
 void crossover (Individuo filhos[],int tamanhoX,int tamanhoPopFilhos){ /// NOTE: NECESSARIO GERAR MAIS FILHOS AQUI?!
     int i,l;
     for(i=0;i<tamanhoPopFilhos;i+=2){ // Crossover
@@ -486,6 +513,24 @@ int comparaViolacaoRestricaoMinimizacao(const void *a, const void *b){
     }
 }
 
+int comparaFitnesseObjFunc(const void *a, const void *b){
+    if((*(Individuo*)a).fitness < (*(Individuo*)b).fitness){
+        return -1; // vem antes
+    }
+    else if((*(Individuo*)a).fitness > (*(Individuo*)b).fitness){
+        return 1; // vem depois
+    }
+    else if((*(Individuo*)a).funcaoObjetivo[0] < (*(Individuo*)b).funcaoObjetivo[0]){
+        return -1;
+    }
+    else if ((*(Individuo*)a).funcaoObjetivo[0] > (*(Individuo*)b).funcaoObjetivo[0]){
+        return 1;
+    }
+    else{ // funcao objetivo igual
+        return 0;
+    }
+}
+
 void inicializaPopulacaoRestricao(Individuo populacao[],int tamanhoX,int tamanhoPop,int tipoFuncao){ ///TODO TROCAR IF POR SWITCH
     int i,j;
     for(i=0;i<tamanhoPop;i++){
@@ -539,9 +584,15 @@ void inicializaPopulacaoRestricao(Individuo populacao[],int tamanhoX,int tamanho
     }
 }
 
-void ordenaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tamanhoPop,int tamanhoPopFilhos){ // Ordena com base nas violacoes
-    qsort(populacao,tamanhoPop,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
-    qsort(filhos,tamanhoPopFilhos,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
+void ordenaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tamanhoPop,int tamanhoPopFilhos,int penaltyMethod){ // Ordena com base nas violacoes
+    if(penaltyMethod == 1){ // Not APM
+        qsort(populacao,tamanhoPop,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
+        qsort(filhos,tamanhoPopFilhos,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
+    }
+    else if(penaltyMethod == 2){ // APM
+        qsort(populacao,tamanhoPop,sizeof(Individuo),comparaFitnesseObjFunc);
+        qsort(filhos,tamanhoPopFilhos,sizeof(Individuo),comparaFitnesseObjFunc);
+    }
 }
 
 void C01 (float *x, float *f, float *g, float *h, int nx, int nf, int ng, int nh);
@@ -840,7 +891,7 @@ void corrigeLimitesX(Individuo populacao[],int tamanhoX,int tipoFuncao,int taman
     }
 }
 
-void somaViolacoes(Individuo populacao[],int tamanhoPop,int numG,int numH){ // Coloca as violacoes g e h no vetor 'v' de violacoes
+void somaViolacoes(Individuo populacao[],int tamanhoPop,int numG,int numH){ // Coloca as violacoes g e h no vetor 'v' de violacoes e soma
     int i,j;
     int indG,indH;
     for(i=0;i<tamanhoPop;i++){
@@ -856,6 +907,24 @@ void somaViolacoes(Individuo populacao[],int tamanhoPop,int numG,int numH){ // C
             }
         }
         populacao[i].violacao = somaValoresArray(populacao[i].v,numG+numH);
+    }
+}
+
+void uniteConstraints(Individuo populacao[],int tamanhoPop,int numG,int numH){ // Coloca as violacoes g e h no vetor 'v' de violacoes
+    int i,j;
+    int indG,indH;
+    for(i=0;i<tamanhoPop;i++){
+        indG=0,indH=0; // Indice do vetor g e h
+        for(j=0;j<numG+numH;j++){ // Percorrer vetor 'v' de violacao
+            if(j < numG){
+                populacao[i].v[j] = populacao[i].g[indG];
+                indG++;
+            }
+            else{
+                populacao[i].v[j] = fabs(populacao[i].h[indH]) - EPSILON; // Transforma h(x)=0 em g(x) <= 0
+                indH++;
+            }
+        }
     }
 }
 
@@ -882,6 +951,16 @@ void imprimeVioleFO(Individuo ind){
     printf("\nV\t%e\tFO\t%e",ind.violacao,ind.funcaoObjetivo[0]);
 }
 
+void imprimeFiteFO(Individuo ind){
+    if(ind.fitness == ind.funcaoObjetivo[0]){
+        printf("\nF\t1\tFO\t%e",ind.funcaoObjetivo[0]);
+    }
+    else{
+        printf("\nF\t1\tFO\t%e",ind.funcaoObjetivo[0]);
+    }
+    //printf("\nF\t%e\tFO\t%e",ind.fitness,ind.funcaoObjetivo[0]);
+}
+
 void imprimeInformacoesPopulacao(Individuo populacao[],int tamanhoPop,int tamX,int numG,int numH){
     int i=0;
     for(i=0;i<tamanhoPop;i++){
@@ -903,6 +982,22 @@ Individuo melhorIndividuoRestricao(Individuo populacao[],int tamanhoPop){
         }
     }
     return melhor;
+}
+
+Individuo melhorIndividuoRestricaoAPM(Individuo populacao[],int tamanhoPop){
+    int i=0;
+    int bestIdx=0;
+    for(i=1;i<tamanhoPop;i++){
+        if(populacao[i].fitness < populacao[bestIdx].fitness){
+            bestIdx = i;
+        }
+        else if(populacao[i].fitness == populacao[bestIdx].fitness){ /// TODO: Verificar esse if
+            if(populacao[i].funcaoObjetivo[0] < populacao[bestIdx].funcaoObjetivo[0]){
+                bestIdx = i;
+            }
+        }
+    }
+    return populacao[bestIdx];
 }
 
 int selecionaPopulacaoDE(int solucao, int ch[], int tamanhoPop){
@@ -936,6 +1031,20 @@ void selecaoDE(Individuo populacao[],Individuo filhos[],int tamanhoPop){
         else if(filhos[i].violacao == populacao[i].violacao){
             if(filhos[i].funcaoObjetivo[0] < populacao[i].funcaoObjetivo[0]){ // Filho melhor que pai
                 populacao[i] = filhos[i];
+            }
+        }
+    }
+}
+
+void selecaoDEAPM(Individuo populacao[],Individuo filhos[],int tamanhoPop){
+    int i;
+    for(i=0;i<tamanhoPop;i++){
+        if(filhos[i].fitness < populacao[i].fitness){ // Filho melhor que pai
+            populacao[i] = filhos[i];
+        }
+        else if(filhos[i].fitness == populacao[i].fitness){ /// TODO: Verificar esse if
+            if(filhos[i].funcaoObjetivo[0] < populacao[i].funcaoObjetivo[0]){
+                populacao[i] = filhos[i]; // Filho melhor que pai
             }
         }
     }
@@ -1001,7 +1110,7 @@ void autoAdaptacaoSigma(Individuo populacao[],Individuo filhos[],int tamanhoX,in
     }
 }
 
-void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tipoES,int tamanhoPop,int tamanhoPopFilhos,int numFilhosGerados){
+void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tipoES,int tamanhoPop,int tamanhoPopFilhos,int numFilhosGerados,int penaltyMethod){
     if(tipoES == 0){ // Es + Junta pais e filhos, e pega os melhores.
         int i,k=0;
         Individuo aux[tamanhoPop+tamanhoPopFilhos];
@@ -1014,7 +1123,12 @@ void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tip
                 k++;
             }
         }
-        qsort(aux,(tamanhoPop+tamanhoPopFilhos),sizeof(Individuo),comparaViolacaoRestricaoMinimizacao); // Ordena auxiliar
+        if (penaltyMethod == 1){
+            qsort(aux,(tamanhoPop+tamanhoPopFilhos),sizeof(Individuo),comparaViolacaoRestricaoMinimizacao); // Ordena auxiliar
+        }
+        else if (penaltyMethod == 2){ // APM
+            qsort(aux,(tamanhoPop+tamanhoPopFilhos),sizeof(Individuo),comparaFitnesseObjFunc); // Ordena auxiliar
+        }
         for(i=0;i<tamanhoPop;i++){
             populacao[i]=aux[i]; // Copia os melhores de aux para populacao
         }
@@ -1037,7 +1151,12 @@ void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tip
             }
             populacao[i] = melhor;
         }
-        qsort(populacao,tamanhoPop,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
+        if (penaltyMethod == 1){
+            qsort(populacao,tamanhoPop,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
+        }
+        else if(penaltyMethod == 2){ // APM
+            qsort(populacao,tamanhoPop,sizeof(Individuo),comparaFitnesseObjFunc);
+        }
     }
     else if(tipoES == 2){ // Es , Adaptado (Seleciona melhor filho de cada pai, e se for melhor que o pai, substitui)
         int i,j=0;
@@ -1058,7 +1177,12 @@ void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tip
                 }
             }
         }
-        qsort(populacao,tamanhoPop,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
+        if (penaltyMethod == 1){
+            qsort(populacao,tamanhoPop,sizeof(Individuo),comparaViolacaoRestricaoMinimizacao);
+        }
+        else if (penaltyMethod == 2){ // APM
+            qsort(populacao,tamanhoPop,sizeof(Individuo),comparaFitnesseObjFunc);
+        }
     }
     else{
         printf("Es nao reconhecido\n");
@@ -1066,19 +1190,135 @@ void selecionaMelhoresRestricao(Individuo populacao[],Individuo filhos[],int tip
     }
 }
 
-void AG(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int probCrossover,int tipoES,int sigmaGlobal){
+void calculatePenaltyCoefficients(Individuo populacao[],int populationSize,/*float* objectiveFunctionValue/,float* constraintViolationValues*/int numberOfConstraints,float* penaltyCoefficients,float* averageObjectiveFunctionValues){
+
+	int i;
+	int j;
+	int l;
+	float sumObjectiveFunction = 0;
+	//foreach candidate solution
+	for (i = 0; i < populationSize; i++) {
+
+		///sumObjectiveFunction += objectiveFunctionValues[ i ];
+
+		sumObjectiveFunction += populacao[i].funcaoObjetivo[0];
+
+	}
+	//the absolute of the sumObjectiveFunction
+	if (sumObjectiveFunction < 0) {
+		sumObjectiveFunction = -sumObjectiveFunction;
+	}
+
+	//the average of the objective function values
+	*averageObjectiveFunctionValues = sumObjectiveFunction / populationSize;
+
+
+
+	//the denominator of the equation of the penalty coefficients
+	float denominator = 0;
+	//the sum of the constraint violation values
+	//these values are recorded to be used in the next situation
+	float* sumViolation = (float*) malloc(numberOfConstraints * sizeof ( float));
+	for (l = 0; l < numberOfConstraints; l++) {
+
+		sumViolation[ l ] = 0;
+		for (i = 0; i < populationSize; i++) {
+
+			///sumViolation[ l ] += constraintViolationValues[ i ][ l ] > 0? constraintViolationValues[ i ][ l ]: 0;
+
+			sumViolation[ l ] += populacao[i].v[l] > 0? populacao[i].v[l]: 0;
+
+		}
+
+		denominator += sumViolation[ l ] * sumViolation[ l ];
+	}
+
+	//the penalty coefficients are calculated
+	for (j = 0; j < numberOfConstraints; j++) {
+
+		penaltyCoefficients[ j ] = denominator == 0? 0: (sumObjectiveFunction / denominator) * sumViolation[ j ];
+
+
+
+	}
+
+	//remove auxiliary variables
+	free(sumViolation);
+
+}
+
+void calculateAllFitness(Individuo populacao[],/*float* fitnessValues,*/int populationSize,/*float* objectiveFunctionValues,float** constraintViolationValues,*/int numberOfConstraints,float* penaltyCoefficients,float averageObjectiveFunctionValues){
+
+	//indicates if the candidate solution is infeasible
+	_Bool infeasible;
+	int i;
+	int j;
+	//the penalty value
+	float penalty;
+	for (i = 0; i < populationSize; i++) {
+
+		//the candidate solutions are assumed feasibles
+		infeasible = 0;
+		penalty = 0;
+
+		for (j = 0; j < numberOfConstraints; j++) {
+
+			///if ( constraintViolationValues[ i ][ j ] > 0 ) {
+			if(populacao[i].v[j] > 0){
+				//the candidate solution is infeasible if some constraint is violated
+				infeasible = 1;
+				//the penalty value is updated
+				///penalty += penaltyCoefficients[ j ] * constraintViolationValues[ i ][ j ];
+                penalty += penaltyCoefficients [j] * populacao[i].v[j];
+			}
+
+		}
+
+		//the fitness is the sum of the objective function and penalty values
+		//if the candidate solution is infeasible and just the objective function value,
+		//otherwise
+		/**fitnessValues[ i ] = infeasible ?
+			(objectiveFunctionValues[ i ] > averageObjectiveFunctionValues? objectiveFunctionValues[ i ] + penalty: averageObjectiveFunctionValues + penalty) :
+			objectiveFunctionValues[ i ];
+        **/
+        populacao[i].fitness = infeasible ? (populacao[i].funcaoObjetivo[0] > averageObjectiveFunctionValues? populacao[i].funcaoObjetivo[0] + penalty: averageObjectiveFunctionValues + penalty) :populacao[i].funcaoObjetivo[0];
+
+	}
+
+}
+
+void AG(int tipoFuncao,int seed,int penaltyMethod,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int probCrossover,int tipoES,int sigmaGlobal){
     int fe=0; // Function Evaluation
     int tamPopulacaoFilhos = tamPopulacao*numFilhosGerados;
-    int numG,numH;
+    int numG,numH,numConstraints;
     Individuo populacao[tamPopulacao];
     Individuo filhos[tamPopulacaoFilhos];
     srand(seed);
     inicializaRestricoes(tipoFuncao,&numG,&numH);
+    numConstraints = numG+numH;
+    float avgObjFunc;
+    float penaltyCoefficients[numConstraints];
     inicializaPopulacaoRestricao(populacao,tamX,tamPopulacao,tipoFuncao);
     avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,numG,numH,&fe);
-    somaViolacoes(populacao,tamPopulacao,numG,numH);
+    if(penaltyMethod == 1){ // Padrao?  (not apm)
+        somaViolacoes(populacao,tamPopulacao,numG,numH);
+    }
+    else if(penaltyMethod == 2){ // Adaptive Penalty Method ( APM )
+        uniteConstraints(populacao,tamPopulacao,numG,numH);
+        calculatePenaltyCoefficients(populacao,tamPopulacao,numConstraints,penaltyCoefficients,&avgObjFunc);
+        calculateAllFitness(populacao,tamPopulacao,numConstraints,penaltyCoefficients,avgObjFunc);
+    }
+    else{
+        printf("Penalthy mehthod doesn't exist");
+        exit(2);
+    }
     while(fe < maxFE){
-        selecaoRestricao(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos);
+        if(penaltyMethod == 1){ // Padrao?  (not apm)
+            selecaoRestricao(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos);
+        }
+        else if(penaltyMethod == 2){ // Adaptive Penalty Method ( APM )
+            selecaoRestricaoAPM(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos);
+        }
         if(probabilidadeCrossover(probCrossover) == 1){
             if(TIPO_CROSSOVER == 0){
                 crossover(filhos,tamX,tamPopulacaoFilhos);
@@ -1090,33 +1330,66 @@ void AG(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
         mutacao(filhos,tamX,tamPopulacaoFilhos);
         corrigeLimitesX(filhos,tamX,tipoFuncao,tamPopulacaoFilhos);
         avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacaoFilhos,numG,numH,&fe);
-        somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
-        ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos);
+
+        if(penaltyMethod == 1){ // Padrao?  (not apm)
+            somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
+        }
+        else if(penaltyMethod == 2){ // Adaptive Penalty Method ( APM )
+            uniteConstraints(filhos,tamPopulacaoFilhos,numG,numH);
+            calculatePenaltyCoefficients(filhos,tamPopulacaoFilhos,numConstraints,penaltyCoefficients,&avgObjFunc);
+            calculateAllFitness(filhos,tamPopulacaoFilhos,numConstraints,penaltyCoefficients,avgObjFunc);
+        }
+        ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos,penaltyMethod);
         elitismoRestricao(filhos,populacao,tamX,tamPopulacao);
         // Pegar melhor individuo
-        ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos);
+        ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos,penaltyMethod);
         //printf("FE: %i\n",fe);
-        imprimeVioleFO(populacao[0]);
+        if(penaltyMethod == 1){ // Padrao?  (not apm)
+            imprimeVioleFO(populacao[0]);
+        }
+        else if(penaltyMethod == 2){ // Adaptive Penalty Method ( APM )
+            imprimeFiteFO(populacao[0]);
+        }
     }
-    //(*melhorAG) = melhorIndividuoRestricao(populacao,TAM_POPULACAO);
 }
 
-void DE(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int probCrossover,int tipoES,int sigmaGlobal){
+void DE(int tipoFuncao,int seed,int penaltyMethod,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int probCrossover,int tipoES,int sigmaGlobal){
     int fe=0;
     int a,i,j;
     numFilhosGerados=1; // Sempre gera apenas um filho
     int tamPopulacaoFilhos = tamPopulacao*numFilhosGerados;
-    int numG,numH;
+    int numG,numH,numConstraints;
     Individuo populacao[tamPopulacao];
     Individuo filhos[tamPopulacaoFilhos];
     srand(seed);
     inicializaRestricoes(tipoFuncao,&numG,&numH);
+    numConstraints = numG+numH;
+    float avgObjFunc;
+    float penaltyCoefficients[numConstraints];
     inicializaPopulacaoRestricao(populacao,tamX,tamPopulacao,tipoFuncao);
     avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,numG,numH,&fe);
-    somaViolacoes(populacao,tamPopulacao,numG,numH);
+
+    if(penaltyMethod == 1){ // Padrao?  (not apm)
+        somaViolacoes(populacao,tamPopulacao,numG,numH);
+    }
+    else if(penaltyMethod == 2){ // Adaptive Penalty Method ( APM )
+        uniteConstraints(populacao,tamPopulacao,numG,numH);
+        calculatePenaltyCoefficients(populacao,tamPopulacao,numConstraints,penaltyCoefficients,&avgObjFunc);
+        calculateAllFitness(populacao,tamPopulacao,numConstraints,penaltyCoefficients,avgObjFunc);
+    }
+    else{
+        printf("Penalthy mehthod doesn't exist");
+        exit(2);
+    }
 
     while(fe < maxFE){
-        selecaoRestricao(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos);
+        if(penaltyMethod == 1){ // Padrao?  (not apm)
+            selecaoRestricao(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos);
+        }
+        else if(penaltyMethod == 2){ // Adaptive Penalty Method ( APM )
+            selecaoRestricaoAPM(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos);
+        }
+
         int ch[3] = {-1,-1,-1}; // Vetor de indices, Poderia ser de tamanho 3?
         for(i=0;i<tamPopulacao;i++){
             for(a=0;a<3;++a){ // Preenche vetor de indices
@@ -1135,27 +1408,50 @@ void DE(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
         }
         corrigeLimitesX(filhos,tamX,tipoFuncao,tamPopulacaoFilhos);
         avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacaoFilhos,numG,numH,&fe);
-        somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
-        selecaoDE(populacao,filhos,tamPopulacaoFilhos);
+        if(penaltyMethod == 1){ // Padrao?  (not apm)
+            somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
+            selecaoDE(populacao,filhos,tamPopulacaoFilhos);
+            imprimeVioleFO(melhorIndividuoRestricao(populacao,tamPopulacao));
+        }
+        else if(penaltyMethod == 2){ // Adaptive Penalty Method ( APM )
+            uniteConstraints(filhos,tamPopulacaoFilhos,numG,numH);
+            calculatePenaltyCoefficients(filhos,tamPopulacaoFilhos,numConstraints,penaltyCoefficients,&avgObjFunc);
+            calculateAllFitness(filhos,tamPopulacaoFilhos,numConstraints,penaltyCoefficients,avgObjFunc);
+            selecaoDEAPM(populacao,filhos,tamPopulacaoFilhos);
+            imprimeFiteFO(melhorIndividuoRestricaoAPM(populacao,tamPopulacao));
+        }
         //imprimeInformacoesIndividuo(melhorIndividuoRestricao(populacao,tamPopulacao),tamX,numG,numH);
-        imprimeVioleFO(melhorIndividuoRestricao(populacao,tamPopulacao));
     }
 }
 
-void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int probCrossover,int tipoES,int sigmaGlobal){
+void ES(int tipoFuncao,int seed,int penaltyMethod,int tamPopulacao,int tamX,int numFilhosGerados,int maxFE,int probCrossover,int tipoES,int sigmaGlobal){
     int i,j=0;
     int fe=0;
     int tamPopulacaoFilhos = tamPopulacao*numFilhosGerados;
-    int numG,numH;
+    int numG,numH,numConstraints;
     Individuo populacao[tamPopulacao];
     Individuo filhos[tamPopulacaoFilhos];
     srand(seed);
     inicializaRestricoes(tipoFuncao,&numG,&numH);
+    numConstraints = numG+numH;
+    float avgObjFunc;
+    float penaltyCoefficients[numConstraints];
     inicializaPopulacaoRestricao(populacao,tamX,tamPopulacao,tipoFuncao);
     corrigeLimitesX(populacao,tamX,tipoFuncao,tamPopulacao); // No caso de C01 x[-10,10]
     // Avalia funcao
     avaliaFuncaoRestricao(populacao,tipoFuncao,tamPopulacao,numG,numH,&fe);
-    somaViolacoes(populacao,tamPopulacao,numG,numH); // Preenche vetor 'v' de violacoes e seta variavel violacao, que eh a soma das violacoes
+    if(penaltyMethod == 1){ // Padrao?  (not apm)
+        somaViolacoes(populacao,tamPopulacao,numG,numH);
+    }
+    else if(penaltyMethod == 2){ // Adaptive Penalty Method ( APM )
+        uniteConstraints(populacao,tamPopulacao,numG,numH);
+        calculatePenaltyCoefficients(populacao,tamPopulacao,numConstraints,penaltyCoefficients,&avgObjFunc);
+        calculateAllFitness(populacao,tamPopulacao,numConstraints,penaltyCoefficients,avgObjFunc);
+    }
+    else{
+        printf("Penalthy mehthod doesn't exist");
+        exit(2);
+    }
     inicalizaEstrategiaEvolutiva(populacao,filhos,tamX,tamPopulacao,tamPopulacaoFilhos,sigmaGlobal);
     /// TODO: MELHORAR FOR ABAIXO
     for(i=0;i<tamPopulacaoFilhos;i++,j++){ // Copia populacao para filhos
@@ -1171,11 +1467,24 @@ void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
         // Avalia funcao
         corrigeLimitesX(filhos,tamX,tipoFuncao,tamPopulacaoFilhos);
         avaliaFuncaoRestricao(filhos,tipoFuncao,tamPopulacaoFilhos,numG,numH,&fe);
-        somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
-        ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos);
+
+        if(penaltyMethod == 1){ // Padrao?  (not apm)
+            somaViolacoes(filhos,tamPopulacaoFilhos,numG,numH);
+        }
+        else if(penaltyMethod == 2){ // Adaptive Penalty Method ( APM )
+            uniteConstraints(filhos,tamPopulacao,numG,numH);
+            calculatePenaltyCoefficients(filhos,tamPopulacao,numConstraints,penaltyCoefficients,&avgObjFunc);
+            calculateAllFitness(filhos,tamPopulacao,numConstraints,penaltyCoefficients,avgObjFunc);
+        }
+        ordenaMelhoresRestricao(populacao,filhos,tamPopulacao,tamPopulacaoFilhos,penaltyMethod);
         //ordenaMelhores(populacao,filhos);// NOTE e necessario?
-        selecionaMelhoresRestricao(populacao,filhos,tipoES,tamPopulacao,tamPopulacaoFilhos,numFilhosGerados);
-        imprimeVioleFO(populacao[0]);
+        selecionaMelhoresRestricao(populacao,filhos,tipoES,tamPopulacao,tamPopulacaoFilhos,numFilhosGerados,penaltyMethod);
+        if(penaltyMethod == 1){ // Padrao?  (not apm)
+            imprimeVioleFO(populacao[0]);
+        }
+        else if(penaltyMethod == 2){ // Adaptive Penalty Method ( APM )
+            imprimeFiteFO(populacao[0]);
+        }
     }
     //(*melhorES) = populacao[0];
     //qsort(populacao,TAM_POPULACAO,sizeof(Individuo),comparaFuncaoObjetivo0);
@@ -1184,11 +1493,13 @@ void ES(int tipoFuncao,int seed,int tamPopulacao,int tamX,int numFilhosGerados,i
 
 int main(int argc,char* argv[]){
     /// Se 0: es+ Se 1:es, Se 2: es, modificado
+    /// Se 1: Penalty method padrao , Se 2: APM
     /// Se sigma global == 1, sigma global, se nao, vetor de sigmas[]
     /// Parametros tipoFuncao|seed|tamPopulacao|tamX|numFilhosGerados|maxFE|probCrossover|tipoES|sigmaGlobal
     char* method = "null";
     int tipoFuncao = 1;
     int seed = 1;
+    int penaltyMethod = 1;
     int tamPopulacao = 50;
     int tamX = 10;
     int numFilhosGerados = 10;
@@ -1198,11 +1509,12 @@ int main(int argc,char* argv[]){
     int sigmaGlobal = 1;
     //DE(1,1,50,10,1,20000,0,0,0);
     int opt;
-    while ((opt = getopt(argc, argv, "n:f:s:p:x:g:m:c:e:t:")) != -1) {
+    while ((opt = getopt(argc, argv, "n:f:s:k:p:x:g:m:c:e:t:")) != -1) {
     	switch (opt) {
     	    case 'n': method = optarg; break;
     	    case 'f': tipoFuncao = atoi(optarg); break;
 			case 's': seed = atoi(optarg); break;
+            case 'k': penaltyMethod = atoi(optarg); break;
 			case 'p': tamPopulacao = atoi(optarg); break;
 			case 'x': tamX = atoi(optarg); break;
 			case 'g': numFilhosGerados = atoi(optarg); break;
@@ -1213,16 +1525,15 @@ int main(int argc,char* argv[]){
 			default: abort();
     	}
     }
-
     //method = "DE";
     if(!strcmp(method,"DE")){ // Retorna 0 se str1 == str2
-        DE(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
+        DE(tipoFuncao,seed,penaltyMethod,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
     }
     else if(!strcmp(method,"ES")){
-        ES(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
+        ES(tipoFuncao,seed,penaltyMethod,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
     }
     else if(!strcmp(method,"AG")){
-        AG(tipoFuncao,seed,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
+        AG(tipoFuncao,seed,penaltyMethod,tamPopulacao,tamX,numFilhosGerados,maxFE,probCrossover,tipoES,sigmaGlobal);
     }
     else{
         printf("Metodo nao encontrado, impresso no codigo em C\n");

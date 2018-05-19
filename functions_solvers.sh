@@ -5,11 +5,14 @@
 totalMethods=3 
 methods=(DE ES AG)
 
-totalFunctions=18 # Funcoes
+totalFunctions=2 # Funcoes
 functions=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18)
 
 totalSeeds=30 # Seeds
 seeds=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30) 
+
+totalPenaltyMethods=2 # PenaltyMethods
+penaltyMethods=(1 2)
 
 totalPopulation=2 # Tamanho Populacao
 #populations=(50 25)
@@ -45,72 +48,77 @@ do
 		s=0
 		while(($s<$totalSeeds))
 		do
-			p=0
-			while(($p<$totalPopulation))
+			pm=0
+			while(($pm<$totalPenaltyMethods))
 			do
-				d=0
-				while(($d<$totalDimensions))
+				p=0
+				while(($p<$totalPopulation))
 				do
-					fg=0
-					while(($fg<$totalFilhosGerados))
+					d=0
+					while(($d<$totalDimensions))
 					do
-						fe=0
-						while(($fe<$totalFE))
+						fg=0
+						while(($fg<$totalFilhosGerados))
 						do
-							c=0 # Apenas para AG ** Inicialize com 2 para rodar testes DE e ES **
-							while(($c<$totalProbCrossover)) 
+							fe=0
+							while(($fe<$totalFE))
 							do
-								es=0 # Apenas para ES ** Inicialize com 2 para rodar testes AG e DE **
-								while(($es<$totalTipoES))
+								c=0 # Apenas para AG ** Inicialize com 2 para rodar testes DE e ES **
+								while(($c<$totalProbCrossover)) 
 								do
-									sig=0 # Apenas para ES ** Inicialize com 2 para rodar testes AG e DE **
-									while(($sig<$totalSigma))
+									es=0 # Apenas para ES ** Inicialize com 2 para rodar testes AG e DE **
+									while(($es<$totalTipoES))
 									do
-										echo "Executando SIG:$sig ES:$es Cross:$c FE:$fe Filhos:$fg N:$d POP:$p SEED:$s FUNC:$func Methods:$m"
-										# FUNCAO SEED POP N FILHOSGERADOS FE PROBCROSSOVER TIPOES SIGMAGLOBAL
-										if [ ${methods[m]} = DE -a $c -eq 0 -a $es -eq 0 -a $sig -eq 0 ];
-										then
-											# DE FUNC _ SEED _ POP _ X _ FILHOS _ FE  ** IMPRESSAO TXT **
-											echo "Executando DE"
-											/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/DE/DE_${functions[func]}_${seeds[s]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}.txt
-										elif [ ${methods[m]} = ES -a $c -eq 0 ];
-										then
-											# es FUNC _ SEED _ POP _ X _ FILHOS _ FE _ TIPOES _ SIGMAGLOBAL  ** IMPRESSAO TXT **
-											echo "Executando ES"
-											if [ $es -eq 0 -a $sig -eq 0 ]; # ES + e Sigma Global
+										sig=0 # Apenas para ES ** Inicialize com 2 para rodar testes AG e DE **
+										while(($sig<$totalSigma))
+										do
+											echo "Executando SIG:$sig ES:$es Cross:$c FE:$fe Filhos:$fg N:$d POP:$p SEED:$s FUNC:$func Methods:$m"
+											# FUNCAO SEED POP N FILHOSGERADOS FE PROBCROSSOVER TIPOES SIGMAGLOBAL
+											if [ ${methods[m]} = DE -a $c -eq 0 -a $es -eq 0 -a $sig -eq 0 ];
 											then
-												/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/ES/ES0/sigmaGlobal/ES_${functions[func]}_${seeds[s]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}_${tipoES[es]}_${sigmas[sig]}.txt
-											elif [ $es -eq 0 -a $sig -eq 1 ];	# ES + e Sigma Individual
+												# DE FUNC _ SEED _ PenMethod _ POP _ X _ FILHOS _ FE  ** IMPRESSAO TXT **
+												echo "Executando DE"
+												/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -k ${penaltyMethods[pm]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/DE/DE_${functions[func]}_${seeds[s]}_${penaltyMethods[pm]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}.txt
+											elif [ ${methods[m]} = ES -a $c -eq 0 ];
 											then
-												/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/ES/ES0/sigmaIndividual/ES_${functions[func]}_${seeds[s]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}_${tipoES[es]}_${sigmas[sig]}.txt									
-											elif [ $es -eq 1 -a $sig -eq 0 ];
+												# es FUNC _ SEED _ PenMethod _ POP _ X _ FILHOS _ FE _ TIPOES _ SIGMAGLOBAL  ** IMPRESSAO TXT **
+												echo "Executando ES"
+												if [ $es -eq 0 -a $sig -eq 0 ]; # ES + e Sigma Global
+												then
+													/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -k ${penaltyMethods[pm]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/ES/ES0/sigmaGlobal/ES_${functions[func]}_${seeds[s]}_${penaltyMethods[pm]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}_${tipoES[es]}_${sigmas[sig]}.txt
+												elif [ $es -eq 0 -a $sig -eq 1 ];	# ES + e Sigma Individual
+												then
+													/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -k ${penaltyMethods[pm]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/ES/ES0/sigmaIndividual/ES_${functions[func]}_${seeds[s]}_${penaltyMethods[pm]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}_${tipoES[es]}_${sigmas[sig]}.txt									
+												elif [ $es -eq 1 -a $sig -eq 0 ];
+												then
+													/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -k ${penaltyMethods[pm]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/ES/ES1/sigmaGlobal/ES_${functions[func]}_${seeds[s]}_${penaltyMethods[pm]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}_${tipoES[es]}_${sigmas[sig]}.txt
+												elif [ $es -eq 1 -a $sig -eq 1 ];
+												then
+													/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -k ${penaltyMethods[pm]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/ES/ES1/sigmaIndividual/ES_${functions[func]}_${seeds[s]}_${penaltyMethods[pm]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}_${tipoES[es]}_${sigmas[sig]}.txt
+												fi
+											elif [ ${methods[m]} = AG -a $es -eq 0 -a $sig -eq 0 ];
 											then
-												/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/ES/ES1/sigmaGlobal/ES_${functions[func]}_${seeds[s]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}_${tipoES[es]}_${sigmas[sig]}.txt
-											elif [ $es -eq 1 -a $sig -eq 1 ];
-											then
-												/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/ES/ES1/sigmaIndividual/ES_${functions[func]}_${seeds[s]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}_${tipoES[es]}_${sigmas[sig]}.txt
+												# AG FUNC _ SEED _ PenMethod _ POP _ X _ FILHOS _ FE _ PROBCROSSOVER  ** IMPRESSAO TXT **
+												echo "Executando AG"
+												/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -k ${penaltyMethods[pm]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/AG/AG_${functions[func]}_${seeds[s]}_${penaltyMethods[pm]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}_${probCrossovers[c]}.txt
+											else
+												echo "Metodo nao encontrado"
 											fi
-										elif [ ${methods[m]} = AG -a $es -eq 0 -a $sig -eq 0 ];
-										then
-											# AG FUNC _ SEED _ POP _ X _ FILHOS _ FE _ PROBCROSSOVER  ** IMPRESSAO TXT **
-											echo "Executando AG"
-											/home/pedrohen/Documentos/PedroIC/Otimizacao/bin/Debug/Otimizacao -n ${methods[m]} -f ${functions[func]} -s ${seeds[s]} -p ${populations[p]} -x ${dimensions[d]} -g ${filhosGerados[fg]} -m ${functionEvaluations[fe]} -c ${probCrossovers[c]} -e ${tipoES[es]} -t ${sigmas[sig]} > /home/pedrohen/Documentos/PedroIC/Resultados/AG/AG_${functions[func]}_${seeds[s]}_${populations[p]}_${dimensions[d]}_${filhosGerados[fg]}_${functionEvaluations[fe]}_${probCrossovers[c]}.txt
-										else
-											echo "Metodo nao encontrado"
-										fi
-										sig=$((sig+1))
+											sig=$((sig+1))
+										done
+										es=$((es+1))
 									done
-									es=$((es+1))
+									c=$((c+1))
 								done
-								c=$((c+1))
+								fe=$((fe+1))
 							done
-							fe=$((fe+1))
+							fg=$((fg+1))
 						done
-						fg=$((fg+1))
+						d=$((d+1))
 					done
-					d=$((d+1))
+					p=$((p+1))
 				done
-				p=$((p+1))
+				pm=$((pm+1))			
 			done
 			s=$((s+1))
 		done
