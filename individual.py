@@ -8,8 +8,9 @@ Created on Sun May 20 17:53:50 2018
 
 import numpy as np
 import sys
+import operator as op
 from functions import Functions
-from random import uniform
+
 
 '''
 typedef struct Individuo {
@@ -256,10 +257,81 @@ class Population(object):
                 #ind1[i] = 0.5 * (((1 + beta) * x1) + ((1 - beta) * x2))
                 #ind2[i] = 0.5 * (((1 - beta) * x1) + ((1 + beta) * x2))
         
+        
+    def mutation(self,nSize,offspringsSize):
+        mean = 0
+        std = 1
+        for i in range(offspringsSize):
+            for j in range(nSize):
+                self.individuals[i].n[j] = self.individuals[i].n[j] + np.random.normal(mean,std)
+                
+    def bounding(self,nSize,function,popSize):
+        nMin = 0
+        nMax = 0
+        if (function == 1):
+            nMin = 0
+            nMax = 10
+        elif (function == 2):
+            nMin = -5.12
+            nMax = 5.12
+        elif (function == 3 or function == 12 or function == 14 or function == 15):
+            nMin = -1000
+            nMax = 1000
+        elif (function == 4 or function == 18):
+            nMin = -50
+            nMax = 50
+        elif (function == 5 or function == 6):
+            nMin = -600
+            nMax = 600
+        elif (function == 7 or function == 8):
+            nMin = -140
+            nMax = 140
+        elif (function == 9 or function == 10 or function == 13):
+            nMin = -500
+            nMax = 500
+        elif (function == 11):
+            nMin = -100
+            nMax = 100
+        elif (function == 16 or function == 17):
+            nMin = -10
+            nMax = 10
+        else:
+            print("Function not encountered")
+            sys.exit("Function not encountered")
+        
+        for i in range (popSize):
+            for j in range(nSize):
+                if (self.individuals[i].n[j] > nMax):
+                    self.individuals[i].n[j] = nMax
+                elif (self.individuals[i].n[j] < nMin):
+                    self.individuals[i].n[j] = nMin
+               
+                
+    def sort(self,offsprings,penaltyMethod):
+        if (penaltyMethod == 1): # Sort based on violatiom and then objective function
+            self.individuals.sort(key = op.attrgetter ("violatiomSum","objectiveFunction"))
+            offsprings.individuals.sort( key = op.attrgetter ("violatiomSum","objectiveFunction"))
+        elif (penaltyMethod == 2):
+            print("Implementar apm depois")
+            sys.exit("APM NAO IMPLEMENTADO")
+            
+        
+    def elitism(self,offsprings,parentsSize):
+        copyStart = 5
+        i = 0
+        for j in range(copyStart,parentsSize): # J iterates on parents
+            self.individuals[j] = offsprings[i]
+            i = i + 1
+    
+    
+    def printViolationSumAndObjFunc(self):
+        best = bestIndividual(self,parentsSize,penaltyMethod)
+        print("Violation: {e}\tObjectiveFunction: {e}\n".format(best.violationSum,best.ObjectiveFunction[0]))
+    
+    
     def lol(self):
         imprimeTeste()
-        
-        
+            
         
     def testeFor(self,tamanho,soma):
         print("Tamanho: {}".format(tamanho))
@@ -275,6 +347,21 @@ class Population(object):
         lista.append(99)
         for i in range(len(lista)):
             lista[i] = i+1
+
+
+
+def bestIndividual(parents,parentsSize,penaltyMethod):
+    best = parents.individuals[0] 
+    if (penaltyMethod == 1): # not apm
+        for i in range(1,parentsSize):
+            if (parents.individuals[i].violationSum < best.violationSum):
+                best = parents.individuals[i]
+            elif (parents.individuals[i].violationSum == best.violationSum):
+                if(parents.individuals[i].objectiveFunction[0] < best.objectiveFunction[0]):
+                    best = parents.individuals[i]
+    elif (penaltyMethod == 2):
+        print("Implementar apm depois")
+    return best
 
 
 def crossoverProbability(crossoverProb):
@@ -372,12 +459,29 @@ def GA(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
             sys.exit(1)
         if(crossoverProbability(crossoverProb)):
             if(crossoverType == 0):
-                offsprings.standardCrossover(nSize,offspringsSize)
+                offsprings.standardCrossover(nSize,offspringsSize) # Standard crossover
             elif(crossoverType == 1):
-                offsprings.sbCrossover(2,nSize,offspringsSize)
+                offsprings.sbCrossover(2,nSize,offspringsSize) # SBX Crossover
             else:
                 print("Crossover type not encountered")
                 sys.exit("Crossover type not encountered")
+        offsprings.mutation(nSize,offspringsSize)
+        offsprings.bounding(nSize,function,offspringsSize)
+        offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)
+        if (penaltyMethod == 1):
+            offsprings.sumViolations(offspringsSize,gSize,hSize)
+        elif (penaltyMethod == 2):
+            print("Adaptar codigo heder deopis")
+            sys.exit(1)
+        parents.sort(offsprings,penaltyMethod)
+        parents.elitism(offsprings,parentsSize)
+        parents.sort(offsprings,penaltyMethod)
+        
+        if (penaltyMethod == 1):
+            parents.printViolationSumAndObjFunc() ## VERIFICATES IF THIS WORKS
+        elif (penaltyMethod == 2):
+            print("implementar apm depois")
+        
     
     
     
