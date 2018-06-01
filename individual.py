@@ -46,11 +46,12 @@ class Individual(object):
     #population = []
     
     
-    def __init__(self,n,objectiveFunction = [], g = [], h = [],violations = [], violationSum = 0):
+    def __init__(self,n = [],objectiveFunction = [], g = [], h = [],violations = [],sigma = [], violationSum = 0):
         self.n = n
         self.objectiveFunction = objectiveFunction
         self.g = g
         self.h = h
+        self.sigma = sigma
         self.violations = violations
         self.violationSum = violationSum
     
@@ -102,7 +103,7 @@ separadamente a populacao
 
 
 class Population(object):
-    def __init__(self,popSize,nSize,function): 
+    def __init__(self,popSize,nSize,function = 1): 
         self.individuals = []
         for i in range (popSize): #
             values = []
@@ -210,8 +211,8 @@ class Population(object):
     
     def selection(self,parents,parentsSize,nSize,offspringsSize): # Compares violations and objective function
         for i in range(offspringsSize):
-            idx1 = np.random.randint(parentsSize)
-            idx2 = np.random.randint(parentsSize)
+            idx1 = np.random.randint(0,parentsSize)
+            idx2 = np.random.randint(0,parentsSize)
             if (parents.individuals[idx1].violationSum < parents.individuals[idx2].violationSum):
                 self.individuals[i] = parents.individuals[idx1]
             elif (parents.individuals[idx1].violationSum > parents.individuals[idx2].violationSum):
@@ -259,11 +260,11 @@ class Population(object):
         
         
     def mutation(self,nSize,offspringsSize):
-        mean = 0
-        std = 1
+        MEAN = 0
+        STD = 1
         for i in range(offspringsSize):
             for j in range(nSize):
-                self.individuals[i].n[j] = self.individuals[i].n[j] + np.random.normal(mean,std)
+                self.individuals[i].n[j] = self.individuals[i].n[j] + np.random.normal(MEAN,STD)
                 
     def bounding(self,nSize,function,popSize):
         nMin = 0
@@ -309,8 +310,8 @@ class Population(object):
                 
     def sort(self,offsprings,penaltyMethod):
         if (penaltyMethod == 1): # Sort based on violatiom and then objective function
-            self.individuals.sort(key = op.attrgetter ("violatiomSum","objectiveFunction"))
-            offsprings.individuals.sort( key = op.attrgetter ("violatiomSum","objectiveFunction"))
+            self.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
+            offsprings.individuals.sort( key = op.attrgetter ("violationSum","objectiveFunction"))
         elif (penaltyMethod == 2):
             print("Implementar apm depois")
             sys.exit("APM NAO IMPLEMENTADO")
@@ -324,10 +325,102 @@ class Population(object):
             i = i + 1
     
     
-    def printViolationSumAndObjFunc(self):
+    def printViolationSumAndObjFunc(self,parentsSize,penaltyMethod):
         best = bestIndividual(self,parentsSize,penaltyMethod)
         print("Violation: {e}\tObjectiveFunction: {e}\n".format(best.violationSum,best.ObjectiveFunction[0]))
     
+    
+    def DESelection(self,offsprings,parentsSize):
+        for i in range(parentsSize):
+            if (offsprings.individuals[i].violationSum < self.individuals[i].violationSum):
+                self.individuals[i] = offsprings.individuals[i]
+            elif (offsprings.individuals[i].violationSum == self.individuals[i].violationSum):
+                if (offsprings.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]):
+                    self.individuals[i] = offsprings.individuals[i]
+    
+    
+    def intializeEvolutionStrategy(self,offsprings,nSize,parentsSize,offspringsSize,globalSigma):
+        STD = 1
+        for i in range(parentsSize): # Initialize sigma parameter for parents
+            if (globalSigma == 1):
+                self.individuals[i].sigma.append(STD)
+            else:
+                for j in range(nSize):
+                    self.individuals[i].sigma.append(STD)
+        
+        for i in range(offspringsSize): # Initialize sigma parameter for offsprings
+            if (globalSigma == 1):
+                offsprings.individuals[i].sigma.append(STD)
+            else:
+                for j in range(nSize):
+                    offsprings.individuals[i].sigma.append(STD)
+        
+    
+    def sigmaSelfAdaptation(self,offsprings,nSize,parentsSize,generatedOffspring,globalSigma):
+        MEAN = 0
+        STD = 1
+        #epsilon,tau
+        l = 0
+        for i in range(parentsSize):
+            for j in range(generatedOffspring): # Each parents generate X offsprings
+                tau = 1 / np.sqrt(nSize)
+                epsilon = tau * np.random.normal(MEAN,STD) # Normal distribution
+                if (globalSigma == 1): # 1 sigma for each individual, utilizes only the first position of sigma array
+                    offsprings.individuals[l].sigma[0] = self.individuals[i].sigma[0] * np.exp(epsilon)
+                
+                for k in range(nSize):
+                    if (globalSigma == 1): # 1 sigma for each individual, utilizes only the first position of sigma array
+                        offsprings.individuals[l].n[k] = self.individuals[i].n[k] + offsprings.individuals[l].sigma[0] * np.random.normal(MEAN,STD)
+                    else:
+                        offsprings.individuals[l].sigma[k] = self.individuals[i].sigma[k] * np.exp(epsilon) * np.exp(epsilon) # NOTE: Is the double produtct necessary?
+                        offsprings.individuals[l].n[k] = self.individuals[i].n[k] + offsprings.individuals[l].sigma[k] * np.random.normal(MEAN,STD)
+                l = l + 1
+                
+                
+    def ESSelection(self,offsprings,parentsSize,offspringsSize,esType,generatedOffspring,penaltyMethod):
+        if (esType == 0): # Es + pick bests individuals among parents and offsprings
+            #parents = Population(parentsSize,nSize,function) # Initialize parents population
+            aux = Population(parentsSize + offspringsSize,nSize)
+            k = 0
+            for i in range(parentsSize + offspringsSize):
+                if (i < parentsSize):
+                    aux.individuals.append(self.individuals[i])
+                else:
+                    aux.individuals.append(offsprings.individuals[k])
+                    k = k + 1
+            if (penaltyMethod == 1):
+                aux.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
+            elif (penaltyMethod == 2):
+                print("implementar depoiss")
+            
+            #self.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
+            #offsprings.individuals.sort( key = op.attrgetter ("violationSum","objectiveFunction"))
+            
+            for i in range(parentsSize):
+                self.individuals[i] = aux.individuals[i]
+        elif (esType == 1): # Es , Each offsprings only "exists" for 1 generation. Pick best offsprings of each parent
+            j = 0
+            for i in range(parentsSize):
+                best = Individual()
+                best = offsprings.individuals[j]
+                while (j < generatedOffspring*(i+1)): # Goes through each offspring of each parent
+                    if (offsprings.individuals[j].violationSum < best.violationSum):
+                        best = offsprings.individuals[j]
+                    elif (offsprings.individuals[j].violationSum == best.violationSum):
+                        if (offsprings.individuals[j].objectiveFunction[0] < best.objectiveFunction[0]):
+                            best = offsprings.individuals[j]
+                    j = j + 1
+                self.individuals[i] = best
+            
+            if (penaltyMethod == 1):
+                self.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
+            elif (penaltyMethod == 2):
+                print("implementar apm")
+        else:
+            print("Es type not encountered")
+            sys.exit("Es type not encountered")
+                
+                
     
     def lol(self):
         imprimeTeste()
@@ -346,7 +439,7 @@ class Population(object):
         print("LIsta em lista Muda",lista)
         lista.append(99)
         for i in range(len(lista)):
-            lista[i] = i+1
+            lista[i] = i + 1
 
 
 
@@ -365,7 +458,7 @@ def bestIndividual(parents,parentsSize,penaltyMethod):
 
 
 def crossoverProbability(crossoverProb):
-    if (np.random.randint(100) < crossoverProb):
+    if (np.random.randint(0,100) < crossoverProb):
         return 1
     else:
         return 0
@@ -418,6 +511,19 @@ def initializeConstraints(function):
         sys.exit("Function not encountered")
 
 
+def populationPick(solution, flags, parentsSize):
+    while (1):
+        contains = 0
+        idx = np.random.randint(0,parentsSize)
+        if (idx != solution ):
+            for l in range(3):
+                if (idx == flags[l]):
+                    contains = 1
+                    break
+            if (contains == 1):
+                break
+    return idx
+
 '''
 function = function to be minimized  --- TIPO FUNCAO
 seed = seed to be used --- SEED
@@ -438,7 +544,6 @@ def GA(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
     crossoverType = 1
     functionEvaluations = 0
     offspringsSize = parentsSize * generatedOffspring
-    np.random.seed(seed) 
     gSize,hSize,numConstraintsSize = initializeConstraints(function)
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function)
@@ -483,10 +588,94 @@ def GA(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
             print("implementar apm depois")
         
     
+def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,crossoverProb,esType,globalSigma): # Differential Evolution
+    CR = 0.7
+    F = 0.9
+    np.random.seed(seed)
+    functionEvaluations = 0
+    offspringsSize = parentsSize * generatedOffspring
+    gSize,hSize,numConstraintsSize = initializeConstraints(function) # Initialize constraints
+    parents = Population(parentsSize,nSize,function) # Initialize parents population
+    offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
+    parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
+    if(penaltyMethod == 1): # Padrao?  (not apm)
+        parents.sumViolations(parentsSize,gSize,hSize)
+    elif(penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
+        print("implementar apm depois")
+        #uniteConstraints(populacao,tamPopulacao,numG,numH);
+        #calculatePenaltyCoefficients(populacao,tamPopulacao,numConstraints,penaltyCoefficients,&avgObjFunc);
+        #calculateAllFitness(populacao,tamPopulacao,numConstraints,penaltyCoefficients,avgObjFunc);
+    else:
+        print("Penalthy method not encountered")
+        sys.exit("Penalty method not encountered")
     
+    while (functionEvaluations < maxFE):
+        if (penaltyMethod == 1):
+            offsprings.selection(parents,parentsSize,nSize,offspringsSize) # Selection
+        elif (penaltyMethod == 2):
+            print("Adaptar codigo heder deopis")
+            sys.exit(1)
+        flags = [-1,-1,-1]
+        for i in range(parentsSize):
+            for l in (len(flags)):
+                flags[l] =  populationPick(i,flags,parentsSize)
+            
+            R = np.random.randint(0,nSize) # Random index
+            for j in range(nSize):
+                Ri = np.random.rand() # Generates random number between (0,1)
+                if (Ri < CR or j == R):
+                    offsprings.individuals[i].n[j] = parents.individuals[flags[0]].n[j] + F * (parents.individuals[flags[1]].n[j] - parents.individuals[flags[2].n[j]])
+                else:
+                    offsprings.individuals[i].n[j] = parents.individuals[i].n[j]
+        
+        offsprings.bounding(nSize,function,offspringsSize)
+        offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)
+        
+        if (penaltyMethod == 1): # NOt apm
+            offsprings.sumViolations(offspringsSize,gSize,hSize)
+            parents.DESelection(offsprings,parentsSize)
+            parents.printViolationSumAndObjFunc(parentsSize,penaltyMethod)
+        elif (penaltyMethod == 2):
+            print("implementar apm depois")
+            
+def ES(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,crossoverProb,esType,globalSigma): # Evolution Strategy    
+    np.random.seed(seed)
+    functionEvaluations = 0
+    offspringsSize = parentsSize * generatedOffspring
+    gSize,hSize,numConstraintsSize = initializeConstraints(function) # Initialize constraints
+    parents = Population(parentsSize,nSize,function) # Initialize parents population
+    offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
+    parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
+    if(penaltyMethod == 1): # Padrao?  (not apm)
+        parents.sumViolations(parentsSize,gSize,hSize)
+    elif(penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
+        print("implementar apm depois")
+        #uniteConstraints(populacao,tamPopulacao,numG,numH);
+        #calculatePenaltyCoefficients(populacao,tamPopulacao,numConstraints,penaltyCoefficients,&avgObjFunc);
+        #calculateAllFitness(populacao,tamPopulacao,numConstraints,penaltyCoefficients,avgObjFunc);
+    else:
+        print("Penalthy method not encountered")
+        sys.exit("Penalty method not encountered")
+    parents.initializeEvolutionStrategy(offsprings,nSize,parentsSize,offspringsSize,globalSigma)
+    j = 0
+    for i in range(offspringsSize):
+        offsprings.individuals[i] = parents.individuals[j]
+        j = j + 1
+        if (j > parentsSize):
+            j = 0
     
-    
-    
+    while (functionEvaluations < maxFE):
+        parents.sigmaSelfAdaptation(offsprings,nSize,parentsSize,generatedOffspring,globalSigma)
+        offsprings.bounding(nSize,function,offspringsSize)
+        offsprings.evaluate(offspringsSize,function,nSize,hSize,functionEvaluations)
+        if (penaltyMethod == 1):
+            offsprings.sumViolations(offspringsSize,gSize,hSize)
+        else:
+            print("implementar apm")
+        parents.sort(offsprings,penaltyMethod)
+        parents.ESSelection(offsprings,parentsSize,offspringsSize,esType,generatedOffspring,penaltyMethod)
+        
+        
 
 if __name__ == '__main__':
     np.random.seed(1)
