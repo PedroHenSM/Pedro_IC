@@ -46,7 +46,7 @@ class Individual(object):
     #population = []
     
     
-    def __init__(self,n = [],objectiveFunction = [], g = [], h = [],violations = [],sigma = [], violationSum = 0):
+    def __init__(self,n = [],objectiveFunction = [], g = [], h = [],violations = [],sigma = [], violationSum = 0,fitness = 0):
         self.n = n
         self.objectiveFunction = objectiveFunction
         self.g = g
@@ -54,6 +54,7 @@ class Individual(object):
         self.sigma = sigma
         self.violations = violations
         self.violationSum = violationSum
+        self.fitness = fitness
     
     '''
     def __init__(self,n,objectiveFunction,g,h):
@@ -209,18 +210,27 @@ class Population(object):
             self.individuals[i].violationSum = np.sum(self.individuals[i].violations)
         
     
-    def selection(self,parents,parentsSize,nSize,offspringsSize): # Compares violations and objective function
-        for i in range(offspringsSize):
-            idx1 = np.random.randint(0,parentsSize)
-            idx2 = np.random.randint(0,parentsSize)
-            if (parents.individuals[idx1].violationSum < parents.individuals[idx2].violationSum):
-                self.individuals[i] = parents.individuals[idx1]
-            elif (parents.individuals[idx1].violationSum > parents.individuals[idx2].violationSum):
-                self.individuals[i] = parents.individuals[idx2]
-            elif (parents.individuals[idx1].objectiveFunction[0] < parents.individuals[idx2].objectiveFunction[0]):
-                self.individuals[i] = parents.individuals[idx1]
-            else:
-                self.individuals[i] = parents.individuals[idx2]
+    def selection(self,parents,parentsSize,offspringsSize,penaltyMethod): 
+        if (penaltyMethod == 1): # Not apm, 'standard' method | Compares violations and objective function
+            for i in range(offspringsSize):
+                idx1 = np.random.randint(0,parentsSize)
+                idx2 = np.random.randint(0,parentsSize)
+                if (parents.individuals[idx1].violationSum < parents.individuals[idx2].violationSum):
+                    self.individuals[i] = parents.individuals[idx1]
+                elif (parents.individuals[idx1].violationSum > parents.individuals[idx2].violationSum):
+                    self.individuals[i] = parents.individuals[idx2]
+                elif (parents.individuals[idx1].objectiveFunction[0] < parents.individuals[idx2].objectiveFunction[0]):
+                    self.individuals[i] = parents.individuals[idx1]
+                else:
+                    self.individuals[i] = parents.individuals[idx2]
+        elif (penaltyMethod == 2): # APM | Compares fitness of each individual
+            for i in range(offspringsSize):
+                idx1 = np.random.randint(0,parentsSize)
+                idx2 = np.random.randint(0,parentsSize)
+                if (parents.individuals[idx1].fitness < parents.individuals[idx2].fitness):
+                    self.individuals[i] = parents.individuals[idx1]
+                elif (parents.individuals[idx1].fitness >= parents.individuals[idx2].fitness):
+                    self.individuals[i] = parents.individuals[idx2] 
               
                 
     def standardCrossover(self,nSize,offspringsSize): # Randomizes uniform value between n1 and n2   
@@ -421,6 +431,81 @@ class Population(object):
             sys.exit("Es type not encountered")
                 
                 
+            
+    def uniteConstraints(self,parentsSize,gSize,hSize):
+        for i in range(parentsSize):
+            idxG = 0
+            idxH = 0
+            for j in range(gSize+hSize):
+                if (j < gSize):
+                    self.individuals[i].violations[j] =  self.individuals[i].g[idxG]
+                    idxG = idxG + 1
+                else:
+                    self.individuals[i].violations[j] =  np.abs(self.individuals[i].g[idxH]) - 0.0001
+                    idxH = idxH + 1
+                    
+    def calculatePenaltyCoefficients(self,popSize,numberOfConstraints,penaltyCoefficients,averageObjectiveFunctionValues):
+        sumObjectiveFunction = 0
+        
+        #foreach candidate solution
+        for i in range(popSize):
+            sumObjectiveFunction = sumObjectiveFunction + self.individuals[i].objectiveFunction[0]
+        # the absolute value of sumObjectiveFunction
+        if (sumObjectiveFunction < 0):
+            sumObjectiveFunction = sumObjectiveFunction * -1
+        # the average of the objective function values
+        averageObjectiveFunctionValues = sumObjectiveFunction / popSize # Value, not an array
+        #the denominator of the equation of the penalty coefficients
+        denominator = 0
+        #the sum of the constraint violation values
+        #these values are recorded to be used in the next situation
+        sumViolation = []
+        for l in range(numberOfConstraints):
+            sumViolation.append(0)
+            #sumViolation[l] = 0 # TODO: Acho que isso nao funciona
+            for i in range(popSize):
+                if (self.individuals[i].violations[l] > 0): # TODO: inser 'fancy' IF here
+                    sumViolation[l] = sumViolation[l] + self.individuals[i].violations[l]
+                else:
+                    sumViolation[l] = sumViolation[l] + 0
+            
+            denominator = denominator + sumViolation[l] * sumViolation[l]
+        # the penalty coefficients  are calculated
+        penaltyCoefficients.clear() # clears list
+        for j in range(numberOfConstraints): # TODO: inser 'fancy' IF here
+            if (denominator == 0):
+                penaltyCoefficients.append(0)
+            else:
+                penaltyCoefficients.append(sumObjectiveFunction / denominator) * sumViolation[j]
+        
+        return (penaltyCoefficients,averageObjectiveFunctionValues) # returns list and value
+    
+    
+    def calculateAllFitness(self,popSize,numberOfConstraints,penaltyCoefficients,averageObjectiveFunctionValues):
+        for i in range(popSize):
+            # indicates if the candidate solution is feasible
+            infeasible = 0 # boolean
+            # the penalty value
+            penalty = 0
+            for j in range(numberOfConstraints):
+                if (self.individuals[i].violations[j] > 0):
+                    # the candidate solution is infeasible if some constraint is violated
+                    infeasible = 1
+                    # the panalty value is updated
+                    penalty = penalty + penaltyCoefficients[j] * self.individuals[i].violations[j]
+                    
+                    
+            #fitness is the sum of the objective function and penalty values
+            #the candidate solution is infeasible and just the objective function value,
+            #otherwise
+            #TODO: fancy if here
+            if (infeasible):
+                if (self.individuals[i].objectiveFunction[0] > averageObjectiveFunctionValues):
+                    self.individuals[i].fitness = self.individuals[i].objectiveFunction[0] + penalty
+                else:
+                    self.individuals[i].fitness = averageObjectiveFunctionValues + penalty
+            else:
+                self.individuals[i].fitness = self.individuals[i].objectiveFunction[0]
     
     def lol(self):
         imprimeTeste()
@@ -544,24 +629,30 @@ def GA(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
     crossoverType = 1
     functionEvaluations = 0
     offspringsSize = parentsSize * generatedOffspring
-    gSize,hSize,numConstraintsSize = initializeConstraints(function)
+    gSize,hSize,numConstraints = initializeConstraints(function) # numConstraints is the sum of gSize and hSize
+    avgObjFuncEmpty = 0 # will be subscripted on 'calculatePenaltyCoefficients'
+    penaltyCoefficientsEmpty = []
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function)
     parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations)
     if (penaltyMethod == 1):
         parents.sumViolations(parentsSize,gSize,hSize)
     elif (penaltyMethod == 2):
-        print("Adaptar codigo heder deopis")
-        sys.exit(1)
+        parents.uniteConstraints(parentsSize,gSize,hSize) # TODO: Verificar se isso é necessário
+        penaltyCoefficients,avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize,numConstraints,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+        parents.calculateAllFitness(parentsSize,numConstraints,penaltyCoefficients,avgObjFunc)
     else:
         print("Penalthy method not encountered")
         sys.exit("Penalty method not encountered")
     while (functionEvaluations < maxFE):
+        """
         if (penaltyMethod == 1):
-            offsprings.selection(parents,parentsSize,nSize,offspringsSize)
+            offsprings.selection(parents,parentsSize,offspringsSize)
         elif (penaltyMethod == 2):
             print("Adaptar codigo heder deopis")
             sys.exit(1)
+        """
+        offsprings.selection(parents,parentsSize,offspringsSize,penaltyMethod) # Selection
         if(crossoverProbability(crossoverProb)):
             if(crossoverType == 0):
                 offsprings.standardCrossover(nSize,offspringsSize) # Standard crossover
@@ -576,14 +667,16 @@ def GA(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
         if (penaltyMethod == 1):
             offsprings.sumViolations(offspringsSize,gSize,hSize)
         elif (penaltyMethod == 2):
-            print("Adaptar codigo heder deopis")
-            sys.exit(1)
+            penaltyCoefficients.clear() # clears penaltyCoefficients | penaltyCoefficientsEmpty is cleaned on 'calcualtePenaltyCoefficients' function
+            offsprings.uniteConstraints(offspringsSize,gSize,hSize) # TODO: Verificar se isso é necessário
+            penaltyCoefficients,avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,numConstraints,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+            offsprings.calculateAllFitness(offspringsSize,numConstraints,penaltyCoefficients,avgObjFunc)
         parents.sort(offsprings,penaltyMethod)
         parents.elitism(offsprings,parentsSize)
         parents.sort(offsprings,penaltyMethod)
         
         if (penaltyMethod == 1):
-            parents.printViolationSumAndObjFunc() ## VERIFICATES IF THIS WORKS
+            parents.printViolationSumAndObjFunc() #TODO: VERIFICATES IF THIS WORKS
         elif (penaltyMethod == 2):
             print("implementar apm depois")
         

@@ -67,6 +67,15 @@ class Aluno:
         return "%s - %s" % (str(self.nome), str(self.matricula))
     
     
+    
+    
+def funcaozinha(alist,anumber):
+    for i in range(3):
+        alist.append(i+1)
+    anumber = 99
+    
+    return (alist,anumber)
+    
 if __name__ == '__main__':
     name1 = ["Pedro","Carol"]
     name2 = ["Lucas", "Larissa"]
@@ -81,9 +90,9 @@ if __name__ == '__main__':
     p1.troca(p2)
     p1.imprime(2)
     p2.imprime(2)
-    
+    print("VALORES ALEATORIOS")
     for i in range(10):
-        print(np.random.uniform(20,10))
+        print(np.random.randint(0,5))
         
     
     alunos = [Aluno("".join(random.sample(string.ascii_letters, 5)), random.randint(0, 10)) for i in range(10)]
@@ -95,6 +104,35 @@ if __name__ == '__main__':
         print (aluno)
 
     print(p1)
+    i = 0
+    while (1):
+        print(i)
+        if (i == 5):
+            break
+        i = i + 1
+        
+    lista = []
+    print (lista)
+    lista.append(5)
+    print(lista)
+    lista[0] = 10
+    print(lista)
+    print('\n\n\n\n\n')
+    listinha = [] 
+    number = 0
+    print(listinha)
+    print(number)
+    listinha1,number1 = funcaozinha(listinha,number) 
+    print(listinha1)
+    print(number1)
+    listinha1.clear()
+    listinha1,number1 = funcaozinha(listinha,number) 
+    print(listinha1)
+    print(number1)
+    print('\n\n\n\n\n')
+    infeasible = 1
+    if (infeasible):
+        print("python é esperto rapaz")
     
     
             

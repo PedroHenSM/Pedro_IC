@@ -106,7 +106,7 @@ totalMethods = 3
 methods = ['DE','ES','AG']
 m = 0
 
-totalFunctions = 2 # Funcoes
+totalFunctions = 18 # Funcoes
 functions = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]
 func = 0
 
@@ -205,7 +205,9 @@ for func in range (totalFunctions):
                                     lastLine = text[-1] # Ultima linha do txt
                                     values = lastLine.split("\t") # Separa ultima linha em valores e salva em array
                                     ag.append(float(values[-1])) # Adiciona FO ao vetor
-                printLatex(de,es_0_1,es_0_2,es_1_1,es_1_2,ag)
+                if ((populations[p] == 50 and filhosGerados[fi] == 1) or (populations[p] == 25 and filhosGerados[fi] == 100)):
+                    # Imprime apenas as relações de tamPop 50 e filhos 1 e tamPop 25 e filhos 100, para apm e padrao
+                    printLatex(de,es_0_1,es_0_2,es_1_1,es_1_2,ag)
 
 
 '''
