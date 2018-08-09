@@ -322,22 +322,34 @@ class Population(object):
         if (penaltyMethod == 1): # Sort based on violatiom and then objective function
             self.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
             offsprings.individuals.sort( key = op.attrgetter ("violationSum","objectiveFunction"))
-        elif (penaltyMethod == 2):
-            print("Implementar apm depois")
-            sys.exit("APM NAO IMPLEMENTADO")
+        elif (penaltyMethod == 2): # Sort based on fitness and then objective function
+            self.individuals.sort(key = op.attrgetter ("fitness","objectiveFunction"))
+            offsprings.individuals.sort(key = op.attrgetter ("fitness","objectiveFunction"))
             
         
-    def elitism(self,offsprings,parentsSize):
-        copyStart = 5
-        i = 0
-        for j in range(copyStart,parentsSize): # J iterates on parents
-            self.individuals[j] = offsprings[i]
-            i = i + 1
+    def elitism(self,offsprings,parentsSize,penaltyMethod):
+        if (penaltyMethod == 1): # Not apm
+            copyStart = 5
+            i = 0
+            for j in range(copyStart,parentsSize): # J iterates on parents
+                self.individuals[j] = offsprings[i]
+                i = i + 1
+        elif (penaltyMethod == 2): # APM | Chooses the best individual beetwen parent-offspring 
+            for i in range(parentsSize):
+                if (offsprings.individuals[i].fitness < self.individuals[i].fitness):
+                    self.individuals[i] = offsprings.individuals[i]
+                elif (offsprings.individuals[i].fitness == self.individuals[i].fitness):
+                    if (offsprings.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]):
+                        self.individuals[i] = offsprings.individuals[i]
     
     
-    def printViolationSumAndObjFunc(self,parentsSize,penaltyMethod):
+    def printBest(self,parentsSize,penaltyMethod):
         best = bestIndividual(self,parentsSize,penaltyMethod)
-        print("Violation: {e}\tObjectiveFunction: {e}\n".format(best.violationSum,best.ObjectiveFunction[0]))
+        if (penaltyMethod == 1): # not apm
+            print("Violation: {e}\tObjectiveFunction: {e}\n".format(best.violationSum,best.ObjectiveFunction[0])) 
+        elif (penaltyMethod == 2): # APM
+           print("Fitness: {e]\tObjectiveFunction: {e]\n".format(best.fitness,best.objectiveFunction))
+    
     
     
     def DESelection(self,offsprings,parentsSize):
@@ -376,7 +388,7 @@ class Population(object):
                 tau = 1 / np.sqrt(nSize)
                 epsilon = tau * np.random.normal(MEAN,STD) # Normal distribution
                 if (globalSigma == 1): # 1 sigma for each individual, utilizes only the first position of sigma array
-                    offsprings.individuals[l].sigma[0] = self.individuals[i].sigma[0] * np.exp(epsilon)
+                    offsprings.individuals[l].sigma[0] = self.individuals[i].sigma[0] * np.exp(epsilon) # TODO: Verificates if this works (use append?!)
                 
                 for k in range(nSize):
                     if (globalSigma == 1): # 1 sigma for each individual, utilizes only the first position of sigma array
@@ -387,8 +399,8 @@ class Population(object):
                 l = l + 1
                 
                 
-    def ESSelection(self,offsprings,parentsSize,offspringsSize,esType,generatedOffspring,penaltyMethod):
-        if (esType == 0): # Es + pick bests individuals among parents and offsprings
+    def elitismES(self,offsprings,parentsSize,offspringsSize,esType,generatedOffspring,penaltyMethod):
+        if (esType == 0): # Es + | Pick bests individuals among parents and offsprings
             #parents = Population(parentsSize,nSize,function) # Initialize parents population
             aux = Population(parentsSize + offspringsSize,nSize)
             k = 0
@@ -401,31 +413,34 @@ class Population(object):
             if (penaltyMethod == 1):
                 aux.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
             elif (penaltyMethod == 2):
-                print("implementar depoiss")
-            
-            #self.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
-            #offsprings.individuals.sort( key = op.attrgetter ("violationSum","objectiveFunction"))
+                aux.individuals.sort(key = op.attrgetter ("fitness","objectiveFunction"))
             
             for i in range(parentsSize):
                 self.individuals[i] = aux.individuals[i]
-        elif (esType == 1): # Es , Each offsprings only "exists" for 1 generation. Pick best offsprings of each parent
+        elif (esType == 1): # Es , | Each offspring only "exists" for 1 generation. Pick best offsprings of each parent
             j = 0
             for i in range(parentsSize):
                 best = Individual()
-                best = offsprings.individuals[j]
+                best = offsprings.individuals[j] 
                 while (j < generatedOffspring*(i+1)): # Goes through each offspring of each parent
-                    if (offsprings.individuals[j].violationSum < best.violationSum):
-                        best = offsprings.individuals[j]
-                    elif (offsprings.individuals[j].violationSum == best.violationSum):
-                        if (offsprings.individuals[j].objectiveFunction[0] < best.objectiveFunction[0]):
+                    if (penaltyMethod == 1): # Not apm
+                        if (offsprings.individuals[j].violationSum < best.violationSum):
                             best = offsprings.individuals[j]
+                        elif (offsprings.individuals[j].violationSum == best.violationSum):
+                            if (offsprings.individuals[j].objectiveFunction[0] < best.objectiveFunction[0]):
+                                best = offsprings.individuals[j]
+                    elif (penaltyMethod == 2): # APM
+                        if (offsprings.individuals[j].fitness < best.fitness):
+                            best = offsprings.individuals[j]
+                        elif (offsprings.individuals[j].fitness == best.fitness):
+                            if (offsprings.individuals[j].objectiveFunction[0] < best.objectiveFunction[0]):
+                                best = offsprings.individuals[j]
                     j = j + 1
                 self.individuals[i] = best
-            
             if (penaltyMethod == 1):
                 self.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
             elif (penaltyMethod == 2):
-                print("implementar apm")
+                self.individuals.sort(key = op.attrgetter ("fitness","objectiveFunction"))
         else:
             print("Es type not encountered")
             sys.exit("Es type not encountered")
@@ -538,7 +553,12 @@ def bestIndividual(parents,parentsSize,penaltyMethod):
                 if(parents.individuals[i].objectiveFunction[0] < best.objectiveFunction[0]):
                     best = parents.individuals[i]
     elif (penaltyMethod == 2):
-        print("Implementar apm depois")
+        for i in range(1,parentsSize):
+            if (parents.individuals[i].fitness < best.fitness):
+                best = parents.individuals[i]
+            elif (parents.individuals[i].fitness == best.fitness):
+                if (parents.individuals[i].objectiveFunction[0] < best.objectiveFunction[0]):
+                    best = parents.individuals[i]
     return best
 
 
@@ -672,42 +692,46 @@ def GA(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
             penaltyCoefficients,avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,numConstraints,penaltyCoefficientsEmpty,avgObjFuncEmpty)
             offsprings.calculateAllFitness(offspringsSize,numConstraints,penaltyCoefficients,avgObjFunc)
         parents.sort(offsprings,penaltyMethod)
-        parents.elitism(offsprings,parentsSize)
+        parents.elitism(offsprings,parentsSize,penaltyMethod)
         parents.sort(offsprings,penaltyMethod)
-        
         if (penaltyMethod == 1):
-            parents.printViolationSumAndObjFunc() #TODO: VERIFICATES IF THIS WORKS
+            parents.printBest(parentsSize,penaltyMethod)
         elif (penaltyMethod == 2):
             print("implementar apm depois")
         
     
 def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,crossoverProb,esType,globalSigma): # Differential Evolution
+    np.random.seed(seed)
     CR = 0.7
     F = 0.9
-    np.random.seed(seed)
     functionEvaluations = 0
+    generatedOffspring = 1 # Always generated only one offspring
+    avgObjFuncEmpty = 0 # will be subscripted on 'calculatePenaltyCoefficients'
+    penaltyCoefficientsEmpty = []
     offspringsSize = parentsSize * generatedOffspring
-    gSize,hSize,numConstraintsSize = initializeConstraints(function) # Initialize constraints
+    gSize,hSize,numConstraints = initializeConstraints(function) # Initialize constraints
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
     parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
     if(penaltyMethod == 1): # Padrao?  (not apm)
         parents.sumViolations(parentsSize,gSize,hSize)
     elif(penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
-        print("implementar apm depois")
-        #uniteConstraints(populacao,tamPopulacao,numG,numH);
-        #calculatePenaltyCoefficients(populacao,tamPopulacao,numConstraints,penaltyCoefficients,&avgObjFunc);
-        #calculateAllFitness(populacao,tamPopulacao,numConstraints,penaltyCoefficients,avgObjFunc);
+        parents.uniteConstraints(parentsSize,gSize,hSize) # TODO: Verificar se isso é necessário
+        penaltyCoefficients,avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize,numConstraints,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+        parents.calculateAllFitness(parentsSize,numConstraints,penaltyCoefficients,avgObjFunc)
     else:
         print("Penalthy method not encountered")
         sys.exit("Penalty method not encountered")
     
     while (functionEvaluations < maxFE):
+        """
         if (penaltyMethod == 1):
             offsprings.selection(parents,parentsSize,nSize,offspringsSize) # Selection
         elif (penaltyMethod == 2):
             print("Adaptar codigo heder deopis")
             sys.exit(1)
+        """
+        offsprings.selection(parents,parentsSize,offspringsSize,penaltyMethod) # Selection
         flags = [-1,-1,-1]
         for i in range(parentsSize):
             for l in (len(flags)):
@@ -724,28 +748,33 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
         offsprings.bounding(nSize,function,offspringsSize)
         offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)
         
-        if (penaltyMethod == 1): # NOt apm
+        if (penaltyMethod == 1): # Not apm
             offsprings.sumViolations(offspringsSize,gSize,hSize)
-            parents.DESelection(offsprings,parentsSize)
-            parents.printViolationSumAndObjFunc(parentsSize,penaltyMethod)
+            #parents.DESelection(offsprings,parentsSize)
         elif (penaltyMethod == 2):
-            print("implementar apm depois")
+            penaltyCoefficients.clear() # clears penaltyCoefficients | penaltyCoefficientsEmpty is cleaned on 'calcualtePenaltyCoefficients' function
+            offsprings.uniteConstraints(offspringsSize,gSize,hSize) # TODO: Verificar se isso é necessário
+            penaltyCoefficients,avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,numConstraints,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+            offsprings.calculateAllFitness(offspringsSize,numConstraints,penaltyCoefficients,avgObjFunc)
+        parents.elitism(offsprings,parentsSize,penaltyMethod)
+        parents.printBest(parentsSize,penaltyMethod)
             
 def ES(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,crossoverProb,esType,globalSigma): # Evolution Strategy    
     np.random.seed(seed)
     functionEvaluations = 0
+    avgObjFuncEmpty = 0 # will be subscripted on 'calculatePenaltyCoefficients'
+    penaltyCoefficientsEmpty = []
     offspringsSize = parentsSize * generatedOffspring
-    gSize,hSize,numConstraintsSize = initializeConstraints(function) # Initialize constraints
+    gSize,hSize,numConstraints = initializeConstraints(function) # Initialize constraints
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
     parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
-    if(penaltyMethod == 1): # Padrao?  (not apm)
+    if (penaltyMethod == 1): # Padrao?  (not apm)
         parents.sumViolations(parentsSize,gSize,hSize)
-    elif(penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
-        print("implementar apm depois")
-        #uniteConstraints(populacao,tamPopulacao,numG,numH);
-        #calculatePenaltyCoefficients(populacao,tamPopulacao,numConstraints,penaltyCoefficients,&avgObjFunc);
-        #calculateAllFitness(populacao,tamPopulacao,numConstraints,penaltyCoefficients,avgObjFunc);
+    elif (penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
+        parents.uniteConstraints(parentsSize,gSize,hSize) # TODO: Verificar se isso é necessário
+        penaltyCoefficients,avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize,numConstraints,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+        parents.calculateAllFitness(parentsSize,numConstraints,penaltyCoefficients,avgObjFunc)
     else:
         print("Penalthy method not encountered")
         sys.exit("Penalty method not encountered")
@@ -764,10 +793,13 @@ def ES(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
         if (penaltyMethod == 1):
             offsprings.sumViolations(offspringsSize,gSize,hSize)
         else:
-            print("implementar apm")
+            penaltyCoefficients.clear() # clears penaltyCoefficients | penaltyCoefficientsEmpty is cleaned on 'calcualtePenaltyCoefficients' function
+            offsprings.uniteConstraints(offspringsSize,gSize,hSize) # TODO: Verificar se isso é necessário
+            penaltyCoefficients,avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,numConstraints,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+            offsprings.calculateAllFitness(offspringsSize,numConstraints,penaltyCoefficients,avgObjFunc)
         parents.sort(offsprings,penaltyMethod)
-        parents.ESSelection(offsprings,parentsSize,offspringsSize,esType,generatedOffspring,penaltyMethod)
-        
+        parents.elitismES(offsprings,parentsSize,offspringsSize,esType,generatedOffspring,penaltyMethod)
+        parents.printBest(parentsSize,penaltyMethod)
         
 
 if __name__ == '__main__':
