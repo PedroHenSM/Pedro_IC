@@ -55,45 +55,12 @@ class Individual(object):
         self.violations = violations
         self.violationSum = violationSum
         self.fitness = fitness
-    
-    '''
-    def __init__(self,n,objectiveFunction,g,h):
-        #self.n.append(n)
-        self.n = n
-        self.objectiveFunction = objectiveFunction
-        self.g = g
-        self.h = h 
-    '''
-    
-    
-    '''
-    def __init__(self,n,sigma,objectiveFunction,g,h,violations,violationSum,fitness):
-        Individual.n = n
-        Individual.sigma = sigma
-        Individual.objectiveFunction = objectiveFunction
-        Individual.g = g
-        Individual.h = h
-        Individual.violations = violations
-        Individual.violationSum = violationSum
-        Individual.fitness = fitness
-    '''
-    
-    '''
-    def __init__(self,name,vec):
-        self.name = name
-        self.vec = vec
-    '''
-        
-        
-'''
-    def sumViolations(self,popSize,g,h):
-        for i in range(popSize):
-            for j in range (g+h):
-                if(j < g):
-                    #self.individuals[i].violations[j]
-                    #self.individuals[i].violations.
-'''
 
+    """
+    def __repr__(self):
+        return str(self.__dict__)
+    """
+    
 
 '''
 Recebe vetor de inviduos e inicializa pop
@@ -104,13 +71,14 @@ separadamente a populacao
 
 
 class Population(object):
-    def __init__(self,popSize,nSize,function = 1): 
+    def __init__(self,popSize,nSize,function): 
         self.individuals = []
         for i in range (popSize): #
             values = []
             for j in range (nSize): # Dimension
                 if (function == 1):
                     values.append(np.random.uniform(0,10))
+                    #value = np.random.uniform(0,10)
                 elif (function == 2):
                     values.append(np.random.uniform(-5,5))
                 elif (function == 3 or function == 12 or function == 14 or function == 15):
@@ -130,17 +98,21 @@ class Population(object):
                 else:
                     print("Function not encountered")
                     sys.exit("Function not encountered")
+                """   
                 #self.individuals[i].append(Individual(value))
-                #self.individuals.append(Individual(vecInd[i].name,vecInd[i].vec))
-            list1 = []
-            list1.append(1)
-            list1.append(2)
-            list1.append(3)
-            #print("Lista")
-            #print(list1)
+                if ( j == 0):
+                    self.individuals.append()
+                else: # 
+                    self.individuals[i].n.append(value)
+                self.individuals.insert(0,).n.append()
+                """
+                
             #print("Values")
             #print(values)
-            self.individuals.append(Individual(values))
+            
+            self.individuals.append(Individual(values)) # TODO: INICIALIZAR ISSO CERTO
+            print(self.individuals[0].n)
+            sys.exit("debugando na criacao")
           
     def printPopulation(self,popSize,n):
         for i in range(popSize):
@@ -193,6 +165,7 @@ class Population(object):
             else:
                 print("Function not encountered")
                 sys.exit("Function not encountered")
+        print("FE RETORNADA: {}".format(fe))
         return fe
     
     
@@ -201,11 +174,13 @@ class Population(object):
             idxG = 0
             idxH = 0
             for j in range(gSize + hSize):
-                if (j < gSize):
-                    self.individuals[i].violations[j] = self.individuals[i].g[idxG]
+                if (j < gSize): # TODO: Foi modificado
+                    #self.individuals[i].violations[j] = self.individuals[i].g[idxG]
+                    self.individuals[i].violations.append(self.individuals[i].g[idxG])
                     idxG = idxG + 1
-                else:
-                    self.individuals[i].violations[j] = self.individuals[i].h[idxH] - 0.0001 # Converts equality on inequality
+                else: # TODO: Foi modificado
+                    #self.individuals[i].violations[j] = self.individuals[i].h[idxH] - 0.0001 # Converts equality on inequality
+                    self.individuals[i].violations.append(self.individuals[i].h[idxH] - 0.0001) 
                     idxH = idxH + 1
             self.individuals[i].violationSum = np.sum(self.individuals[i].violations)
         
@@ -332,7 +307,7 @@ class Population(object):
             copyStart = 5
             i = 0
             for j in range(copyStart,parentsSize): # J iterates on parents
-                self.individuals[j] = offsprings[i]
+                self.individuals[j] = offsprings.individuals[i]
                 i = i + 1
         elif (penaltyMethod == 2): # APM | Chooses the best individual beetwen parent-offspring 
             for i in range(parentsSize):
@@ -346,9 +321,9 @@ class Population(object):
     def printBest(self,parentsSize,penaltyMethod):
         best = bestIndividual(self,parentsSize,penaltyMethod)
         if (penaltyMethod == 1): # not apm
-            print("Violation: {e}\tObjectiveFunction: {e}\n".format(best.violationSum,best.ObjectiveFunction[0])) 
+            print("Violation: {:e}\tObjectiveFunction: {:e}\n".format(best.violationSum,best.objectiveFunction[0])) 
         elif (penaltyMethod == 2): # APM
-           print("Fitness: {e]\tObjectiveFunction: {e]\n".format(best.fitness,best.objectiveFunction))
+           print("Fitness: {:e}\tObjectiveFunction: {:e}\n".format(best.fitness,best.objectiveFunction))
     
     
     
@@ -399,7 +374,7 @@ class Population(object):
                 l = l + 1
                 
                 
-    def elitismES(self,offsprings,parentsSize,offspringsSize,esType,generatedOffspring,penaltyMethod):
+    def elitismES(self,offsprings,parentsSize,offspringsSize,nSize,esType,generatedOffspring,penaltyMethod):
         if (esType == 0): # Es + | Pick bests individuals among parents and offsprings
             #parents = Population(parentsSize,nSize,function) # Initialize parents population
             aux = Population(parentsSize + offspringsSize,nSize)
@@ -625,7 +600,7 @@ def populationPick(solution, flags, parentsSize):
                 if (idx == flags[l]):
                     contains = 1
                     break
-            if (contains == 1):
+            if (contains == 0):
                 break
     return idx
 
@@ -654,7 +629,7 @@ def GA(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
     penaltyCoefficientsEmpty = []
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function)
-    parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations)
+    functionEvaluations = functionEvaluations + parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations)
     if (penaltyMethod == 1):
         parents.sumViolations(parentsSize,gSize,hSize)
     elif (penaltyMethod == 2):
@@ -683,7 +658,7 @@ def GA(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
                 sys.exit("Crossover type not encountered")
         offsprings.mutation(nSize,offspringsSize)
         offsprings.bounding(nSize,function,offspringsSize)
-        offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)
+        functionEvaluations = functionEvaluations + offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)
         if (penaltyMethod == 1):
             offsprings.sumViolations(offspringsSize,gSize,hSize)
         elif (penaltyMethod == 2):
@@ -712,7 +687,9 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
     gSize,hSize,numConstraints = initializeConstraints(function) # Initialize constraints
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
-    parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
+    functionEvaluations = parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
+    print(parents.individuals[0])
+    sys.exit("debugando")
     if(penaltyMethod == 1): # Padrao?  (not apm)
         parents.sumViolations(parentsSize,gSize,hSize)
     elif(penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
@@ -734,19 +711,19 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
         offsprings.selection(parents,parentsSize,offspringsSize,penaltyMethod) # Selection
         flags = [-1,-1,-1]
         for i in range(parentsSize):
-            for l in (len(flags)):
+            for l in range(len(flags)):
                 flags[l] =  populationPick(i,flags,parentsSize)
             
             R = np.random.randint(0,nSize) # Random index
             for j in range(nSize):
                 Ri = np.random.rand() # Generates random number between (0,1)
                 if (Ri < CR or j == R):
-                    offsprings.individuals[i].n[j] = parents.individuals[flags[0]].n[j] + F * (parents.individuals[flags[1]].n[j] - parents.individuals[flags[2].n[j]])
+                    offsprings.individuals[i].n[j] = parents.individuals[flags[0]].n[j] + F * (parents.individuals[flags[1]].n[j] - parents.individuals[flags[2]].n[j])
                 else:
                     offsprings.individuals[i].n[j] = parents.individuals[i].n[j]
         
         offsprings.bounding(nSize,function,offspringsSize)
-        offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)
+        functionEvaluations = offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)
         
         if (penaltyMethod == 1): # Not apm
             offsprings.sumViolations(offspringsSize,gSize,hSize)
@@ -758,6 +735,7 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
             offsprings.calculateAllFitness(offspringsSize,numConstraints,penaltyCoefficients,avgObjFunc)
         parents.elitism(offsprings,parentsSize,penaltyMethod)
         parents.printBest(parentsSize,penaltyMethod)
+        print("FE: {}".format(functionEvaluations))
             
 def ES(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,crossoverProb,esType,globalSigma): # Evolution Strategy    
     np.random.seed(seed)
@@ -768,7 +746,7 @@ def ES(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
     gSize,hSize,numConstraints = initializeConstraints(function) # Initialize constraints
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
-    parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
+    functionEvaluations = parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
     if (penaltyMethod == 1): # Padrao?  (not apm)
         parents.sumViolations(parentsSize,gSize,hSize)
     elif (penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
@@ -789,7 +767,7 @@ def ES(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
     while (functionEvaluations < maxFE):
         parents.sigmaSelfAdaptation(offsprings,nSize,parentsSize,generatedOffspring,globalSigma)
         offsprings.bounding(nSize,function,offspringsSize)
-        offsprings.evaluate(offspringsSize,function,nSize,hSize,functionEvaluations)
+        functionEvaluations = offsprings.evaluate(offspringsSize,function,nSize,hSize,functionEvaluations)
         if (penaltyMethod == 1):
             offsprings.sumViolations(offspringsSize,gSize,hSize)
         else:
@@ -798,11 +776,12 @@ def ES(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
             penaltyCoefficients,avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,numConstraints,penaltyCoefficientsEmpty,avgObjFuncEmpty)
             offsprings.calculateAllFitness(offspringsSize,numConstraints,penaltyCoefficients,avgObjFunc)
         parents.sort(offsprings,penaltyMethod)
-        parents.elitismES(offsprings,parentsSize,offspringsSize,esType,generatedOffspring,penaltyMethod)
+        parents.elitismES(offsprings,parentsSize,offspringsSize,nSize,esType,generatedOffspring,penaltyMethod)
         parents.printBest(parentsSize,penaltyMethod)
         
 
 if __name__ == '__main__':
+    """
     np.random.seed(1)
     pSize = 5
     nSize = 10
@@ -827,14 +806,25 @@ if __name__ == '__main__':
     print("randons")
     for j in range(50):
         print(np.random.rand())
-    '''
-    population = Population(2,vecInd)
-    print("opa")
-    print(population)
-    print(population.individuals[0].name)
-    print(population.individuals[1].name)
-    population.printPopulation(2)
-    '''
+    """
+    """
+    np.random.seed(1)
+    pais = Population(5,2,1)
+    pais.printPopulation(5,2)
+    filhos = Population(5,2,1)
+    filhos.printPopulation(5,2)
+    #print(pais.individuals[0].n[1])
+    #print(filhos.individuals[0].n[0])
+    #filhos.individuals[0] = pais.individuals[0]
+    #filhos.printPopulation(5,2)
+    filhos.individuals = pais.individuals
+    filhos.printPopulation(5,2)
+    """
+    
+    DE(1,1,1,50,10,1,20000,0,0,0)
+    
+    
+    
     
     
     
