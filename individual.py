@@ -46,20 +46,21 @@ class Individual(object):
     #population = []
     
     
-    def __init__(self,n = [],objectiveFunction = [], g = [], h = [],violations = [],sigma = [], violationSum = 0,fitness = 0):
+    def __init__(self,n = [],objectiveFunction = [-1], g = [-1,-1,-1,-1], h = [-1,-1,-1,-1],violations = [-1,-1,-1,-1,-1,-1],sigma = [], violationSum = 0,fitness = 0):
         self.n = n
         self.objectiveFunction = objectiveFunction
         self.g = g
         self.h = h
+        #sigma = [-1 for i in range(50)]
         self.sigma = sigma
         self.violations = violations
         self.violationSum = violationSum
         self.fitness = fitness
 
-    """
+    
     def __repr__(self):
         return str(self.__dict__)
-    """
+    
     
 
 '''
@@ -110,10 +111,16 @@ class Population(object):
             #print("Values")
             #print(values)
             
-            self.individuals.append(Individual(values)) # TODO: INICIALIZAR ISSO CERTO
-            print(self.individuals[0].n)
-            sys.exit("debugando na criacao")
-          
+            self.individuals.append(Individual(values)) # Funcionando
+            #print("Individuo 1: {}".format(self.individuals))
+            #sys.exit("debugando na criacao")
+    
+    """
+    def __repr__(self):
+        return str(self.__dict__)
+    """
+    
+    
     def printPopulation(self,popSize,n):
         for i in range(popSize):
             print("Individual: {}".format(i))
@@ -122,10 +129,23 @@ class Population(object):
                 
     
     def evaluate(self,popSize,function,nSize,gSize,hSize,fe): # verificar parametro fe 
+        print("Individuals dentro da funcao evaluate:")
+        print(self.individuals)
+        print("nSize: {} gSize: {} hSize: {}".format(nSize,gSize,hSize))
+        print("\n\n")
         for i in range(popSize):
             fe = fe + 1
             if (function == 1):
+                """
+                TODO: Quando o individuo 0 é avaliado,o retorno dele vai para todos os outros individuos, 
+                e assim sucessivamente. Os valores estão sendos sobrescritos
+                """
+                print("Individuo {} ANTES DO EVALUATE".format(i))
+                print(self.individuals[i])
+                #C001(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
                 Functions.C01(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
+                print("Individuo {} DEPOIS DO EVALUATE".format(i))
+                print(self.individuals[i])
             elif (function == 2):
                 Functions.C02(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
             elif (function == 3):
@@ -165,8 +185,14 @@ class Population(object):
             else:
                 print("Function not encountered")
                 sys.exit("Function not encountered")
+        print("\n\n")
+        print("Individuals dentro da funcao evaluate(no fim):")
+        print(self.individuals)
+        print("\n\n")
         print("FE RETORNADA: {}".format(fe))
         return fe
+    
+    
     
     
     def sumViolations(self,popSize,gSize,hSize):
@@ -174,13 +200,13 @@ class Population(object):
             idxG = 0
             idxH = 0
             for j in range(gSize + hSize):
-                if (j < gSize): # TODO: Foi modificado
-                    #self.individuals[i].violations[j] = self.individuals[i].g[idxG]
-                    self.individuals[i].violations.append(self.individuals[i].g[idxG])
+                if (j < gSize): 
+                    self.individuals[i].violations[j] = self.individuals[i].g[idxG]
+                    #self.individuals[i].violations.append(self.individuals[i].g[idxG])
                     idxG = idxG + 1
-                else: # TODO: Foi modificado
-                    #self.individuals[i].violations[j] = self.individuals[i].h[idxH] - 0.0001 # Converts equality on inequality
-                    self.individuals[i].violations.append(self.individuals[i].h[idxH] - 0.0001) 
+                else: 
+                    self.individuals[i].violations[j] = self.individuals[i].h[idxH] - 0.0001 # Converts equality on inequality
+                    #self.individuals[i].violations.append(self.individuals[i].h[idxH] - 0.0001) 
                     idxH = idxH + 1
             self.individuals[i].violationSum = np.sum(self.individuals[i].violations)
         
@@ -549,6 +575,37 @@ def imprimeTeste():
 
 
 
+def C001(x,f,g,h,nx,nf,ng,nh):
+    #f1,f2,f3,g1,g2
+    print("NA FUNCAO C01 == nx: {} nf: {} ng: {} nh: {}".format(nx,nf,ng,nh))
+    print("Vetor x: {} Vetor f: {}  Vetor g: {} Vetor h: {} INICIAL".format(x,f,g,h))
+    e = []
+    o = [0.030858718087483,	-0.078632292353156,	0.048651146638038,	-0.069089831066354,	-0.087918542941928,	0.088982639811141,	0.074143235639847,	-0.086527593580149,	-0.020616531903907,	0.055586106499231,	0.059285954883598,	-0.040671485554685,	-0.087399911887693,	-0.01842585125741,	-0.005184912793062,	-0.039892037937026,	0.036509229387458,	0.026046414854433,	-0.067133862936029,	0.082780189144943,	-0.049336722577062,	0.018503188080959,	0.051610619131255,	0.018613117768432,	0.093448598181657,	-0.071208840780873,	-0.036535677894572,	-0.03126128526933,	0.099243805247963,	0.053872445945574 ]
+    #print(o)
+    for j in range(nx):
+        e.append(x[j] - o[j])
+    # objective function
+    #print(e)
+    f1 = 0.
+    f2 = 1.
+    f3 = 0.
+    g1 = 1.
+    g2 = 0.
+    #print("UAAAAI")
+    #print("f1, exemplo: {}".format(f1))
+    for j in range(nx):
+        f1 = f1 + np.power(np.cos(e[j]),4)
+        f2 = f2 * np.cos(e[j]) * np.cos(e[j])
+        f3 = f3 + (j + 1.) * e[j] * e[j]
+        g1 = g1 * e[j]
+        g2 = g2 + e[j]
+    f[0] = np.abs(((f1 - 2 * f2 )/ np.sqrt(f3)))
+    f[0] = -f[0]
+    g[0] = 0.75 - g1
+    g[1] = g2 -7.5 * nx
+    print("Vetor x: {} Vetor f: {}  Vetor g: {} Vetor h: {} FINAL".format(x,f,g,h))
+
+
 def initializeConstraints(function):
     if(function == 1):
         g = 2
@@ -687,9 +744,23 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
     gSize,hSize,numConstraints = initializeConstraints(function) # Initialize constraints
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
+
+    print(parents.individuals)
+    print("\n\n")
+    print(offsprings.individuals)
+    print("ahahaa")
+    if(parents != offsprings):
+        print("diferentes")
+        print(parentsSize)
+    
+    #TODO: Esse evaluate está mudando o valor dos 'offsprings' também, corrigir isso
+
     functionEvaluations = parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
-    print(parents.individuals[0])
-    sys.exit("debugando")
+    print(parents.individuals)
+    print("\n\n")
+    print(offsprings.individuals)
+    print("ahahaaAAA")
+    sys.exit("debugando na criacao")
     if(penaltyMethod == 1): # Padrao?  (not apm)
         parents.sumViolations(parentsSize,gSize,hSize)
     elif(penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
@@ -821,7 +892,7 @@ if __name__ == '__main__':
     filhos.printPopulation(5,2)
     """
     
-    DE(1,1,1,50,10,1,20000,0,0,0)
+    DE(1,1,1,5,2,1,20000,0,0,0)
     
     
     
