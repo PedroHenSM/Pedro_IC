@@ -42,9 +42,7 @@ fitness = Fitness of each individual (for APM)
 
 
 
-class Individual(object):
-    #population = []
-    
+class Individual(object):    
     
     def __init__(self,n = [],objectiveFunction = [-1], g = [-1,-1,-1,-1], h = [-1,-1,-1,-1],violations = [-1,-1,-1,-1,-1,-1],sigma = [], violationSum = 0,fitness = 0):
         self.n = n
@@ -74,6 +72,7 @@ separadamente a populacao
 class Population(object):
     def __init__(self,popSize,nSize,function): 
         self.individuals = []
+        
         for i in range (popSize): #
             values = []
             for j in range (nSize): # Dimension
@@ -110,7 +109,6 @@ class Population(object):
                 
             #print("Values")
             #print(values)
-            
             self.individuals.append(Individual(values)) # Funcionando
             #print("Individuo 1: {}".format(self.individuals))
             #sys.exit("debugando na criacao")
@@ -128,6 +126,46 @@ class Population(object):
                 print("N: {}".format(self.individuals[i].n[j]))
                 
     
+    
+    
+    
+    
+    def avalia(self,popSize,nSize,gSize):
+        """
+        for i in range (popSize-4):
+            for j in range (gSize):
+                print("ANTES DO AVALIA")
+                print(self.individuals[i])
+                self.individuals[i].g[j] = j+1
+                print("DEPOISDO AVALIA")
+                print(self.individuals[i])
+            self.individuals[i].objectiveFunction[0] = (i+1)*5
+        """
+        
+
+        i = 0 
+        for individual in (self.individuals):
+            for j in range(gSize):
+                print("ANTES DO AVALIA")
+                print(individual)
+                individual.g[j] = j+1
+                print("DEPOISDO AVALIA")
+                print(individual)
+            individual.objectiveFunction[0] = (i+1)*5
+            i = i + 1
+            
+            
+        """  
+        print("IMPRIMINDO O FOR MALUCO AQUI")
+        for individual in (self.individuals):
+            for j in (individual.g):
+                print(j)
+            #individual.objectiveFunction[0] = (i+1)*5
+            #i = i + 1
+            print(individual)
+        """
+            
+            
     def evaluate(self,popSize,function,nSize,gSize,hSize,fe): # verificar parametro fe 
         print("Individuals dentro da funcao evaluate:")
         print(self.individuals)
@@ -575,6 +613,18 @@ def imprimeTeste():
 
 
 
+def avaliaPopulacao(pop,popSize,nSize,gSize): # também não funciona
+    for i in range(popSize-4):
+        for j in range (gSize):
+            print("ANTES DO AVALIA")
+            print(pop.individuals[i])
+            pop.individuals[i].g[j] = j+1
+            print("DEPOISDO AVALIA")
+            print(pop.individuals[i])
+        pop.individuals[i].objectiveFunction[0] = (i+1)*5
+        print(pop.individuals[1])
+
+
 def C001(x,f,g,h,nx,nf,ng,nh):
     #f1,f2,f3,g1,g2
     print("NA FUNCAO C01 == nx: {} nf: {} ng: {} nh: {}".format(nx,nf,ng,nh))
@@ -744,7 +794,9 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
     gSize,hSize,numConstraints = initializeConstraints(function) # Initialize constraints
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
+    
 
+    print(type(parents))
     print(parents.individuals)
     print("\n\n")
     print(offsprings.individuals)
@@ -754,8 +806,9 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
         print(parentsSize)
     
     #TODO: Esse evaluate está mudando o valor dos 'offsprings' também, corrigir isso
-
-    functionEvaluations = parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
+    #parents.avalia(parentsSize,nSize,gSize)
+    avaliaPopulacao(parents,parentsSize,nSize,gSize)
+    #functionEvaluations = parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
     print(parents.individuals)
     print("\n\n")
     print(offsprings.individuals)
