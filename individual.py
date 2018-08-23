@@ -118,17 +118,6 @@ class Population(object):
     """
     
     
-    def printPopulation(self,popSize,n):
-        for i in range(popSize):
-            print("Individual: {}".format(i))
-            for j in range(n):
-                print("N: {}".format(self.individuals[i].n[j]))
-                
-    
-    
-    
-    
-    
     def avalia(self,popSize,nSize,gSize):
         """
         for i in range (popSize-4):
@@ -571,6 +560,10 @@ class Population(object):
         lista.append(99)
         for i in range(len(lista)):
             lista[i] = i + 1
+            
+    def printPopulation(self,popSize):
+        for i in range(popSize):
+            print(self.individuals[i])
 
 
 
@@ -775,7 +768,21 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
             sys.exit(1)
         """
         #print(offsprings.individuals)
+        """
+        if (functionEvaluations == 300):
+            print("No comeco do DE")
+            print(parents.individuals)
+            parents.printBest(parentsSize,penaltyMethod)
+        """
         offsprings.selection(parents,parentsSize,offspringsSize,penaltyMethod) # Selection
+        """
+        #if (functionEvaluations == 300):
+        print("No comeco do DE")
+        #print(parents.individuals)
+        parents.printPopulation(parentsSize);
+        parents.printBest(parentsSize,penaltyMethod)
+        """
+        
         #print("Apos selection")
         #print(offsprings.individuals)
         #sys.exit("debugando")
@@ -794,9 +801,23 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
         
         offsprings.bounding(nSize,function,offspringsSize)
         functionEvaluations = offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)
-        
+        """
+        print("Após avaliar offsprings do DE. FE = {}".format(functionEvaluations))
+        #print(parents.individuals)
+        parents.printPopulation(parentsSize);
+        parents.printBest(parentsSize,penaltyMethod)
+        """
         if (penaltyMethod == 1): # Not apm
+            print("Antes do sumViolation do offsprings do DE. FE = {}".format(functionEvaluations))
+            parents.printPopulation(parentsSize);
+            parents.printBest(parentsSize,penaltyMethod)
+            
             offsprings.sumViolations(offspringsSize,gSize,hSize)
+      
+            print("Antes do DESelection (depois do sumViolation). FE = {}".format(functionEvaluations))
+            parents.printPopulation(parentsSize);
+            parents.printBest(parentsSize,penaltyMethod)
+
             parents.DESelection(offsprings,parentsSize)
         elif (penaltyMethod == 2):
             penaltyCoefficients.clear() # clears penaltyCoefficients | penaltyCoefficientsEmpty is cleaned on 'calcualtePenaltyCoefficients' function
@@ -804,11 +825,15 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
             penaltyCoefficients,avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,numConstraints,penaltyCoefficientsEmpty,avgObjFuncEmpty)
             offsprings.calculateAllFitness(offspringsSize,numConstraints,penaltyCoefficients,avgObjFunc)
         #parents.elitism(offsprings,parentsSize,penaltyMethod)
-        parents.printBest(parentsSize,penaltyMethod)
         print("FE: {}".format(functionEvaluations))
-        if (functionEvaluations == 150):
-            print(parents.individuals)
-    print(parents.individuals)
+        #if (functionEvaluations == 300):
+        #print("Ao fim do DE")
+        print(parents.individuals)
+        parents.printPopulation(parentsSize)
+        parents.printBest(parentsSize,penaltyMethod)
+
+    #print(parents.individuals)
+    #parents.printPopulation(parentsSize)
             
 def ES(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,crossoverProb,esType,globalSigma): # Evolution Strategy    
     np.random.seed(seed)
@@ -854,45 +879,6 @@ def ES(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
         
 
 if __name__ == '__main__':
-    """
-    np.random.seed(1)
-    pSize = 5
-    nSize = 10
-    l = []
-    l.append(11)
-    l.append(22)
-    l.append(33)
-    population = Population(pSize,nSize,1)
-    #populations = Population(10,10,1)
-    population.printPopulation(pSize,nSize)
-    #populations.printPopulation(10,10)
-    fes = 0
-    population.lol()
-    #population.evaluate(popSize,function,nSize,gSize,hSize,functionEvaluations)
-    fes = population.evaluate(pSize,99,nSize,1,1,fes)
-    fes = population.testeFor(pSize,fes)
-    print(fes)
-    print(l)
-    population.listaMuda(l)
-    print(l)
-    print(np.sum(l))
-    print("randons")
-    for j in range(50):
-        print(np.random.rand())
-    """
-    """
-    np.random.seed(1)
-    pais = Population(5,2,1)
-    pais.printPopulation(5,2)
-    filhos = Population(5,2,1)
-    filhos.printPopulation(5,2)
-    #print(pais.individuals[0].n[1])
-    #print(filhos.individuals[0].n[0])
-    #filhos.individuals[0] = pais.individuals[0]
-    #filhos.printPopulation(5,2)
-    filhos.individuals = pais.individuals
-    filhos.printPopulation(5,2)
-    """
     #function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,crossoverProb,esType,globalSigma
     function = 1
     seed = 1
@@ -900,7 +886,7 @@ if __name__ == '__main__':
     parentsSize = 50
     nSize = 10
     generatedOffspring = 10
-    maxFE = 20000
+    maxFE = 400
     crossoverProb = 0
     esType = 0
     globalSigma = 0
