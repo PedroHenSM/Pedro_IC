@@ -45,13 +45,12 @@ fitness = Fitness of each individual (for APM)
 class Individual(object):    
     
     def __init__(self,n = None, objectiveFunction = None, g = None, h =None,violations = None ,sigma = None, violationSum = None, fitness = None):
-        self.n = [-1 for i in range (30)] if n is None else n
+        self.n = [-1 for i in range (10)] if n is None else n # 30
         self.objectiveFunction = [-1 for i in range(1)] if objectiveFunction is None else objectiveFunction
-        self.g = [-1 for i in range (5)] if g is None else g
-        self.h = [-1 for i in range (5)] if h is None else h
-        #sigma = [-1 for i in range(50)]
-        self.sigma = [-1 for i in range (30)] if sigma is None else sigma
-        self.violations = [-1 for i in range (10) ] if violations is None else violations
+        self.g = [-1 for i in range (2)] if g is None else g # 5
+        self.h = [-1 for i in range (1)] if h is None else h # 5
+        self.sigma = [-1 for i in range (1)] if sigma is None else sigma # 30
+        self.violations = [-1 for i in range (2) ] if violations is None else violations # 10
         self.violationSum = -1 if violationSum is None else violationSum
         self.fitness = -1 if fitness is None else fitness
 
@@ -758,7 +757,6 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
     else:
         print("Penalthy method not encountered")
         sys.exit("Penalty method not encountered")
-    
     while (functionEvaluations < maxFE):
         """
         if (penaltyMethod == 1):
@@ -767,21 +765,25 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
             print("Adaptar codigo heder deopis")
             sys.exit(1)
         """
-        #print(offsprings.individuals)
+
         """
-        if (functionEvaluations == 300):
-            print("No comeco do DE")
-            print(parents.individuals)
-            parents.printBest(parentsSize,penaltyMethod)
-        """
-        offsprings.selection(parents,parentsSize,offspringsSize,penaltyMethod) # Selection
-        """
-        #if (functionEvaluations == 300):
-        print("No comeco do DE")
-        #print(parents.individuals)
+        print("PARENTS Antes do selection do offsprings do DE. FE = {}".format(functionEvaluations))
         parents.printPopulation(parentsSize);
         parents.printBest(parentsSize,penaltyMethod)
+        print("OFFSPRINGS Antes do selection do offsprings do DE. FE = {}".format(functionEvaluations))
+        offsprings.printPopulation(offspringsSize);
+        offsprings.printBest(offspringsSize,penaltyMethod)
         """
+        
+        offsprings.selection(parents,parentsSize,offspringsSize,penaltyMethod) # Selection
+        
+         # Aparentemente o selection nao muda os parents,como deveria ser
+        print("PARENTS Depois do selection  do offsprings. FE = {}".format(functionEvaluations))
+        parents.printPopulation(parentsSize);
+        parents.printBest(parentsSize,penaltyMethod)      
+        print("OFFSPRINGS Depois do selection  do offsprings. FE = {}".format(functionEvaluations))
+        offsprings.printPopulation(offspringsSize);
+        offsprings.printBest(offspringsSize,penaltyMethod)
         
         #print("Apos selection")
         #print(offsprings.individuals)
@@ -799,6 +801,16 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
                 else:
                     offsprings.individuals[i].n[j] = parents.individuals[i].n[j]
         
+        print("PARENTS Depois do calculo do DE offsprings do DE. FE = {}".format(functionEvaluations))
+        parents.printPopulation(parentsSize);
+        parents.printBest(parentsSize,penaltyMethod)
+        print("OFFSPRINGS Depois do calculo do DE offsprings do DE. FE = {}".format(functionEvaluations))
+        offsprings.printPopulation(offspringsSize);
+        offsprings.printBest(offspringsSize,penaltyMethod)
+        
+        
+        
+        
         offsprings.bounding(nSize,function,offspringsSize)
         functionEvaluations = offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)
         """
@@ -808,15 +820,24 @@ def DE(function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,cr
         parents.printBest(parentsSize,penaltyMethod)
         """
         if (penaltyMethod == 1): # Not apm
-            print("Antes do sumViolation do offsprings do DE. FE = {}".format(functionEvaluations))
+            """
+            print("PARENTS Antes do sumViolation do offsprings do DE. FE = {}".format(functionEvaluations))
             parents.printPopulation(parentsSize);
             parents.printBest(parentsSize,penaltyMethod)
+            print("OFFSPRINGS Antes do sumViolation do offsprings do DE. FE = {}".format(functionEvaluations))
+            offsprings.printPopulation(parentsSize);
+            offsprings.printBest(parentsSize,penaltyMethod)
+            """
             
             offsprings.sumViolations(offspringsSize,gSize,hSize)
-      
-            print("Antes do DESelection (depois do sumViolation). FE = {}".format(functionEvaluations))
+            """
+            print("PARENTS Antes do DESelection  do offsprings (depois do sumViolation). FE = {}".format(functionEvaluations))
             parents.printPopulation(parentsSize);
-            parents.printBest(parentsSize,penaltyMethod)
+            parents.printBest(parentsSize,penaltyMethod)      
+            print("OFFSPRINGS Antes do DESelection  do offsprings (depois do sumViolation). FE = {}".format(functionEvaluations))
+            offsprings.printPopulation(parentsSize);
+            offsprings.printBest(parentsSize,penaltyMethod)
+            """
 
             parents.DESelection(offsprings,parentsSize)
         elif (penaltyMethod == 2):
