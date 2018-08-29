@@ -48,12 +48,31 @@ class Individual(object):
         self.objectiveFunction = [-1 for i in range(1)] if objectiveFunction is None else objectiveFunction
         self.g = [-1 for i in range (5)] if g is None else g
         self.h = [-1 for i in range (5)] if h is None else h
-        #sigma = [-1 for i in range(50)]
         self.sigma = [-1 for i in range (30)] if sigma is None else sigma
         self.violations = [-1 for i in range (10) ] if violations is None else violations
         self.violationSum = -1 if violationSum is None else violationSum
         self.fitness = -1 if fitness is None else fitness
 
+    def copyIndividual(self, individual, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
+        for j in range(nSize):  # Copies n
+            self.n[j] = individual.n[j]
+        for j in range(objectiveFunctionSize):
+            self.objectiveFunction[j] = individual.objectiveFunction[j]
+        for j in range(gSize):
+            self.g[j] = individual.g[j]
+        for j in range(hSize):
+            self.h[j] = individual.h[j]
+        if penaltyMethod == 1:  # Standard
+            if globalSigma == 1:  # 1 sigma for each individual, utilizes only the first position of sigma array
+                self.sigma[0] = individual.sigma[0]
+            elif globalSigma == 2:  # 1 sigma for each n of each individual
+                for j in range(nSize):
+                    self.sigma[j] = individual.sigma[j]
+            for j in range(constraintsSize): # gSize + hSize (violations)
+                self.violations[j] = individual.violations[j]
+            self.violationSum = individual.violationSum
+        elif penaltyMethod == 2:  # APM
+            self.fitness = individual.fitness
 
     def __repr__(self):
         return str(self.__dict__)
@@ -319,12 +338,12 @@ class Population(object):
             self.individuals.sort(key = op.attrgetter ("violationSum",
                                                        "objectiveFunction"))
             offsprings.individuals.sort( key = op.attrgetter (
-                "violationSum", "objectiveFunction"))
+                "violationSum",  "objectiveFunction"))
         elif (penaltyMethod == 2): # Sort based on fitness and then objective function
             self.individuals.sort(key = op.attrgetter ("fitness",
                                                        'objectiveFunction'))
-            offsprings.individuals.sort(key = op.attrgetter ("fitness",
-                                                             "objectiveFunction"))
+            offsprings.individuals.sort(key = op.attrgetter("fitness",
+                                                            "objectiveFunction"))
 
     def elitism(self,offsprings,parentsSize, nSize, gSize, hSize,
                 constraintsSize, globalSigma, penaltyMethod):
@@ -392,33 +411,40 @@ class Population(object):
     def sigmaSelfAdaptation(self,offsprings,nSize,parentsSize,generatedOffspring,globalSigma):
         MEAN = 0
         STD = 1
-        l = 0
+        l = 0  # iterates over offsprings
         for i in range(parentsSize):
             for j in range(generatedOffspring): # Each parents generate X offsprings
                 tau = 1 / np.sqrt(nSize)
                 epsilon = tau * np.random.normal(MEAN,STD) # Normal distribution
                 if (globalSigma == 1): # 1 sigma for each individual, utilizes only the first position of sigma array
                     offsprings.individuals[l].sigma[0] = self.individuals[i].sigma[0] * np.exp(epsilon) # TODO: Verificates if this works(guess it does) (use append?!)
-
                 for k in range(nSize):
                     if (globalSigma == 1): # 1 sigma for each individual, utilizes only the first position of sigma array
                         offsprings.individuals[l].n[k] = self.individuals[i].n[k] + offsprings.individuals[l].sigma[0] * np.random.normal(MEAN,STD)
                     else:
-                        offsprings.individuals[l].sigma[k] = self.individuals[i].sigma[k] * np.exp(epsilon) * np.exp(epsilon) # NOTE: Is the double produtct necessary?
+                        offsprings.individuals[l].sigma[k] = self.individuals[i].sigma[k] * np.exp(epsilon) * np.exp(epsilon) # NOTE: Is the double produ   ct necessary?
                         offsprings.individuals[l].n[k] = self.individuals[i].n[k] + offsprings.individuals[l].sigma[k] * np.random.normal(MEAN,STD)
                 l = l + 1
 
-    def elitismES(self,offsprings,parentsSize,offspringsSize,nSize,esType,generatedOffspring,penaltyMethod):
+    def elitismES(self,offsprings,parentsSize,offspringsSize,nSize,
+                  gSize, hSize, constraintsSize, globalSigma, esType,
+                  generatedOffspring, penaltyMethod):
         if (esType == 0): # Es + | Pick bests individuals among parents and offsprings
             # parents = Population(parentsSize,nSize,function) # Initialize
             # parents population
-            aux = Population(parentsSize + offspringsSize, nSize, 99)
+            aux = Population(parentsSize + offspringsSize, nSize, 1)
             k = 0
             for i in range(parentsSize + offspringsSize):
                 if (i < parentsSize):
-                    aux.individuals.append(self.individuals[i])
+                    aux.copyIndividual(i, i, self, nSize, 1, gSize, hSize,
+                                       constraintsSize, globalSigma,
+                                       penaltyMethod)
+                    # aux.individuals.append(self.individuals[i])
                 else:
-                    aux.individuals.append(offsprings.individuals[k])
+                    aux.copyIndividual(i, k, offsprings, nSize, 1, gSize,
+                                       hSize, constraintsSize, globalSigma,
+                                       penaltyMethod)
+                    # aux.individuals.append(offsprings.individuals[k])
                     k = k + 1
             if (penaltyMethod == 1):
                 aux.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
@@ -426,27 +452,52 @@ class Population(object):
                 aux.individuals.sort(key = op.attrgetter ("fitness","objectiveFunction"))
 
             for i in range(parentsSize):
-                self.individuals[i] = aux.individuals[i]
+                self.copyIndividual(i, i, aux, nSize, 1, gSize, hSize,
+                                    constraintsSize, globalSigma,
+                                    penaltyMethod)
+                # self.individuals[i] = aux.individuals[i]
         elif (esType == 1): # Es , | Each offspring only "exists" for 1 generation. Pick best offsprings of each parent
             j = 0
             for i in range(parentsSize):
                 best = Individual()
-                best = offsprings.individuals[j]
+                best.copyIndividual(offsprings.individuals[j], nSize, 1,
+                                    gSize, hSize, constraintsSize,
+                                    globalSigma, penaltyMethod)
+                # best = offsprings.individuals[j]
                 while (j < generatedOffspring*(i+1)): # Goes through each offspring of each parent
                     if (penaltyMethod == 1): # Not apm
                         if (offsprings.individuals[j].violationSum < best.violationSum):
-                            best = offsprings.individuals[j]
+                            best.copyIndividual(offsprings.individuals[j],
+                                                nSize, 1, gSize, hSize,
+                                                constraintsSize,
+                                                globalSigma, penaltyMethod)
+                            # best = offsprings.individuals[j]
                         elif (offsprings.individuals[j].violationSum == best.violationSum):
                             if (offsprings.individuals[j].objectiveFunction[0] < best.objectiveFunction[0]):
-                                best = offsprings.individuals[j]
+                                best.copyIndividual(offsprings.individuals[j],
+                                                    nSize, 1, gSize, hSize,
+                                                    constraintsSize,
+                                                    globalSigma, penaltyMethod)
+                                # best = offsprings.individuals[j]
                     elif (penaltyMethod == 2): # APM
                         if (offsprings.individuals[j].fitness < best.fitness):
-                            best = offsprings.individuals[j]
+                            best.copyIndividual(offsprings.individuals[j],
+                                                nSize, 1, gSize, hSize,
+                                                constraintsSize,
+                                                globalSigma, penaltyMethod)
+                            # best = offsprings.individuals[j]
                         elif (offsprings.individuals[j].fitness == best.fitness):
                             if (offsprings.individuals[j].objectiveFunction[0] < best.objectiveFunction[0]):
-                                best = offsprings.individuals[j]
+                                best.copyIndividual(offsprings.individuals[j],
+                                                    nSize, 1, gSize, hSize,
+                                                    constraintsSize,
+                                                    globalSigma, penaltyMethod)
+                                # best = offsprings.individuals[j]
                     j = j + 1
-                self.individuals[i] = best
+                # self.individuals[i] = best
+                self.individuals[i].copyIndividual(best, nSize, 1, gSize,
+                                                   hSize, constraintsSize,
+                                                   globalSigma, penaltyMethod)
             if (penaltyMethod == 1):
                 self.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
             elif (penaltyMethod == 2):
@@ -461,13 +512,15 @@ class Population(object):
             idxH = 0
             for j in range(gSize+hSize):
                 if (j < gSize):
-                    self.individuals[i].violations[j] =  self.individuals[i].g[idxG]
+                    self.individuals[i].violations[j] = self.individuals[i].g[idxG]
                     idxG = idxG + 1
                 else:
-                    self.individuals[i].violations[j] =  np.abs(self.individuals[i].g[idxH]) - 0.0001
+                    self.individuals[i].violations[j] = np.abs(self.individuals[i].g[idxH]) - 0.0001
                     idxH = idxH + 1
 
-    def calculatePenaltyCoefficients(self,popSize,numberOfConstraints,penaltyCoefficients,averageObjectiveFunctionValues):
+    def calculatePenaltyCoefficients(self,popSize,numberOfConstraints,
+                                     penaltyCoefficients,
+                                     averageObjectiveFunctionValues):
         sumObjectiveFunction = 0
 
         #foreach candidate solution
@@ -477,7 +530,7 @@ class Population(object):
         if (sumObjectiveFunction < 0):
             sumObjectiveFunction = sumObjectiveFunction * -1
         # the average of the objective function values
-        averageObjectiveFunctionValues = sumObjectiveFunction / popSize # Value, not an array
+        averageObjectiveFunctionValues = sumObjectiveFunction / popSize
         #the denominator of the equation of the penalty coefficients
         denominator = 0
         #the sum of the constraint violation values
@@ -490,18 +543,22 @@ class Population(object):
                 if (self.individuals[i].violations[l] > 0): # TODO: inser 'fancy' IF here
                     sumViolation[l] = sumViolation[l] + self.individuals[i].violations[l]
                 else:
-                    sumViolation[l] = sumViolation[l] + 0
+                    sumViolation[l] = sumViolation[l] + 0 # TODO pode
+                    # colocar um pass aqui, acho
 
             denominator = denominator + sumViolation[l] * sumViolation[l]
         # the penalty coefficients  are calculated
-        penaltyCoefficients.clear() # clears list
-        for j in range(numberOfConstraints): # TODO: inser 'fancy' IF here
+        for j in range(numberOfConstraints): # TODO: insert 'fancy' IF here
             if (denominator == 0):
-                penaltyCoefficients.append(0)
+                penaltyCoefficients[j] = 0
+                # penaltyCoefficients.append(0)
             else:
-                penaltyCoefficients.append((sumObjectiveFunction / denominator) * sumViolation[j])
+                penaltyCoefficients[j] = (sumObjectiveFunction /
+                                          denominator) * sumViolation[j]
+                # penaltyCoefficients.append((sumObjectiveFunction /
+                # denominator) * sumViolation[j])
 
-        return (penaltyCoefficients,averageObjectiveFunctionValues) # returns list and value
+        return averageObjectiveFunctionValues  # returns list and value
 
 
     def calculateAllFitness(self,popSize,numberOfConstraints,penaltyCoefficients,averageObjectiveFunctionValues):
@@ -636,8 +693,8 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
     functionEvaluations = 0
     offspringsSize = parentsSize * generatedOffspring
     gSize,hSize,constraintsSize = initializeConstraints(function) # constraintsSize is the sum of gSize and hSize
-    avgObjFuncEmpty = 0 # will be subscripted on 'calculatePenaltyCoefficients'
-    penaltyCoefficientsEmpty = []
+    penaltyCoefficients = [-1 for i in range(constraintsSize)]
+    avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function)
     functionEvaluations = parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations)
@@ -645,7 +702,7 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
         parents.sumViolations(parentsSize,gSize,hSize)
     elif (penaltyMethod == 2):
         parents.uniteConstraints(parentsSize,gSize,hSize) # TODO: Verificar se isso é necessário
-        penaltyCoefficients,avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize,constraintsSize,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
         parents.calculateAllFitness(parentsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
     else:
         print("Penalthy method not encountered")
@@ -668,9 +725,8 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
         if (penaltyMethod == 1):
             offsprings.sumViolations(offspringsSize,gSize,hSize)
         elif (penaltyMethod == 2):
-            penaltyCoefficients.clear() # clears penaltyCoefficients | penaltyCoefficientsEmpty is cleaned on 'calcualtePenaltyCoefficients' function
             offsprings.uniteConstraints(offspringsSize,gSize,hSize) # TODO: Verificar se isso é necessário
-            penaltyCoefficients,avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,constraintsSize,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
         parents.sort(offsprings, penaltyMethod)
         parents.elitism(offsprings, parentsSize, nSize, gSize, hSize,
@@ -690,11 +746,11 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
     CR = 0.9
     F = 0.5
     functionEvaluations = 0
-    avgObjFuncEmpty = 0 # will be subscribed on 'calculatePenaltyCoefficients'
     generatedOffspring = 1 # One parents only generates one offsprings
-    penaltyCoefficientsEmpty = []
     offspringsSize = parentsSize * generatedOffspring
     gSize,hSize,constraintsSize = initializeConstraints(function) # Initialize constraints
+    penaltyCoefficients = [-1 for i in range(constraintsSize)]
+    avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
     functionEvaluations = parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
@@ -702,7 +758,7 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
         parents.sumViolations(parentsSize,gSize,hSize)
     elif(penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
         parents.uniteConstraints(parentsSize,gSize,hSize) # TODO: Verificar se isso é necessário
-        penaltyCoefficients,avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize,constraintsSize,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
         parents.calculateAllFitness(parentsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
     else:
         print("Penalthy method not encountered")
@@ -730,9 +786,8 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
             parents.DESelection(offsprings, parentsSize, nSize, gSize,
                                 hSize, constraintsSize, penaltyMethod)
         elif (penaltyMethod == 2):
-            penaltyCoefficients.clear() # clears penaltyCoefficients | penaltyCoefficientsEmpty is cleaned on 'calcualtePenaltyCoefficients' function
             offsprings.uniteConstraints(offspringsSize,gSize,hSize) # TODO: Verificar se isso é necessário
-            penaltyCoefficients,avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,constraintsSize,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
         parents.printBest(parentsSize,penaltyMethod)
 
@@ -741,10 +796,10 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
     crossoverProb = -1
     np.random.seed(seed)
     functionEvaluations = 0
-    avgObjFuncEmpty = 0 # will be subscripted on 'calculatePenaltyCoefficients'
-    penaltyCoefficientsEmpty = []
     offspringsSize = parentsSize * generatedOffspring
     gSize,hSize,constraintsSize = initializeConstraints(function) # Initialize constraints
+    penaltyCoefficients = [-1 for i in range(constraintsSize)]
+    avgObjFunc = 0  # will be subscribed on 'calculatePenaltyCoefficients'
     parents = Population(parentsSize,nSize,function) # Initialize parents population
     offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
     functionEvaluations = parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
@@ -752,23 +807,12 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
         parents.sumViolations(parentsSize,gSize,hSize)
     elif (penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
         parents.uniteConstraints(parentsSize,gSize,hSize) # TODO: Verificar se isso é necessário
-        penaltyCoefficients,avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize,constraintsSize,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
         parents.calculateAllFitness(parentsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
     else:
         print("Penalthy method not encountered")
         sys.exit("Penalty method not encountered")
     parents.initializeEvolutionStrategy(offsprings,nSize,parentsSize,offspringsSize,globalSigma)
-    """
-    j = 0
-    for i in range(offspringsSize):
-        offsprings.copyIndividual(i, j, parents, nSize, 1, gSize, hSize,
-                                  constraintsSize, globalSigma, penaltyMethod)
-        # offsprings.individuals[i] = parents.individuals[j]
-        j = j + 1
-        if (j > parentsSize):
-            j = 0
-    """
-
     while (functionEvaluations < maxFE):
         parents.sigmaSelfAdaptation(offsprings,nSize,parentsSize,generatedOffspring,globalSigma)
         offsprings.bounding(nSize,function,offspringsSize)
@@ -776,17 +820,19 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
         if (penaltyMethod == 1):
             offsprings.sumViolations(offspringsSize,gSize,hSize)
         else:
-            penaltyCoefficients.clear() # clears penaltyCoefficients | penaltyCoefficientsEmpty is cleaned on 'calcualtePenaltyCoefficients' function
             offsprings.uniteConstraints(offspringsSize,gSize,hSize) # TODO: Verificar se isso é necessário
-            penaltyCoefficients,avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,constraintsSize,penaltyCoefficientsEmpty,avgObjFuncEmpty)
+            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
         parents.sort(offsprings,penaltyMethod)
-        parents.elitismES(offsprings,parentsSize,offspringsSize,nSize,esType,generatedOffspring,penaltyMethod)
+        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize,
+                          gSize, hSize, constraintsSize, globalSigma,
+                          esType, generatedOffspring, penaltyMethod)
         parents.printBest(parentsSize,penaltyMethod)
 
 
 if __name__ == '__main__':
-    #function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,crossoverProb,esType,globalSigma
+    # function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,
+    # maxFE,crossoverProb,esType,globalSigma
     function = 1
     seed = 1
     penaltyMethod = 1
@@ -795,12 +841,11 @@ if __name__ == '__main__':
     generatedOffspring = 10
     maxFE = 20000
     crossoverProb = 60
-    esType = 0
+    esType = 1
     globalSigma = 1
-    # """
+
     DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
        maxFE, crossoverProb, esType, globalSigma)
-
     """
     GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, 
     maxFE, crossoverProb, esType, globalSigma)
