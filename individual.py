@@ -808,7 +808,3 @@ if __name__ == '__main__':
     ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
        maxFE, crossoverProb, esType, globalSigma)
     """
-
-
-
-
