@@ -797,17 +797,17 @@ if __name__ == '__main__':
     crossoverProb = 60
     esType = 0
     globalSigma = 1
-    """
+    # """
     DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
        maxFE, crossoverProb, esType, globalSigma)
 
-
+    """
     GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, 
     maxFE, crossoverProb, esType, globalSigma)
-    """
+    
     ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
        maxFE, crossoverProb, esType, globalSigma)
-
+    """
 
 
 
