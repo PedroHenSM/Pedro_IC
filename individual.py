@@ -861,6 +861,7 @@ if __name__ == '__main__':
     globalSigma = 1
 
     """
+    
     DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
        maxFE, crossoverProb, esType, globalSigma)
 
@@ -869,6 +870,7 @@ if __name__ == '__main__':
     
     ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
        maxFE, crossoverProb, esType, globalSigma)
+
     """
 
     # gcc -shared -o libCFunctions.so -fPIC -Wall -g cFunctions.c  # gerar .so
@@ -892,3 +894,4 @@ if __name__ == '__main__':
 
 
     # print(res)
+
