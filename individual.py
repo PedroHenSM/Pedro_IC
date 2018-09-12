@@ -154,7 +154,20 @@ class Population(object):
         for i in range(popSize):
             fe = fe + 1
             if (function == 1):
-                Functions.C01(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
+                # Functions.C01(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
+                cLib.C01.restype = None  # void
+                # Seta 4 param( ponteiros para float) e 4 ultimos param (inteiros)
+                cLib.C01.argtypes = (ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_float),ctypes.POINTER( ctypes.c_float),ctypes.POINTER(ctypes.c_float),  ctypes.c_int,ctypes.c_int, ctypes.c_int,ctypes.c_int)
+                nParam = (ctypes.c_float * nSize) (*(self.individuals[i].n))
+                objFuncParam = (ctypes.c_float * nSize)(*(self.individuals[i].objectiveFunction))
+                gParam = (ctypes.c_float * nSize)(*(self.individuals[i].g))
+                hParam = (ctypes.c_float * nSize)(*(self.individuals[i].h))
+                cLib.C01(nParam, objFuncParam, gParam, hParam, nSize, 1, gSize, hSize)
+                self.individuals[i].n = [x for x in nParam]  # copia array
+                self.individuals[i].objectiveFunction = [x for x in objFuncParam]
+                self.individuals[i].g = [x for x in gParam]  # copia array
+                self.individuals[i].h = [x for x in hParam]  # copia array
+
             elif (function == 2):
                 Functions.C02(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
             elif (function == 3):
@@ -860,11 +873,14 @@ if __name__ == '__main__':
     esType = 1
     globalSigma = 1
 
-    """
+    # gcc -shared -o libCFunctions.so -fPIC -Wall -g cFunctions.c  # gerar .so
+    cLib = ctypes.cdll.LoadLibrary("./libCFunctions.so")
+
+
     
     DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
        maxFE, crossoverProb, esType, globalSigma)
-
+    """
     GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, 
     maxFE, crossoverProb, esType, globalSigma)
     
@@ -873,25 +889,17 @@ if __name__ == '__main__':
 
     """
 
-    # gcc -shared -o libCFunctions.so -fPIC -Wall -g cFunctions.c  # gerar .so
-    cLib = ctypes.cdll.LoadLibrary("./libCFunctions.so")
-    cLib.helloWorld()
-    print(cLib.soma(5,2))
-
+    """
     # arrays
     cLib.change_array.restype = None # void
     # Seta 1 param( ponteiro para inteiro) e segundo param (inteiro)
     cLib.change_array.argtypes = (ctypes.POINTER(ctypes.c_int), ctypes.c_int)
     x = [2,3,4]
-    y = []
     param = (ctypes.c_int * len(x))(*x)
     cLib.change_array(param, len(x))
-    print(list(param))
+    x = [x for x in param] # copia array em c para pythonlist
     print(x)
-    for i in range (len(param)):
-        x[i] = param[i]
-    print(x)
-
+    """
 
     # print(res)
 
