@@ -9,7 +9,10 @@ Created on Sun May 20 17:53:50 2018
 import numpy as np
 import sys
 import operator as op
-import ctypes
+# import ctypes
+import sys
+sys.path.insert(0,"eureka")
+import eureka
 from functions import Functions
 
 
@@ -45,12 +48,12 @@ fitness = Fitness of each individual (for APM)
 
 class Individual(object):
     def __init__(self,n = None, objectiveFunction = None, g = None, h =None,violations = None ,sigma = None, violationSum = None, fitness = None):
-        self.n = [-1 for i in range (30)] if n is None else n
+        self.n = [-1 for i in range (100)] if n is None else n
         self.objectiveFunction = [-1 for i in range(1)] if objectiveFunction is None else objectiveFunction
-        self.g = [-1 for i in range (5)] if g is None else g
-        self.h = [-1 for i in range (5)] if h is None else h
-        self.sigma = [-1 for i in range (30)] if sigma is None else sigma
-        self.violations = [-1 for i in range (10) ] if violations is None else violations
+        self.g = [-1 for i in range (100)] if g is None else g
+        self.h = [-1 for i in range (100)] if h is None else h
+        self.sigma = [-1 for i in range (100)] if sigma is None else sigma
+        self.violations = [-1 for i in range (100) ] if violations is None else violations
         self.violationSum = -1 if violationSum is None else violationSum
         self.fitness = -1 if fitness is None else fitness
 
@@ -110,6 +113,13 @@ class Population(object):
                     values.append(np.random.uniform(-100,100))
                 elif (function == 16 or function == 17):
                     values.append(np.random.uniform(-10,10))
+                elif (function == 19): # TODO: Aidicionar essa function nos outros lugares necessário(trelica de 10 barras)
+                    values.append(np.random.uniform(0.1,40))
+                    """
+                    dimensionArray = eureka.new_doubleArray(f.getDimension())  # creates an array
+                    eureka.doubleArray_setitem(dimensionArray,j,np.random.uniform(0.1,40))
+                    eureka.delete_doubleArray(dimensionArray)
+                    """
                 else:
                     print("Function not encountered")
                     #sys.exit("Function not encountered")
@@ -154,7 +164,8 @@ class Population(object):
         for i in range(popSize):
             fe = fe + 1
             if (function == 1):
-                # Functions.C01(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
+                Functions.C01(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
+                """
                 cLib.C01.restype = None  # void
                 # Seta 4 param( ponteiros para float) e 4 ultimos param (inteiros)
                 cLib.C01.argtypes = (ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_float),ctypes.POINTER( ctypes.c_float),ctypes.POINTER(ctypes.c_float),  ctypes.c_int,ctypes.c_int, ctypes.c_int,ctypes.c_int)
@@ -167,7 +178,7 @@ class Population(object):
                 self.individuals[i].objectiveFunction = [x for x in objFuncParam]
                 self.individuals[i].g = [x for x in gParam]  # copia array
                 self.individuals[i].h = [x for x in hParam]  # copia array
-
+                """
             elif (function == 2):
                 Functions.C02(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
             elif (function == 3):
@@ -306,7 +317,7 @@ class Population(object):
                 self.individuals[i].n[j] = self.individuals[i].n[j] + np.random.normal(MEAN,STD)
 
     def bounding(self,nSize,function,popSize):
-        nMin = 0
+        nMin = 0  # TODO ISSO AQUI PODE TIRAR UAI
         nMax = 0
         if (function == 1):
             nMin = 0
@@ -335,6 +346,9 @@ class Population(object):
         elif (function == 16 or function == 17):
             nMin = -10
             nMax = 10
+        elif (function == 19):
+            nMin = 0.1
+            nMax = 40
         else:
             print("Function not encountered")
             sys.exit("Function not encountered")
@@ -685,6 +699,7 @@ def initializeConstraints(function):
         print("Function not encountered")
         sys.exit("Function not encountered")
 
+
 def populationPick(solution, flags, parentsSize):
     while (1):
         contains = 0
@@ -697,6 +712,40 @@ def populationPick(solution, flags, parentsSize):
             if (contains == 0):
                 break
     return idx
+
+
+# Python function to pass values of a list to a C++ array
+def build_array(a,l,size):
+    for i in range(size):
+        eureka.doubleArray_setitem(a,i,l[i]) # sets on array "a" at idx "i" the value of "l[i]"
+
+
+# Python function to pass values of a C++ array to a list
+# startIdx is from where (on array) the values will be copied
+def build_list(l,a,startIdx,size):
+    for i in range(size):
+        l[i] = eureka.doubleArray_getitem(a,startIdx) # Gets item of array "a" at idx "idxStart"
+        startIdx = startIdx + 1
+
+
+def evaluateTruss(truss, pop, popSize, function, fe):
+    for i in range(popSize):
+        fe = fe + 1
+        if  (function == 18): # 10 bar truss
+            valuesArraySize = truss.getNumberObjectives() + truss.getNumberConstraints() # the length will be objFunct(1) + gSize
+            dimensionArray = eureka.new_doubleArray(truss.getDimension())  # creates an array
+            valuesArray = eureka.new_doubleArray(valuesArraySize)  # the length will be objFunct(1) + gSize
+            build_array(dimensionArray, pop.individuals[i].n, truss.getDimension()) # transfers values to C++ array
+            valuesList = pop.individuals[i].objectiveFunction + pop.individuals[i].g  # concatenates the two lists
+            build_array(valuesArray, valuesList, valuesArraySize)
+            truss.evaluation(dimensionArray, valuesArray)
+            build_list(pop.individuals[i].n, dimensionArray, 0, truss.getDimension()) # transfers values to python list
+            pop.individuals[i].objectiveFunction[0] = eureka.doubleArray_getitem(valuesArray,0)
+            build_list(pop.individuals[i].g, valuesArray, 1, truss.getNumberConstraints())
+            eureka.delete_doubleArray(dimensionArray)
+            eureka.delete_doubleArray(valuesArray)
+    return fe
+
 
 '''
 function = function to be minimized  --- TIPO FUNCAO
@@ -770,6 +819,7 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
 def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
        maxFE, crossoverProb, esType, globalSigma): # Differential
     # Evolution
+    solvingTrusses = 1 # if solving trusses
     crossoverProb = esType = globalSigma = -1
     np.random.seed(seed)
     CR = 0.9
@@ -777,15 +827,36 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
     functionEvaluations = 0
     generatedOffspring = 1 # One parents only generates one offsprings
     offspringsSize = parentsSize * generatedOffspring
-    gSize,hSize,constraintsSize = initializeConstraints(function) # Initialize constraints
-    penaltyCoefficients = [-1 for i in range(constraintsSize)]
-    avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
-    parents = Population(parentsSize,nSize,function) # Initialize parents population
-    offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
-    functionEvaluations = parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
-    if(penaltyMethod == 1): # Padrao?  (not apm)
+    print("Chegou aqui OK")
+    truss = eureka.F101Truss10Bar()
+    f = eureka.F101Truss10Bar()
+    f.getDimension()
+    print("Chegou aqui")
+    #  sys.exit("interrompido")
+    if (solvingTrusses):
+        print("Chegou aqui")
+        function = 19
+        nSize = truss.getDimension()
+        print("uai")
+        gSize = truss.getNumberConstraints()
+        hSize = 0
+        constraintsSize = gSize + hSize
+        penaltyCoefficients = [-1 for i in range(constraintsSize)]
+        avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
+        parents = Population(parentsSize, nSize, function)
+        offsprings = Population(offspringsSize, nSize, function)
+        functionEvaluations = evaluateTruss(truss, parents, parentsSize, function, functionEvaluations)
+    else:  # Solving 'normal' functions
+        gSize,hSize,constraintsSize = initializeConstraints(function) # Initialize constraints
+        penaltyCoefficients = [-1 for i in range(constraintsSize)]
+        avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
+        parents = Population(parentsSize,nSize,function) # Initialize parents population
+        offsprings = Population(offspringsSize,nSize,function) # Initialize offsprings population
+        functionEvaluations = parents.evaluate(parentsSize,function,nSize,gSize,hSize,functionEvaluations) # Evaluate parents
+
+    if(penaltyMethod == 1):  # Padrao?  (not apm)
         parents.sumViolations(parentsSize,gSize,hSize)
-    elif(penaltyMethod == 2): # // Adaptive Penalty Method ( APM )
+    elif(penaltyMethod == 2):  # // Adaptive Penalty Method ( APM )
         parents.uniteConstraints(parentsSize,gSize,hSize)
         avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
         parents.calculateAllFitness(parentsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
@@ -809,7 +880,11 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
                 else:
                     offsprings.individuals[i].n[j] = parents.individuals[i].n[j]
         offsprings.bounding(nSize,function,offspringsSize)
-        functionEvaluations = offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)
+        if (solvingTrusses):
+            functionEvaluations = evaluateTruss(truss,offsprings,offspringsSize,function,functionEvaluations)
+        else:
+            functionEvaluations = offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)  # TODO Juntar todos os evaluates em 1 só
+
         if (penaltyMethod == 1): # Not apm
             offsprings.sumViolations(offspringsSize,gSize,hSize)
         elif (penaltyMethod == 2):
@@ -874,7 +949,7 @@ if __name__ == '__main__':
     globalSigma = 1
 
     # gcc -shared -o libCFunctions.so -fPIC -Wall -g cFunctions.c  # gerar .so
-    cLib = ctypes.cdll.LoadLibrary("./libCFunctions.so")
+    # cLib = ctypes.cdll.LoadLibrary("./libCFunctions.so")
 
 
     
