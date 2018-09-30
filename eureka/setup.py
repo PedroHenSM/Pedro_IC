@@ -15,6 +15,7 @@ setup(name=name,
       version=version, 
       ext_modules=[ext_modules]) 
 
+
 """
 ***COMPILING***
 swig -python -c++ -o _eureka_module.cc eureka.i
