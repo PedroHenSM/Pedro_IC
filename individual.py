@@ -89,7 +89,7 @@ separadamente a populacao
 '''
 
 class Population(object):
-    def __init__(self,popSize,nSize,function):
+    def __init__(self,popSize,nSize,function, truss = None):
         self.individuals = []
         for i in range (popSize): #
             values = []
@@ -113,8 +113,8 @@ class Population(object):
                     values.append(np.random.uniform(-100,100))
                 elif (function == 16 or function == 17):
                     values.append(np.random.uniform(-10,10))
-                elif (function == 19): # TODO: Aidicionar essa function nos outros lugares necessário(trelica de 10 barras)
-                    values.append(np.random.uniform(0.1,40))
+                elif (function == 19): # 10 bar truss
+                    values.append(np.random.uniform(0.1,40)) # TODO: Arrumar a matriz no swig, para fazer bounds 'automaticos'(com getBounds)
                     """
                     dimensionArray = eureka.new_doubleArray(f.getDimension())  # creates an array
                     eureka.doubleArray_setitem(dimensionArray,j,np.random.uniform(0.1,40))
@@ -160,7 +160,7 @@ class Population(object):
         elif penaltyMethod == 2:  # APM
             self.individuals[idxDest].fitness = population.individuals[idxToBeCopy].fitness
 
-    def evaluate(self,popSize,function,nSize,gSize,hSize,fe):
+    def evaluate(self,popSize,function,nSize,gSize,hSize,fe, truss = None):
         for i in range(popSize):
             fe = fe + 1
             if (function == 1):
@@ -213,6 +213,19 @@ class Population(object):
                 Functions.C17(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
             elif (function == 18):
                 Functions.C18(self.individuals[i].n,self.individuals[i].objectiveFunction,self.individuals[i].g,self.individuals[i].h,nSize,1,gSize,hSize)
+            elif (function == 19): # 10 bar truss
+                valuesArraySize = truss.getNumberObjectives() + truss.getNumberConstraints()  # the length will be objFunct(1) + gSize
+                dimensionArray = eureka.new_doubleArray(truss.getDimension())  # creates an array
+                valuesArray = eureka.new_doubleArray(valuesArraySize)  # the length will be objFunct(1) + gSize
+                build_array(dimensionArray, self.individuals[i].n, truss.getDimension())  # transfers values to C++ array
+                valuesList = self.individuals[i].objectiveFunction + self.individuals[i].g  # concatenates the two lists
+                build_array(valuesArray, valuesList,valuesArraySize)
+                truss.evaluation(dimensionArray, valuesArray)
+                build_list(self.individuals[i].n, dimensionArray, 0, truss.getDimension())  # transfers values to python list
+                self.individuals[i].objectiveFunction[0] = eureka.doubleArray_getitem(valuesArray, 0)
+                build_list(self.individuals[i].g, valuesArray, 1, truss.getNumberConstraints())
+                eureka.delete_doubleArray(dimensionArray)
+                eureka.delete_doubleArray(valuesArray)
             elif (function == 99):
                 print("AvaliouFuncaoTeste")
             else:
@@ -317,8 +330,6 @@ class Population(object):
                 self.individuals[i].n[j] = self.individuals[i].n[j] + np.random.normal(MEAN,STD)
 
     def bounding(self,nSize,function,popSize):
-        nMin = 0  # TODO ISSO AQUI PODE TIRAR UAI
-        nMax = 0
         if (function == 1):
             nMin = 0
             nMax = 10
@@ -346,7 +357,7 @@ class Population(object):
         elif (function == 16 or function == 17):
             nMin = -10
             nMax = 10
-        elif (function == 19):
+        elif (function == 19): # TODO: Arrumar a matriz no swig, para fazer bounds 'automaticos'(com getBounds)
             nMin = 0.1
             nMax = 40
         else:
@@ -363,25 +374,18 @@ class Population(object):
 
     def sort(self,offsprings,penaltyMethod):
         if (penaltyMethod == 1): # Sort based on violatiom and then objective function
-            self.individuals.sort(key = op.attrgetter ("violationSum",
-                                                       "objectiveFunction"))
-            offsprings.individuals.sort( key = op.attrgetter (
-                "violationSum",  "objectiveFunction"))
+            self.individuals.sort(key = op.attrgetter ("violationSum", "objectiveFunction"))
+            offsprings.individuals.sort( key = op.attrgetter ("violationSum", "objectiveFunction"))
         elif (penaltyMethod == 2): # Sort based on fitness and then objective function
-            self.individuals.sort(key = op.attrgetter ("fitness",
-                                                       'objectiveFunction'))
-            offsprings.individuals.sort(key = op.attrgetter("fitness",
-                                                            "objectiveFunction"))
+            self.individuals.sort(key = op.attrgetter ("fitness", 'objectiveFunction'))
+            offsprings.individuals.sort(key = op.attrgetter("fitness", "objectiveFunction"))
 
-    def elitism(self,offsprings,parentsSize, nSize, gSize, hSize,
-                constraintsSize, globalSigma, penaltyMethod):
+    def elitism(self,offsprings,parentsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
         if (penaltyMethod == 1): # Not apm
             copyStart = 5
             i = 0
             for j in range(copyStart,parentsSize): # J iterates on parents
-                self.copyIndividual(j, i, offsprings, nSize, 1, gSize, hSize,
-                                    constraintsSize, globalSigma,
-                                    penaltyMethod)
+                self.copyIndividual(j, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                 # self.individuals[j] = offsprings.individuals[i]
                 i = i + 1
         elif (penaltyMethod == 2): # APM | Chooses the best individual beetwen parent-offspring
@@ -406,36 +410,26 @@ class Population(object):
 
 
 
-    def DESelection(self,offsprings,parentsSize, nSize, gSize, hSize,
-                    constraintsSize, penaltyMethod):
+    def DESelection(self,offsprings,parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod):
         if penaltyMethod == 1:
             for i in range(parentsSize):
                 if (offsprings.individuals[i].violationSum < self.individuals[i].violationSum): # If offspring is better than parent
-                    self.copyIndividual(i, i, offsprings, nSize, 1, gSize,
-                                        hSize, constraintsSize, -1, penaltyMethod)
+                    self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
                     #self.individuals[i] = offsprings.individuals[i] # Offspring
                     #  "becomes" parent
                 elif (offsprings.individuals[i].violationSum == self.individuals[i].violationSum): # Compares if violatiomSun is equal for offspring and parents
                     if (offsprings.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]): # Offspring better than parent
-                        self.copyIndividual(i, i, offsprings, nSize, 1, gSize,
-                                            hSize, constraintsSize, -1,
-                                            penaltyMethod)
+                        self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
                         # self.individuals[i] = offsprings.individuals[i]
         elif penaltyMethod == 2:
-            print("Au")
             for i in range(parentsSize):
                 if offsprings.individuals[i].fitness < self.individuals[i].fitness:
-                    self.copyIndividual(i, i, offsprings, nSize, 1, gSize,
-                                        hSize, constraintsSize, -1,
-                                        penaltyMethod)
+                    self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
                 elif offsprings.individuals[i].fitness == self.individuals[i].fitness:
                     if (offsprings.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]): # Offspring better than parent
-                        self.copyIndividual(i, i, offsprings, nSize, 1, gSize,
-                                            hSize, constraintsSize, -1,
-                                            penaltyMethod)
+                        self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
 
-    def initializeEvolutionStrategy(self,offsprings,nSize,parentsSize,
-                                    offspringsSize,globalSigma):
+    def initializeEvolutionStrategy(self,offsprings,nSize,parentsSize, offspringsSize,globalSigma):
         STD = 1
         for i in range(parentsSize): # Initialize sigma parameter for parents
             if (globalSigma == 1):
@@ -469,9 +463,7 @@ class Population(object):
                         offsprings.individuals[l].n[k] = self.individuals[i].n[k] + offsprings.individuals[l].sigma[k] * np.random.normal(MEAN,STD)
                 l = l + 1
 
-    def elitismES(self,offsprings,parentsSize,offspringsSize,nSize,
-                  gSize, hSize, constraintsSize, globalSigma, esType,
-                  generatedOffspring, penaltyMethod):
+    def elitismES(self,offsprings,parentsSize,offspringsSize,nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod):
         if (esType == 0): # Es + | Pick bests individuals among parents and offsprings
             # parents = Population(parentsSize,nSize,function) # Initialize
             # parents population
@@ -479,14 +471,10 @@ class Population(object):
             k = 0
             for i in range(parentsSize + offspringsSize):
                 if (i < parentsSize):
-                    aux.copyIndividual(i, i, self, nSize, 1, gSize, hSize,
-                                       constraintsSize, globalSigma,
-                                       penaltyMethod)
+                    aux.copyIndividual(i, i, self, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                     # aux.individuals.append(self.individuals[i])
                 else:
-                    aux.copyIndividual(i, k, offsprings, nSize, 1, gSize,
-                                       hSize, constraintsSize, globalSigma,
-                                       penaltyMethod)
+                    aux.copyIndividual(i, k, offsprings, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                     # aux.individuals.append(offsprings.individuals[k])
                     k = k + 1
             if (penaltyMethod == 1):
@@ -495,52 +483,34 @@ class Population(object):
                 aux.individuals.sort(key = op.attrgetter ("fitness","objectiveFunction"))
 
             for i in range(parentsSize):
-                self.copyIndividual(i, i, aux, nSize, 1, gSize, hSize,
-                                    constraintsSize, globalSigma,
-                                    penaltyMethod)
+                self.copyIndividual(i, i, aux, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                 # self.individuals[i] = aux.individuals[i]
         elif (esType == 1): # Es , | Each offspring only "exists" for 1 generation. Pick best offsprings of each parent
             j = 0
             for i in range(parentsSize):
                 best = Individual()
-                best.copyIndividual(offsprings.individuals[j], nSize, 1,
-                                    gSize, hSize, constraintsSize,
-                                    globalSigma, penaltyMethod)
+                best.copyIndividual(offsprings.individuals[j], nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                 # best = offsprings.individuals[j]
                 while (j < generatedOffspring*(i+1)): # Goes through each offspring of each parent
                     if (penaltyMethod == 1): # Not apm
                         if (offsprings.individuals[j].violationSum < best.violationSum):
-                            best.copyIndividual(offsprings.individuals[j],
-                                                nSize, 1, gSize, hSize,
-                                                constraintsSize,
-                                                globalSigma, penaltyMethod)
+                            best.copyIndividual(offsprings.individuals[j], nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                             # best = offsprings.individuals[j]
                         elif (offsprings.individuals[j].violationSum == best.violationSum):
                             if (offsprings.individuals[j].objectiveFunction[0] < best.objectiveFunction[0]):
-                                best.copyIndividual(offsprings.individuals[j],
-                                                    nSize, 1, gSize, hSize,
-                                                    constraintsSize,
-                                                    globalSigma, penaltyMethod)
+                                best.copyIndividual(offsprings.individuals[j], nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                                 # best = offsprings.individuals[j]
                     elif (penaltyMethod == 2): # APM
                         if (offsprings.individuals[j].fitness < best.fitness):
-                            best.copyIndividual(offsprings.individuals[j],
-                                                nSize, 1, gSize, hSize,
-                                                constraintsSize,
-                                                globalSigma, penaltyMethod)
+                            best.copyIndividual(offsprings.individuals[j], nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                             # best = offsprings.individuals[j]
                         elif (offsprings.individuals[j].fitness == best.fitness):
                             if (offsprings.individuals[j].objectiveFunction[0] < best.objectiveFunction[0]):
-                                best.copyIndividual(offsprings.individuals[j],
-                                                    nSize, 1, gSize, hSize,
-                                                    constraintsSize,
-                                                    globalSigma, penaltyMethod)
+                                best.copyIndividual(offsprings.individuals[j], nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                                 # best = offsprings.individuals[j]
                     j = j + 1
                 # self.individuals[i] = best
-                self.individuals[i].copyIndividual(best, nSize, 1, gSize,
-                                                   hSize, constraintsSize,
-                                                   globalSigma, penaltyMethod)
+                self.individuals[i].copyIndividual(best, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
             if (penaltyMethod == 1):
                 self.individuals.sort(key = op.attrgetter ("violationSum","objectiveFunction"))
             elif (penaltyMethod == 2):
@@ -699,6 +669,8 @@ def initializeConstraints(function):
         print("Function not encountered")
         sys.exit("Function not encountered")
 
+def initializeConstraintsTrusses(truss):
+    return truss.getNumberConstraints(), 0, truss.getNumberConstraints() + 0
 
 def populationPick(solution, flags, parentsSize):
     while (1):
@@ -726,26 +698,6 @@ def build_list(l,a,startIdx,size):
     for i in range(size):
         l[i] = eureka.doubleArray_getitem(a,startIdx) # Gets item of array "a" at idx "idxStart"
         startIdx = startIdx + 1
-
-
-def evaluateTruss(truss, pop, popSize, function, fe):
-    for i in range(popSize):
-        fe = fe + 1
-        if  (function == 19): # 10 bar truss
-            valuesArraySize = truss.getNumberObjectives() + truss.getNumberConstraints() # the length will be objFunct(1) + gSize
-            dimensionArray = eureka.new_doubleArray(truss.getDimension())  # creates an array
-            valuesArray = eureka.new_doubleArray(valuesArraySize)  # the length will be objFunct(1) + gSize
-            build_array(dimensionArray, pop.individuals[i].n, truss.getDimension()) # transfers values to C++ array
-            valuesList = pop.individuals[i].objectiveFunction + pop.individuals[i].g  # concatenates the two lists
-            build_array(valuesArray, valuesList, valuesArraySize)
-            truss.evaluation(dimensionArray, valuesArray)
-            build_list(pop.individuals[i].n, dimensionArray, 0, truss.getDimension()) # transfers values to python list
-            pop.individuals[i].objectiveFunction[0] = eureka.doubleArray_getitem(valuesArray,0)
-            build_list(pop.individuals[i].g, valuesArray, 1, truss.getNumberConstraints())
-            eureka.delete_doubleArray(dimensionArray)
-            eureka.delete_doubleArray(valuesArray)
-    return fe
-
 
 '''
 function = function to be minimized  --- TIPO FUNCAO
@@ -786,9 +738,7 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
         print("Penalthy method not encountered")
         sys.exit("Penalty method not encountered")
     while (functionEvaluations < maxFE):
-        offsprings.selection(parents, parentsSize, offspringsSize, nSize,
-                             gSize, hSize, constraintsSize, globalSigma,
-                             penaltyMethod) # Selection
+        offsprings.selection(parents, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod) # Selection
         if(crossoverProbability(crossoverProb)):
             if(crossoverType == 0):
                 offsprings.standardCrossover(nSize,offspringsSize) # Standard crossover
@@ -807,8 +757,7 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
             avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
         parents.sort(offsprings, penaltyMethod)
-        parents.elitism(offsprings, parentsSize, nSize, gSize, hSize,
-                        constraintsSize, globalSigma, penaltyMethod)
+        parents.elitism(offsprings, parentsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
         parents.sort(offsprings, penaltyMethod)
         print("FE: {}".format(functionEvaluations))
         if (penaltyMethod == 1):
@@ -827,19 +776,16 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
     functionEvaluations = 0
     generatedOffspring = 1 # One parents only generates one offsprings
     offspringsSize = parentsSize * generatedOffspring
-    truss = eureka.F101Truss10Bar()
     #  sys.exit("interrompido")
-    if (solvingTrusses):
-        function = 19
+    if (function > 18): #  solving trusses
+        truss = eureka.F101Truss10Bar()
         nSize = truss.getDimension()
-        gSize = truss.getNumberConstraints()
-        hSize = 0
-        constraintsSize = gSize + hSize
+        gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function)
-        offsprings = Population(offspringsSize, nSize, function)
-        functionEvaluations = evaluateTruss(truss, parents, parentsSize, function, functionEvaluations)
+        parents = Population(parentsSize, nSize, function, truss)
+        offsprings = Population(offspringsSize, nSize, function, truss)
+        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
     else:  # Solving 'normal' functions
         gSize,hSize,constraintsSize = initializeConstraints(function) # Initialize constraints
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
@@ -859,9 +805,7 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
         sys.exit("Penalty method not encountered")
 
     while (functionEvaluations < maxFE):
-        offsprings.selection(parents, parentsSize, offspringsSize, nSize,
-                             gSize, hSize, constraintsSize, globalSigma,
-                             penaltyMethod)
+        offsprings.selection(parents, parentsSize, offspringsSize, nSize,   gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
         flags = [-1,-1,-1]
         for i in range(parentsSize):
             for l in range(len(flags)):
@@ -874,8 +818,8 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
                 else:
                     offsprings.individuals[i].n[j] = parents.individuals[i].n[j]
         offsprings.bounding(nSize,function,offspringsSize)
-        if (solvingTrusses):
-            functionEvaluations = evaluateTruss(truss,offsprings,offspringsSize,function,functionEvaluations)
+        if (function > 18):
+            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # Evaluate parents
         else:
             functionEvaluations = offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)  # TODO Juntar todos os evaluates em 1 só
 
@@ -885,8 +829,7 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
             offsprings.uniteConstraints(offspringsSize,gSize,hSize)
             avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
-        parents.DESelection(offsprings, parentsSize, nSize, gSize, hSize,
-                            constraintsSize, penaltyMethod)
+        parents.DESelection(offsprings, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
         parents.printBest(parentsSize,penaltyMethod)
 
 def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
@@ -895,7 +838,7 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
     np.random.seed(seed)
     functionEvaluations = 0
     offspringsSize = parentsSize * generatedOffspring
-    gSize,hSize,constraintsSize = initializeConstraints(function) # Initialize constraints
+    gSize,hSize,constraintsSize = initializeConstraints(function)  # Initialize constraints
     penaltyCoefficients = [-1 for i in range(constraintsSize)]
     avgObjFunc = 0  # will be subscribed on 'calculatePenaltyCoefficients'
     parents = Population(parentsSize,nSize,function) # Initialize parents population
@@ -922,9 +865,7 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
             avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
         parents.sort(offsprings,penaltyMethod)
-        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize,
-                          gSize, hSize, constraintsSize, globalSigma,
-                          esType, generatedOffspring, penaltyMethod)
+        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod)
         parents.printBest(parentsSize,penaltyMethod)
 
 
@@ -944,12 +885,9 @@ if __name__ == '__main__':
 
     # gcc -shared -o libCFunctions.so -fPIC -Wall -g cFunctions.c  # gerar .so
     # cLib = ctypes.cdll.LoadLibrary("./libCFunctions.so")
-
-
     
-    DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
-     maxFE, crossoverProb, esType, globalSigma)
-    eureka.new_doubleArray
+    DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
+
     """
     GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, 
     maxFE, crossoverProb, esType, globalSigma)
