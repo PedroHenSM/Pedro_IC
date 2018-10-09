@@ -731,7 +731,7 @@ def build_list(l,a,startIdx,size):
 def evaluateTruss(truss, pop, popSize, function, fe):
     for i in range(popSize):
         fe = fe + 1
-        if  (function == 18): # 10 bar truss
+        if  (function == 19): # 10 bar truss
             valuesArraySize = truss.getNumberObjectives() + truss.getNumberConstraints() # the length will be objFunct(1) + gSize
             dimensionArray = eureka.new_doubleArray(truss.getDimension())  # creates an array
             valuesArray = eureka.new_doubleArray(valuesArraySize)  # the length will be objFunct(1) + gSize
@@ -827,17 +827,11 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
     functionEvaluations = 0
     generatedOffspring = 1 # One parents only generates one offsprings
     offspringsSize = parentsSize * generatedOffspring
-    print("Chegou aqui OK")
     truss = eureka.F101Truss10Bar()
-    f = eureka.F101Truss10Bar()
-    f.getDimension()
-    print("Chegou aqui")
     #  sys.exit("interrompido")
     if (solvingTrusses):
-        print("Chegou aqui")
         function = 19
         nSize = truss.getDimension()
-        print("uai")
         gSize = truss.getNumberConstraints()
         hSize = 0
         constraintsSize = gSize + hSize
@@ -954,7 +948,8 @@ if __name__ == '__main__':
 
     
     DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
-       maxFE, crossoverProb, esType, globalSigma)
+     maxFE, crossoverProb, esType, globalSigma)
+    eureka.new_doubleArray
     """
     GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, 
     maxFE, crossoverProb, esType, globalSigma)
