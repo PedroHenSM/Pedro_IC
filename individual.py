@@ -7,7 +7,6 @@ Created on Sun May 20 17:53:50 2018
 """
 
 import numpy as np
-import sys
 import operator as op
 # import ctypes
 import sys
@@ -16,22 +15,7 @@ import eureka
 from functions import Functions
 
 
-'''
-typedef struct Individuo {
-    float x[TAM_X_MAXIMO];
-    float sigma[TAM_X_MAXIMO]; // Strategy Parameters ( Parametros de Controle )
-    float funcaoObjetivo[TAM_X_MAXIMO];
-    float g[NUM_RESTRICOES];
-    float h[NUM_RESTRICOES];
-    //float penaltyCoefficients[NUM_RESTRICOES]; // For APM
-    float fitness; // Fitness for APM
-    //float avgObjFunc; // For APM
-    float v[2*NUM_RESTRICOES]; // Vetor de violacoes
-    float violacao; // Soma das violacoes // Soma das violacoes
-}Individuo;
-'''
-
-'''
+"""
 n = search space dimension
 sigma = ES parameter
 objectiveFunction = Objective function to be minimized
@@ -40,20 +24,17 @@ h = Number of equalities constraints
 violations = Array of violations
 violatonSum = Sum of violations
 fitness = Fitness of each individual (for APM)
-
-
-'''
-
+"""
 
 
 class Individual(object):
-    def __init__(self,n = None, objectiveFunction = None, g = None, h =None,violations = None ,sigma = None, violationSum = None, fitness = None):
-        self.n = [-1 for i in range (100)] if n is None else n
+    def __init__(self, n=None, objectiveFunction=None, g=None, h=None, violations=None, sigma=None, violationSum=None, fitness=None):
+        self.n = [-1 for i in range(100)] if n is None else n
         self.objectiveFunction = [-1 for i in range(1)] if objectiveFunction is None else objectiveFunction
-        self.g = [-1 for i in range (100)] if g is None else g
-        self.h = [-1 for i in range (100)] if h is None else h
-        self.sigma = [-1 for i in range (100)] if sigma is None else sigma
-        self.violations = [-1 for i in range (100) ] if violations is None else violations
+        self.g = [-1 for i in range(100)] if g is None else g
+        self.h = [-1 for i in range(100)] if h is None else h
+        self.sigma = [-1 for i in range(100)] if sigma is None else sigma
+        self.violations = [-1 for i in range(100)] if violations is None else violations
         self.violationSum = -1 if violationSum is None else violationSum
         self.fitness = -1 if fitness is None else fitness
 
@@ -408,26 +389,64 @@ class Population(object):
             if best.fitness == best.objectiveFunction[0]:
                 print("Fitness == objectiveFunction")
 
+    def DESelection(self, offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod):
+        if penaltyMethod == 1:
+            j = 0
+            for i in range(parentsSize):
+                bestIdx = j
+                while (j < generatedOffspring * (i+1)): # walks through every n offsprings of each parent
+                    # get the best individual among the offsprings
+                    if (offsprings.individuals[j].violationSum < offsprings.individuals[bestIdx].violationSum):
+                        bestIdx = j
+
+                    elif (offsprings.individuals[j].violationSum == offsprings.individuals[bestIdx].violationSum):
+                        if (offsprings.individuals[j].objectiveFunction[0] < offsprings.individuals[bestIdx].violationSum):
+                            bestIdx = j
+                    j = j + 1
+                # get the best individual among the parent and the best offspring
+                if (offsprings.individuals[bestIdx].violationSum < self.individuals[i].violationSum):
+                    self.copyIndividual(i, bestIdx, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+                elif (offsprings.individuals[bestIdx].violationSum == self.individuals[i].violationSum):
+                    if(offsprings.individuals[bestIdx].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]):
+                        self.copyIndividual(i, bestIdx, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+        elif penaltyMethod == 2:
+            j = 0
+            for i in range(parentsSize):
+                bestIdx = j
+                while j < generatedOffspring * (i+1): # walks through every n offspring of each parent
+                    if offsprings.individuals[j].fitness < offsprings.individuals[bestIdx].fitness:
+                        bestIdx = j
+                        # self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+                    elif offsprings.individuals[j].fitness == offsprings.individuals[bestIdx].fitness:
+                        if (offsprings.individuals[j].objectiveFunction[0] < offsprings.individuals[bestIdx].objectiveFunction[0]): # Offspring better than parent
+                            bestIdx = j
+                            # self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+                    j = j +1
+                if (offsprings.individuals[bestIdx].fitness < self.individuals[i].fitness):
+                    self.copyIndividual(i, bestIdx, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+                elif (offsprings.individuals[bestIdx].fitness == self.individuals[i].fitness):
+                    if(offsprings.individuals[bestIdx].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]):
+                        self.copyIndividual(i, bestIdx, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
 
 
-    def DESelection(self,offsprings,parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod):
+
+
+    def DESelectionWorking(self, offsprings, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod):
         if penaltyMethod == 1:
             for i in range(parentsSize):
-                if (offsprings.individuals[i].violationSum < self.individuals[i].violationSum): # If offspring is better than parent
-                    self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
-                    #self.individuals[i] = offsprings.individuals[i] # Offspring
-                    #  "becomes" parent
-                elif (offsprings.individuals[i].violationSum == self.individuals[i].violationSum): # Compares if violatiomSun is equal for offspring and parents
-                    if (offsprings.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]): # Offspring better than parent
-                        self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
-                        # self.individuals[i] = offsprings.individuals[i]
+                if (offsprings.individuals[i].violationSum < self.individuals[i].violationSum):  # If offspring is better than parent
+                    self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)  # self.individuals[i] = offsprings.individuals[i] # Offspring  #  "becomes" parent
+                elif (offsprings.individuals[i].violationSum == self.individuals[i].violationSum):  # Compares if violationSun is equal for offspring and parents
+                    if (offsprings.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]):  # Offspring better than parent
+                        self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)  # self.individuals[i] = offsprings.individuals[i]
         elif penaltyMethod == 2:
             for i in range(parentsSize):
                 if offsprings.individuals[i].fitness < self.individuals[i].fitness:
                     self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
                 elif offsprings.individuals[i].fitness == self.individuals[i].fitness:
-                    if (offsprings.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]): # Offspring better than parent
+                    if (offsprings.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]):  # Offspring better than parent
                         self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+
 
     def initializeEvolutionStrategy(self,offsprings,nSize,parentsSize, offspringsSize,globalSigma):
         STD = 1
@@ -604,6 +623,72 @@ class Population(object):
         for i in range(popSize):
             print(self.individuals[i])
 
+# self, idxDest, idxToBeCopy, population, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod
+def copyOneIndividual(individual,idxToBeCopy, population, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
+    #  print("UAAAIA")
+    for j in range(nSize):  # Copies n
+        #  print("nSize: {}  j: {} idxCopy: {}".format(nSize, j, idxToBeCopy))
+        individual.n[j] = population.individuals[idxToBeCopy].n[j]
+        #  self.individuals[idxDest].n[j] = population.individuals[idxToBeCopy].n[j]
+    for j in range(objectiveFunctionSize):
+        individual.objectiveFunction[j] = population.individuals[idxToBeCopy].objectiveFunction[j]
+        #  self.individuals[idxDest].objectiveFunction[j] = population.individuals[idxToBeCopy].objectiveFunction[j]
+    for j in range(gSize):
+        individual.g[j] = population.individuals[idxToBeCopy].g[j]
+        #  self.individuals[idxDest].g[j] = population.individuals[idxToBeCopy].g[j]
+    for j in range(hSize):
+        individual.h[j] = population.individuals[idxToBeCopy].h[j]
+        #  self.individuals[idxDest].h[j] = population.individuals[idxToBeCopy].h[j]
+    if penaltyMethod == 1:  # Standard
+        if globalSigma == 1:  # 1 sigma for each individual, utilizes only the first position of sigma array
+            individual.sigma[0] = population.individuals[idxToBeCopy].sigma[0]
+            #  self.individuals[idxDest].sigma[0] = population.individuals[idxToBeCopy].sigma[0]
+        elif globalSigma == 2:  # 1 sigma for each n of each individual
+            for j in range(nSize):
+                individual.sigma[j] = population.individuals[idxToBeCopy].sigma[j]
+                #  self.individuals[idxDest].sigma[j] = population.individuals[idxToBeCopy].sigma[j]
+        for j in range(constraintsSize): # gSize + hSize (violations)
+            individual.violations[j] = population.individuals[idxToBeCopy].violations[j]
+            #  self.individuals[idxDest].violations[j] = population.individuals[idxToBeCopy].violations[j]
+        individual.violationSum = population.individuals[idxToBeCopy].violationSum
+        #  self.individuals[idxDest].violationSum = population.individuals[idxToBeCopy].violationSum
+    elif penaltyMethod == 2:  # APM
+        individual.fitness = population.individuals[idxToBeCopy].fitness
+        #  self.individuals[idxDest].fitness = population.individuals[idxToBeCopy].fitness
+
+
+def copiaIndividuo(individual, individual2, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
+    # print("UAAAIA")
+    for j in range(nSize):  # Copies n
+        #  print("nSize: {}  j: {} idxCopy: {}".format(nSize, j, idxToBeCopy))
+        individual.n[j] = individual2.n[j]
+        #  self.individuals[idxDest].n[j] = population.individuals[idxToBeCopy].n[j]
+    for j in range(objectiveFunctionSize):
+        individual.objectiveFunction[j] = individual2.objectiveFunction[j]
+        #  self.individuals[idxDest].objectiveFunction[j] = population.individuals[idxToBeCopy].objectiveFunction[j]
+    for j in range(gSize):
+        individual.g[j] = individual2.g[j]
+        #  self.individuals[idxDest].g[j] = population.individuals[idxToBeCopy].g[j]
+    for j in range(hSize):
+        individual.h[j] = individual2.h[j]
+        #  self.individuals[idxDest].h[j] = population.individuals[idxToBeCopy].h[j]
+    if penaltyMethod == 1:  # Standard
+        if globalSigma == 1:  # 1 sigma for each individual, utilizes only the first position of sigma array
+            individual.sigma[0] = individual2.sigma[0]
+            #  self.individuals[idxDest].sigma[0] = population.individuals[idxToBeCopy].sigma[0]
+        elif globalSigma == 2:  # 1 sigma for each n of each individual
+            for j in range(nSize):
+                individual.sigma[j] = individual2.sigma[j]
+                #  self.individuals[idxDest].sigma[j] = population.individuals[idxToBeCopy].sigma[j]
+        for j in range(constraintsSize): # gSize + hSize (violations)
+            individual.violations[j] = individual2.violations[j]
+            #  self.individuals[idxDest].violations[j] = population.individuals[idxToBeCopy].violations[j]
+        individual.violationSum = individual2.violationSum
+        #  self.individuals[idxDest].violationSum = population.individuals[idxToBeCopy].violationSum
+    elif penaltyMethod == 2:  # APM
+        individual.fitness = individual2.fitness
+        #  self.individuals[idxDest].fitness = population.individuals[idxToBeCopy].fitness
+
 def bestIndividual(parents,parentsSize,penaltyMethod):
     best = parents.individuals[0]
     if (penaltyMethod == 1): # not apm
@@ -714,9 +799,7 @@ each individual has an array of sigma.
 '''
 
 
-def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
-       maxFE, crossoverProb, esType, globalSigma): # Genetic
-    # Algorithm
+def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma): # Genetic Algorithm
     esType = globalSigma = -1
     np.random.seed(seed)
     crossoverType = 1
@@ -765,16 +848,12 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
         elif (penaltyMethod == 2):
             print("implementar apm depois")
 
-def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
-       maxFE, crossoverProb, esType, globalSigma): # Differential
-    # Evolution
-    solvingTrusses = 1 # if solving trusses
+def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma): # Differential Evolution
     crossoverProb = esType = globalSigma = -1
     np.random.seed(seed)
     CR = 0.9
     F = 0.5
     functionEvaluations = 0
-    generatedOffspring = 1 # One parents only generates one offsprings
     offspringsSize = parentsSize * generatedOffspring
     #  sys.exit("interrompido")
     if (function > 18): #  solving trusses
@@ -807,33 +886,36 @@ def DE(function,seed,penaltyMethod,parentsSize, nSize, generatedOffspring,
     while (functionEvaluations < maxFE):
         offsprings.selection(parents, parentsSize, offspringsSize, nSize,   gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
         flags = [-1,-1,-1]
+        offspringIdx = 0
         for i in range(parentsSize):
-            for l in range(len(flags)):
-                flags[l] = populationPick(i,flags,parentsSize)
-            R = np.random.randint(0,nSize) # Random index
-            for j in range(nSize):
-                Ri = np.random.rand() # Generates random number between (0,1)
-                if (Ri < CR or j == R):
-                    offsprings.individuals[i].n[j] = parents.individuals[flags[0]].n[j] + F * (parents.individuals[flags[1]].n[j] - parents.individuals[flags[2]].n[j])
-                else:
-                    offsprings.individuals[i].n[j] = parents.individuals[i].n[j]
-        offsprings.bounding(nSize,function,offspringsSize)
+            for k in range(generatedOffspring):
+                for l in range(len(flags)):
+                    flags[l] = populationPick(i,flags,parentsSize)
+                R = np.random.randint(0, nSize)  # Random index
+                for j in range(nSize):
+                    Ri = np.random.rand()  # Generates random number between (0,1)
+                    # print("offspringIdx: {}".format(offspringIdx))
+                    if (Ri < CR or j == R):
+                        offsprings.individuals[offspringIdx].n[j] = parents.individuals[flags[0]].n[j] + F * (parents.individuals[flags[1]].n[j] - parents.individuals[flags[2]].n[j])
+                    else:
+                        offsprings.individuals[offspringIdx].n[j] = parents.individuals[i].n[j]
+                offspringIdx = offspringIdx + 1
+        offsprings.bounding(nSize, function, offspringsSize)
         if (function > 18):
             functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # Evaluate parents
         else:
-            functionEvaluations = offsprings.evaluate(offspringsSize,function,nSize,gSize,hSize,functionEvaluations)  # TODO Juntar todos os evaluates em 1 só
+            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations)  # TODO Juntar todos os evaluates em 1 só
 
         if (penaltyMethod == 1): # Not apm
-            offsprings.sumViolations(offspringsSize,gSize,hSize)
+            offsprings.sumViolations(offspringsSize, gSize, hSize)
         elif (penaltyMethod == 2):
-            offsprings.uniteConstraints(offspringsSize,gSize,hSize)
-            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
+            offsprings.uniteConstraints(offspringsSize, gSize, hSize)
+            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize,constraintsSize,penaltyCoefficients,avgObjFunc)
-        parents.DESelection(offsprings, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
-        parents.printBest(parentsSize,penaltyMethod)
+        parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
+        parents.printBest(parentsSize, penaltyMethod)
 
-def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring,
-       maxFE, crossoverProb, esType, globalSigma): # Evolution Strategy
+def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma): # Evolution Strategy
     crossoverProb = -1
     np.random.seed(seed)
     functionEvaluations = 0
@@ -877,7 +959,7 @@ if __name__ == '__main__':
     penaltyMethod = 1
     parentsSize = 50
     nSize = 10
-    generatedOffspring = 10
+    generatedOffspring = 1
     maxFE = 20000
     crossoverProb = 60
     esType = 1
