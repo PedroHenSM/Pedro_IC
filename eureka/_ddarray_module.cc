@@ -3004,16 +3004,9 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 /* -------- TYPES TABLE (BEGIN) -------- */
 
 #define SWIGTYPE_p_char swig_types[0]
-#define SWIGTYPE_p_double swig_types[1]
-#define SWIGTYPE_p_p_double swig_types[2]
-#define SWIGTYPE_p_problem__F101Truss10Bar swig_types[3]
-#define SWIGTYPE_p_problem__Problem swig_types[4]
-#define SWIGTYPE_p_problem__TrussBarStructureStaticProblem swig_types[5]
-#define SWIGTYPE_p_std__shared_ptrT_problem__Problem_t swig_types[6]
-#define SWIGTYPE_p_string swig_types[7]
-#define SWIGTYPE_p_void swig_types[8]
-static swig_type_info *swig_types[10];
-static swig_module_info swig_module = {swig_types, 9, 0, 0, 0, 0};
+#define SWIGTYPE_p_p_double swig_types[1]
+static swig_type_info *swig_types[3];
+static swig_module_info swig_module = {swig_types, 2, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3026,16 +3019,16 @@ static swig_module_info swig_module = {swig_types, 9, 0, 0, 0, 0};
 #endif
 
 /*-----------------------------------------------
-              @(target):= _eureka.so
+              @(target):= _ddarray.so
   ------------------------------------------------*/
 #if PY_VERSION_HEX >= 0x03000000
-#  define SWIG_init    PyInit__eureka
+#  define SWIG_init    PyInit__ddarray
 
 #else
-#  define SWIG_init    init_eureka
+#  define SWIG_init    init_ddarray
 
 #endif
-#define SWIG_name    "_eureka"
+#define SWIG_name    "_ddarray"
 
 #define SWIGVERSION 0x030012 
 #define SWIG_VERSION SWIGVERSION
@@ -3118,20 +3111,43 @@ namespace swig {
 }
 
 
-  static double *new_doubleArray(size_t nelements) { 
-    return (new double[nelements]());
-  }
+// Helper function to create a 2d array
 
-  static void delete_doubleArray(double *ary) {
-    delete[] ary;
-  }
+double **new_doubleddArray(int rows, int cols) {
+    int i;
+    double **arr = new double *[rows];
+    for (i=0; i<rows; i++)
+		arr[i] = new double[cols];
+    return arr;
+}
 
-  static double doubleArray_getitem(double *ary, size_t index) {
-    return ary[index];
-  }
-  static void doubleArray_setitem(double *ary, size_t index, double value) {
-    ary[index] = value;
-  }
+void delete_ddArray (double **arr, int rows, int cols){
+	int i;
+	for (i=0; i<rows; i++)
+		delete[] arr[i];
+	delete[] arr;
+}
+
+void doubleddArray_setitem(double **array, int row, int col, double value) {
+    array[row][col] = value;
+}
+
+double doubleddArray_getitem(double **array, int row, int col) {
+    return array[row][col];
+}
+
+double calculate(double **arr, int rows, int cols);
+
+
+
+#include <limits.h>
+#if !defined(SWIG_NO_LLONG_MAX)
+# if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
+#   define LLONG_MAX __LONG_LONG_MAX__
+#   define LLONG_MIN (-LLONG_MAX - 1LL)
+#   define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
+# endif
+#endif
 
 
 SWIGINTERN int
@@ -3217,167 +3233,6 @@ SWIG_CanCastAsInteger(double *d, double min, double max) {
 
 
 SWIGINTERN int
-SWIG_AsVal_unsigned_SS_long (PyObject *obj, unsigned long *val) 
-{
-#if PY_VERSION_HEX < 0x03000000
-  if (PyInt_Check(obj)) {
-    long v = PyInt_AsLong(obj);
-    if (v >= 0) {
-      if (val) *val = v;
-      return SWIG_OK;
-    } else {
-      return SWIG_OverflowError;
-    }
-  } else
-#endif
-  if (PyLong_Check(obj)) {
-    unsigned long v = PyLong_AsUnsignedLong(obj);
-    if (!PyErr_Occurred()) {
-      if (val) *val = v;
-      return SWIG_OK;
-    } else {
-      PyErr_Clear();
-      return SWIG_OverflowError;
-    }
-  }
-#ifdef SWIG_PYTHON_CAST_MODE
-  {
-    int dispatch = 0;
-    unsigned long v = PyLong_AsUnsignedLong(obj);
-    if (!PyErr_Occurred()) {
-      if (val) *val = v;
-      return SWIG_AddCast(SWIG_OK);
-    } else {
-      PyErr_Clear();
-    }
-    if (!dispatch) {
-      double d;
-      int res = SWIG_AddCast(SWIG_AsVal_double (obj,&d));
-      if (SWIG_IsOK(res) && SWIG_CanCastAsInteger(&d, 0, ULONG_MAX)) {
-	if (val) *val = (unsigned long)(d);
-	return res;
-      }
-    }
-  }
-#endif
-  return SWIG_TypeError;
-}
-
-
-#include <limits.h>
-#if !defined(SWIG_NO_LLONG_MAX)
-# if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
-#   define LLONG_MAX __LONG_LONG_MAX__
-#   define LLONG_MIN (-LLONG_MAX - 1LL)
-#   define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
-# endif
-#endif
-
-
-#if defined(LLONG_MAX) && !defined(SWIG_LONG_LONG_AVAILABLE)
-#  define SWIG_LONG_LONG_AVAILABLE
-#endif
-
-
-#ifdef SWIG_LONG_LONG_AVAILABLE
-SWIGINTERN int
-SWIG_AsVal_unsigned_SS_long_SS_long (PyObject *obj, unsigned long long *val)
-{
-  int res = SWIG_TypeError;
-  if (PyLong_Check(obj)) {
-    unsigned long long v = PyLong_AsUnsignedLongLong(obj);
-    if (!PyErr_Occurred()) {
-      if (val) *val = v;
-      return SWIG_OK;
-    } else {
-      PyErr_Clear();
-      res = SWIG_OverflowError;
-    }
-  } else {
-    unsigned long v;
-    res = SWIG_AsVal_unsigned_SS_long (obj,&v);
-    if (SWIG_IsOK(res)) {
-      if (val) *val = v;
-      return res;
-    }
-  }
-#ifdef SWIG_PYTHON_CAST_MODE
-  {
-    const double mant_max = 1LL << DBL_MANT_DIG;
-    double d;
-    res = SWIG_AsVal_double (obj,&d);
-    if (SWIG_IsOK(res) && !SWIG_CanCastAsInteger(&d, 0, mant_max))
-      return SWIG_OverflowError;
-    if (SWIG_IsOK(res) && SWIG_CanCastAsInteger(&d, 0, mant_max)) {
-      if (val) *val = (unsigned long long)(d);
-      return SWIG_AddCast(res);
-    }
-    res = SWIG_TypeError;
-  }
-#endif
-  return res;
-}
-#endif
-
-
-SWIGINTERNINLINE int
-SWIG_AsVal_size_t (PyObject * obj, size_t *val)
-{
-  int res = SWIG_TypeError;
-#ifdef SWIG_LONG_LONG_AVAILABLE
-  if (sizeof(size_t) <= sizeof(unsigned long)) {
-#endif
-    unsigned long v;
-    res = SWIG_AsVal_unsigned_SS_long (obj, val ? &v : 0);
-    if (SWIG_IsOK(res) && val) *val = static_cast< size_t >(v);
-#ifdef SWIG_LONG_LONG_AVAILABLE
-  } else if (sizeof(size_t) <= sizeof(unsigned long long)) {
-    unsigned long long v;
-    res = SWIG_AsVal_unsigned_SS_long_SS_long (obj, val ? &v : 0);
-    if (SWIG_IsOK(res) && val) *val = static_cast< size_t >(v);
-  }
-#endif
-  return res;
-}
-
-
-  #define SWIG_From_double   PyFloat_FromDouble 
-
-
-/* Inlcude headers files or function declarations */
-#include "EurekaOptimaException.h"
-#include "F101Truss10Bar.h"
-#include "Problem.h"
-#include "TrussBarStructureStaticProblem.h"
-#include "TrussBarStructureStaticSimulator.h"
-
-// Helper function to create a 2d array
-
-double **new_doubleddArray(int rows, int cols) {
-    int i;
-    double **arr = new double *[rows];
-    for (i=0; i<rows; i++)
-		arr[i] = new double[cols];
-    return arr;
-}
-
-void delete_ddArray (double **arr, int rows, int cols){
-	int i;
-	for (i=0; i<rows; i++)
-		delete[] arr[i];
-	delete[] arr;
-}
-
-void doubleddArray_setitem(double **array, int row, int col, double value) {
-    array[row][col] = value;
-}
-
-double doubleddArray_getitem(double **array, int row, int col) {
-    return array[row][col];
-}
-
-
-SWIGINTERN int
 SWIG_AsVal_long (PyObject *obj, long* val)
 {
 #if PY_VERSION_HEX < 0x03000000
@@ -3436,128 +3291,11 @@ SWIG_AsVal_int (PyObject * obj, int *val)
 }
 
 
-SWIGINTERNINLINE PyObject*
-  SWIG_From_int  (int value)
-{
-  return PyInt_FromLong((long) value);
-}
+  #define SWIG_From_double   PyFloat_FromDouble 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-SWIGINTERN PyObject *_wrap_new_doubleArray(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  size_t arg1 ;
-  size_t val1 ;
-  int ecode1 = 0 ;
-  PyObject * obj0 = 0 ;
-  double *result = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:new_doubleArray",&obj0)) SWIG_fail;
-  ecode1 = SWIG_AsVal_size_t(obj0, &val1);
-  if (!SWIG_IsOK(ecode1)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_doubleArray" "', argument " "1"" of type '" "size_t""'");
-  } 
-  arg1 = static_cast< size_t >(val1);
-  result = (double *)new_doubleArray(arg1);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_double, 0 |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_delete_doubleArray(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  double *arg1 = (double *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:delete_doubleArray",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_double, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_doubleArray" "', argument " "1"" of type '" "double *""'"); 
-  }
-  arg1 = reinterpret_cast< double * >(argp1);
-  delete_doubleArray(arg1);
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_doubleArray_getitem(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  double *arg1 = (double *) 0 ;
-  size_t arg2 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  size_t val2 ;
-  int ecode2 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  double result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OO:doubleArray_getitem",&obj0,&obj1)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_double, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "doubleArray_getitem" "', argument " "1"" of type '" "double *""'"); 
-  }
-  arg1 = reinterpret_cast< double * >(argp1);
-  ecode2 = SWIG_AsVal_size_t(obj1, &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "doubleArray_getitem" "', argument " "2"" of type '" "size_t""'");
-  } 
-  arg2 = static_cast< size_t >(val2);
-  result = (double)doubleArray_getitem(arg1,arg2);
-  resultobj = SWIG_From_double(static_cast< double >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_doubleArray_setitem(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  double *arg1 = (double *) 0 ;
-  size_t arg2 ;
-  double arg3 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  size_t val2 ;
-  int ecode2 = 0 ;
-  double val3 ;
-  int ecode3 = 0 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OOO:doubleArray_setitem",&obj0,&obj1,&obj2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_double, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "doubleArray_setitem" "', argument " "1"" of type '" "double *""'"); 
-  }
-  arg1 = reinterpret_cast< double * >(argp1);
-  ecode2 = SWIG_AsVal_size_t(obj1, &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "doubleArray_setitem" "', argument " "2"" of type '" "size_t""'");
-  } 
-  arg2 = static_cast< size_t >(val2);
-  ecode3 = SWIG_AsVal_double(obj2, &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "doubleArray_setitem" "', argument " "3"" of type '" "double""'");
-  } 
-  arg3 = static_cast< double >(val3);
-  doubleArray_setitem(arg1,arg2,arg3);
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
 SWIGINTERN PyObject *_wrap_new_doubleddArray(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   int arg1 ;
@@ -3716,593 +3454,39 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_delete_Problem(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_calculate(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  problem::Problem *arg1 = (problem::Problem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:delete_Problem",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__Problem, SWIG_POINTER_DISOWN |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_Problem" "', argument " "1"" of type '" "problem::Problem *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::Problem * >(argp1);
-  delete arg1;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Problem_evaluate(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::Problem *arg1 = (problem::Problem *) 0 ;
-  void *arg2 = (void *) 0 ;
-  void *arg3 = (void *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int res2 ;
-  int res3 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OOO:Problem_evaluate",&obj0,&obj1,&obj2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__Problem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Problem_evaluate" "', argument " "1"" of type '" "problem::Problem *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::Problem * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1,SWIG_as_voidptrptr(&arg2), 0, 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "Problem_evaluate" "', argument " "2"" of type '" "void *""'"); 
-  }
-  res3 = SWIG_ConvertPtr(obj2,SWIG_as_voidptrptr(&arg3), 0, 0);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "Problem_evaluate" "', argument " "3"" of type '" "void *""'"); 
-  }
-  (arg1)->evaluate(arg2,arg3);
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Problem_getNumberObjectiveFunctionEvaluations(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::Problem *arg1 = (problem::Problem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  int result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:Problem_getNumberObjectiveFunctionEvaluations",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__Problem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Problem_getNumberObjectiveFunctionEvaluations" "', argument " "1"" of type '" "problem::Problem const *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::Problem * >(argp1);
-  result = (int)((problem::Problem const *)arg1)->getNumberObjectiveFunctionEvaluations();
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Problem_getMaxNumberObjectiveFunctionEvaluations(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::Problem *arg1 = (problem::Problem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  int result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:Problem_getMaxNumberObjectiveFunctionEvaluations",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__Problem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Problem_getMaxNumberObjectiveFunctionEvaluations" "', argument " "1"" of type '" "problem::Problem const *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::Problem * >(argp1);
-  result = (int)((problem::Problem const *)arg1)->getMaxNumberObjectiveFunctionEvaluations();
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Problem_getBounds(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::Problem *arg1 = (problem::Problem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  void *result = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:Problem_getBounds",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__Problem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Problem_getBounds" "', argument " "1"" of type '" "problem::Problem const *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::Problem * >(argp1);
-  result = (void *)((problem::Problem const *)arg1)->getBounds();
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_void, 0 |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Problem_getNumberObjectives(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::Problem *arg1 = (problem::Problem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  int result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:Problem_getNumberObjectives",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__Problem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Problem_getNumberObjectives" "', argument " "1"" of type '" "problem::Problem const *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::Problem * >(argp1);
-  result = (int)((problem::Problem const *)arg1)->getNumberObjectives();
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Problem_getNumberConstraints(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::Problem *arg1 = (problem::Problem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  int result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:Problem_getNumberConstraints",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__Problem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Problem_getNumberConstraints" "', argument " "1"" of type '" "problem::Problem const *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::Problem * >(argp1);
-  result = (int)((problem::Problem const *)arg1)->getNumberConstraints();
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Problem_getDimension(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::Problem *arg1 = (problem::Problem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  int result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:Problem_getDimension",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__Problem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Problem_getDimension" "', argument " "1"" of type '" "problem::Problem const *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::Problem * >(argp1);
-  result = (int)((problem::Problem const *)arg1)->getDimension();
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_Problem_toString(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::Problem *arg1 = (problem::Problem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  string result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:Problem_toString",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__Problem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "Problem_toString" "', argument " "1"" of type '" "problem::Problem const *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::Problem * >(argp1);
-  result = ((problem::Problem const *)arg1)->toString();
-  resultobj = SWIG_NewPointerObj((new string(static_cast< const string& >(result))), SWIGTYPE_p_string, SWIG_POINTER_OWN |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *Problem_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *obj;
-  if (!PyArg_ParseTuple(args,(char *)"O:swigregister", &obj)) return NULL;
-  SWIG_TypeNewClientData(SWIGTYPE_p_problem__Problem, SWIG_NewClientData(obj));
-  return SWIG_Py_Void();
-}
-
-SWIGINTERN PyObject *_wrap_new_TrussBarStructureStaticProblem__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  int arg1 ;
-  void *arg2 = (void *) 0 ;
+  double **arg1 = (double **) 0 ;
+  int arg2 ;
   int arg3 ;
-  int arg4 ;
-  int arg5 ;
-  int arg6 ;
-  double arg7 ;
-  double arg8 ;
-  double arg9 ;
-  string arg10 ;
-  double arg11 ;
-  double arg12 ;
-  int val1 ;
-  int ecode1 = 0 ;
-  int res2 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int val2 ;
+  int ecode2 = 0 ;
   int val3 ;
   int ecode3 = 0 ;
-  int val4 ;
-  int ecode4 = 0 ;
-  int val5 ;
-  int ecode5 = 0 ;
-  int val6 ;
-  int ecode6 = 0 ;
-  double val7 ;
-  int ecode7 = 0 ;
-  double val8 ;
-  int ecode8 = 0 ;
-  double val9 ;
-  int ecode9 = 0 ;
-  void *argp10 ;
-  int res10 = 0 ;
-  double val11 ;
-  int ecode11 = 0 ;
-  double val12 ;
-  int ecode12 = 0 ;
   PyObject * obj0 = 0 ;
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
-  PyObject * obj3 = 0 ;
-  PyObject * obj4 = 0 ;
-  PyObject * obj5 = 0 ;
-  PyObject * obj6 = 0 ;
-  PyObject * obj7 = 0 ;
-  PyObject * obj8 = 0 ;
-  PyObject * obj9 = 0 ;
-  PyObject * obj10 = 0 ;
-  PyObject * obj11 = 0 ;
-  problem::TrussBarStructureStaticProblem *result = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OOOOOOOOOOOO:new_TrussBarStructureStaticProblem",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5,&obj6,&obj7,&obj8,&obj9,&obj10,&obj11)) SWIG_fail;
-  ecode1 = SWIG_AsVal_int(obj0, &val1);
-  if (!SWIG_IsOK(ecode1)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "1"" of type '" "int""'");
-  } 
-  arg1 = static_cast< int >(val1);
-  res2 = SWIG_ConvertPtr(obj1,SWIG_as_voidptrptr(&arg2), 0, 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "2"" of type '" "void *""'"); 
-  }
-  ecode3 = SWIG_AsVal_int(obj2, &val3);
-  if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "3"" of type '" "int""'");
-  } 
-  arg3 = static_cast< int >(val3);
-  ecode4 = SWIG_AsVal_int(obj3, &val4);
-  if (!SWIG_IsOK(ecode4)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode4), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "4"" of type '" "int""'");
-  } 
-  arg4 = static_cast< int >(val4);
-  ecode5 = SWIG_AsVal_int(obj4, &val5);
-  if (!SWIG_IsOK(ecode5)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "5"" of type '" "int""'");
-  } 
-  arg5 = static_cast< int >(val5);
-  ecode6 = SWIG_AsVal_int(obj5, &val6);
-  if (!SWIG_IsOK(ecode6)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "6"" of type '" "int""'");
-  } 
-  arg6 = static_cast< int >(val6);
-  ecode7 = SWIG_AsVal_double(obj6, &val7);
-  if (!SWIG_IsOK(ecode7)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode7), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "7"" of type '" "double""'");
-  } 
-  arg7 = static_cast< double >(val7);
-  ecode8 = SWIG_AsVal_double(obj7, &val8);
-  if (!SWIG_IsOK(ecode8)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode8), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "8"" of type '" "double""'");
-  } 
-  arg8 = static_cast< double >(val8);
-  ecode9 = SWIG_AsVal_double(obj8, &val9);
-  if (!SWIG_IsOK(ecode9)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode9), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "9"" of type '" "double""'");
-  } 
-  arg9 = static_cast< double >(val9);
-  {
-    res10 = SWIG_ConvertPtr(obj9, &argp10, SWIGTYPE_p_string,  0  | 0);
-    if (!SWIG_IsOK(res10)) {
-      SWIG_exception_fail(SWIG_ArgError(res10), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "10"" of type '" "string""'"); 
-    }  
-    if (!argp10) {
-      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_TrussBarStructureStaticProblem" "', argument " "10"" of type '" "string""'");
-    } else {
-      string * temp = reinterpret_cast< string * >(argp10);
-      arg10 = *temp;
-      if (SWIG_IsNewObj(res10)) delete temp;
-    }
-  }
-  ecode11 = SWIG_AsVal_double(obj10, &val11);
-  if (!SWIG_IsOK(ecode11)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode11), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "11"" of type '" "double""'");
-  } 
-  arg11 = static_cast< double >(val11);
-  ecode12 = SWIG_AsVal_double(obj11, &val12);
-  if (!SWIG_IsOK(ecode12)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode12), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "12"" of type '" "double""'");
-  } 
-  arg12 = static_cast< double >(val12);
-  result = (problem::TrussBarStructureStaticProblem *)new problem::TrussBarStructureStaticProblem(arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__TrussBarStructureStaticProblem, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_TrussBarStructureStaticProblem__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::TrussBarStructureStaticProblem *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  problem::TrussBarStructureStaticProblem *result = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:new_TrussBarStructureStaticProblem",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_problem__TrussBarStructureStaticProblem,  0  | 0);
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_TrussBarStructureStaticProblem" "', argument " "1"" of type '" "problem::TrussBarStructureStaticProblem const &""'"); 
-  }
-  if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_TrussBarStructureStaticProblem" "', argument " "1"" of type '" "problem::TrussBarStructureStaticProblem const &""'"); 
-  }
-  arg1 = reinterpret_cast< problem::TrussBarStructureStaticProblem * >(argp1);
-  result = (problem::TrussBarStructureStaticProblem *)new problem::TrussBarStructureStaticProblem((problem::TrussBarStructureStaticProblem const &)*arg1);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__TrussBarStructureStaticProblem, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_TrussBarStructureStaticProblem(PyObject *self, PyObject *args) {
-  Py_ssize_t argc;
-  PyObject *argv[13] = {
-    0
-  };
-  Py_ssize_t ii;
-  
-  if (!PyTuple_Check(args)) SWIG_fail;
-  argc = args ? PyObject_Length(args) : 0;
-  for (ii = 0; (ii < 12) && (ii < argc); ii++) {
-    argv[ii] = PyTuple_GET_ITEM(args,ii);
-  }
-  if (argc == 1) {
-    int _v;
-    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_problem__TrussBarStructureStaticProblem, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      return _wrap_new_TrussBarStructureStaticProblem__SWIG_1(self, args);
-    }
-  }
-  if (argc == 12) {
-    int _v;
-    {
-      int res = SWIG_AsVal_int(argv[0], NULL);
-      _v = SWIG_CheckState(res);
-    }
-    if (_v) {
-      void *ptr = 0;
-      int res = SWIG_ConvertPtr(argv[1], &ptr, 0, 0);
-      _v = SWIG_CheckState(res);
-      if (_v) {
-        {
-          int res = SWIG_AsVal_int(argv[2], NULL);
-          _v = SWIG_CheckState(res);
-        }
-        if (_v) {
-          {
-            int res = SWIG_AsVal_int(argv[3], NULL);
-            _v = SWIG_CheckState(res);
-          }
-          if (_v) {
-            {
-              int res = SWIG_AsVal_int(argv[4], NULL);
-              _v = SWIG_CheckState(res);
-            }
-            if (_v) {
-              {
-                int res = SWIG_AsVal_int(argv[5], NULL);
-                _v = SWIG_CheckState(res);
-              }
-              if (_v) {
-                {
-                  int res = SWIG_AsVal_double(argv[6], NULL);
-                  _v = SWIG_CheckState(res);
-                }
-                if (_v) {
-                  {
-                    int res = SWIG_AsVal_double(argv[7], NULL);
-                    _v = SWIG_CheckState(res);
-                  }
-                  if (_v) {
-                    {
-                      int res = SWIG_AsVal_double(argv[8], NULL);
-                      _v = SWIG_CheckState(res);
-                    }
-                    if (_v) {
-                      int res = SWIG_ConvertPtr(argv[9], 0, SWIGTYPE_p_string, 0);
-                      _v = SWIG_CheckState(res);
-                      if (_v) {
-                        {
-                          int res = SWIG_AsVal_double(argv[10], NULL);
-                          _v = SWIG_CheckState(res);
-                        }
-                        if (_v) {
-                          {
-                            int res = SWIG_AsVal_double(argv[11], NULL);
-                            _v = SWIG_CheckState(res);
-                          }
-                          if (_v) {
-                            return _wrap_new_TrussBarStructureStaticProblem__SWIG_0(self, args);
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  
-fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_TrussBarStructureStaticProblem'.\n"
-    "  Possible C/C++ prototypes are:\n"
-    "    problem::TrussBarStructureStaticProblem::TrussBarStructureStaticProblem(int,void *,int,int,int,int,double,double,double,string,double,double)\n"
-    "    problem::TrussBarStructureStaticProblem::TrussBarStructureStaticProblem(problem::TrussBarStructureStaticProblem const &)\n");
-  return 0;
-}
-
-
-SWIGINTERN PyObject *_wrap_delete_TrussBarStructureStaticProblem(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::TrussBarStructureStaticProblem *arg1 = (problem::TrussBarStructureStaticProblem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:delete_TrussBarStructureStaticProblem",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__TrussBarStructureStaticProblem, SWIG_POINTER_DISOWN |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_TrussBarStructureStaticProblem" "', argument " "1"" of type '" "problem::TrussBarStructureStaticProblem *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::TrussBarStructureStaticProblem * >(argp1);
-  delete arg1;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_TrussBarStructureStaticProblem_evaluation(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::TrussBarStructureStaticProblem *arg1 = (problem::TrussBarStructureStaticProblem *) 0 ;
-  void *arg2 = (void *) 0 ;
-  void *arg3 = (void *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  int res2 ;
-  int res3 ;
-  PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
-  PyObject * obj2 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"OOO:TrussBarStructureStaticProblem_evaluation",&obj0,&obj1,&obj2)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__TrussBarStructureStaticProblem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "TrussBarStructureStaticProblem_evaluation" "', argument " "1"" of type '" "problem::TrussBarStructureStaticProblem *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::TrussBarStructureStaticProblem * >(argp1);
-  res2 = SWIG_ConvertPtr(obj1,SWIG_as_voidptrptr(&arg2), 0, 0);
-  if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "TrussBarStructureStaticProblem_evaluation" "', argument " "2"" of type '" "void *""'"); 
-  }
-  res3 = SWIG_ConvertPtr(obj2,SWIG_as_voidptrptr(&arg3), 0, 0);
-  if (!SWIG_IsOK(res3)) {
-    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "TrussBarStructureStaticProblem_evaluation" "', argument " "3"" of type '" "void *""'"); 
-  }
-  (arg1)->evaluation(arg2,arg3);
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_TrussBarStructureStaticProblem_getNumberOfBars(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::TrussBarStructureStaticProblem *arg1 = (problem::TrussBarStructureStaticProblem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  int result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:TrussBarStructureStaticProblem_getNumberOfBars",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__TrussBarStructureStaticProblem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "TrussBarStructureStaticProblem_getNumberOfBars" "', argument " "1"" of type '" "problem::TrussBarStructureStaticProblem *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::TrussBarStructureStaticProblem * >(argp1);
-  result = (int)(arg1)->getNumberOfBars();
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_TrussBarStructureStaticProblem_getNLCase(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::TrussBarStructureStaticProblem *arg1 = (problem::TrussBarStructureStaticProblem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  int result;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:TrussBarStructureStaticProblem_getNLCase",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__TrussBarStructureStaticProblem, 0 |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "TrussBarStructureStaticProblem_getNLCase" "', argument " "1"" of type '" "problem::TrussBarStructureStaticProblem *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::TrussBarStructureStaticProblem * >(argp1);
-  result = (int)(arg1)->getNLCase();
-  resultobj = SWIG_From_int(static_cast< int >(result));
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_TrussBarStructureStaticProblem_getDisplacementConstraint(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::TrussBarStructureStaticProblem *arg1 = (problem::TrussBarStructureStaticProblem *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
   double result;
   
-  if (!PyArg_ParseTuple(args,(char *)"O:TrussBarStructureStaticProblem_getDisplacementConstraint",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__TrussBarStructureStaticProblem, 0 |  0 );
+  if (!PyArg_ParseTuple(args,(char *)"OOO:calculate",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_p_double, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "TrussBarStructureStaticProblem_getDisplacementConstraint" "', argument " "1"" of type '" "problem::TrussBarStructureStaticProblem *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "calculate" "', argument " "1"" of type '" "double **""'"); 
   }
-  arg1 = reinterpret_cast< problem::TrussBarStructureStaticProblem * >(argp1);
-  result = (double)(arg1)->getDisplacementConstraint();
+  arg1 = reinterpret_cast< double ** >(argp1);
+  ecode2 = SWIG_AsVal_int(obj1, &val2);
+  if (!SWIG_IsOK(ecode2)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "calculate" "', argument " "2"" of type '" "int""'");
+  } 
+  arg2 = static_cast< int >(val2);
+  ecode3 = SWIG_AsVal_int(obj2, &val3);
+  if (!SWIG_IsOK(ecode3)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "calculate" "', argument " "3"" of type '" "int""'");
+  } 
+  arg3 = static_cast< int >(val3);
+  result = (double)calculate(arg1,arg2,arg3);
   resultobj = SWIG_From_double(static_cast< double >(result));
   return resultobj;
 fail:
@@ -4310,199 +3494,33 @@ fail:
 }
 
 
-SWIGINTERN PyObject *TrussBarStructureStaticProblem_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *obj;
-  if (!PyArg_ParseTuple(args,(char *)"O:swigregister", &obj)) return NULL;
-  SWIG_TypeNewClientData(SWIGTYPE_p_problem__TrussBarStructureStaticProblem, SWIG_NewClientData(obj));
-  return SWIG_Py_Void();
-}
-
-SWIGINTERN PyObject *_wrap_new_F101Truss10Bar__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::F101Truss10Bar *result = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)":new_F101Truss10Bar")) SWIG_fail;
-  result = (problem::F101Truss10Bar *)new problem::F101Truss10Bar();
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__F101Truss10Bar, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_F101Truss10Bar__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::F101Truss10Bar *arg1 = 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  problem::F101Truss10Bar *result = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:new_F101Truss10Bar",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_problem__F101Truss10Bar,  0  | 0);
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_F101Truss10Bar" "', argument " "1"" of type '" "problem::F101Truss10Bar const &""'"); 
-  }
-  if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_F101Truss10Bar" "', argument " "1"" of type '" "problem::F101Truss10Bar const &""'"); 
-  }
-  arg1 = reinterpret_cast< problem::F101Truss10Bar * >(argp1);
-  result = (problem::F101Truss10Bar *)new problem::F101Truss10Bar((problem::F101Truss10Bar const &)*arg1);
-  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__F101Truss10Bar, SWIG_POINTER_NEW |  0 );
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *_wrap_new_F101Truss10Bar(PyObject *self, PyObject *args) {
-  Py_ssize_t argc;
-  PyObject *argv[2] = {
-    0
-  };
-  Py_ssize_t ii;
-  
-  if (!PyTuple_Check(args)) SWIG_fail;
-  argc = args ? PyObject_Length(args) : 0;
-  for (ii = 0; (ii < 1) && (ii < argc); ii++) {
-    argv[ii] = PyTuple_GET_ITEM(args,ii);
-  }
-  if (argc == 0) {
-    return _wrap_new_F101Truss10Bar__SWIG_0(self, args);
-  }
-  if (argc == 1) {
-    int _v;
-    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_problem__F101Truss10Bar, 0);
-    _v = SWIG_CheckState(res);
-    if (_v) {
-      return _wrap_new_F101Truss10Bar__SWIG_1(self, args);
-    }
-  }
-  
-fail:
-  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_F101Truss10Bar'.\n"
-    "  Possible C/C++ prototypes are:\n"
-    "    problem::F101Truss10Bar::F101Truss10Bar()\n"
-    "    problem::F101Truss10Bar::F101Truss10Bar(problem::F101Truss10Bar const &)\n");
-  return 0;
-}
-
-
-SWIGINTERN PyObject *_wrap_delete_F101Truss10Bar(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *resultobj = 0;
-  problem::F101Truss10Bar *arg1 = (problem::F101Truss10Bar *) 0 ;
-  void *argp1 = 0 ;
-  int res1 = 0 ;
-  PyObject * obj0 = 0 ;
-  
-  if (!PyArg_ParseTuple(args,(char *)"O:delete_F101Truss10Bar",&obj0)) SWIG_fail;
-  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__F101Truss10Bar, SWIG_POINTER_DISOWN |  0 );
-  if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_F101Truss10Bar" "', argument " "1"" of type '" "problem::F101Truss10Bar *""'"); 
-  }
-  arg1 = reinterpret_cast< problem::F101Truss10Bar * >(argp1);
-  delete arg1;
-  resultobj = SWIG_Py_Void();
-  return resultobj;
-fail:
-  return NULL;
-}
-
-
-SWIGINTERN PyObject *F101Truss10Bar_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
-  PyObject *obj;
-  if (!PyArg_ParseTuple(args,(char *)"O:swigregister", &obj)) return NULL;
-  SWIG_TypeNewClientData(SWIGTYPE_p_problem__F101Truss10Bar, SWIG_NewClientData(obj));
-  return SWIG_Py_Void();
-}
-
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"SWIG_PyInstanceMethod_New", (PyCFunction)SWIG_PyInstanceMethod_New, METH_O, NULL},
-	 { (char *)"new_doubleArray", _wrap_new_doubleArray, METH_VARARGS, NULL},
-	 { (char *)"delete_doubleArray", _wrap_delete_doubleArray, METH_VARARGS, NULL},
-	 { (char *)"doubleArray_getitem", _wrap_doubleArray_getitem, METH_VARARGS, NULL},
-	 { (char *)"doubleArray_setitem", _wrap_doubleArray_setitem, METH_VARARGS, NULL},
 	 { (char *)"new_doubleddArray", _wrap_new_doubleddArray, METH_VARARGS, NULL},
 	 { (char *)"delete_ddArray", _wrap_delete_ddArray, METH_VARARGS, NULL},
 	 { (char *)"doubleddArray_setitem", _wrap_doubleddArray_setitem, METH_VARARGS, NULL},
 	 { (char *)"doubleddArray_getitem", _wrap_doubleddArray_getitem, METH_VARARGS, NULL},
-	 { (char *)"delete_Problem", _wrap_delete_Problem, METH_VARARGS, NULL},
-	 { (char *)"Problem_evaluate", _wrap_Problem_evaluate, METH_VARARGS, NULL},
-	 { (char *)"Problem_getNumberObjectiveFunctionEvaluations", _wrap_Problem_getNumberObjectiveFunctionEvaluations, METH_VARARGS, NULL},
-	 { (char *)"Problem_getMaxNumberObjectiveFunctionEvaluations", _wrap_Problem_getMaxNumberObjectiveFunctionEvaluations, METH_VARARGS, NULL},
-	 { (char *)"Problem_getBounds", _wrap_Problem_getBounds, METH_VARARGS, NULL},
-	 { (char *)"Problem_getNumberObjectives", _wrap_Problem_getNumberObjectives, METH_VARARGS, NULL},
-	 { (char *)"Problem_getNumberConstraints", _wrap_Problem_getNumberConstraints, METH_VARARGS, NULL},
-	 { (char *)"Problem_getDimension", _wrap_Problem_getDimension, METH_VARARGS, NULL},
-	 { (char *)"Problem_toString", _wrap_Problem_toString, METH_VARARGS, NULL},
-	 { (char *)"Problem_swigregister", Problem_swigregister, METH_VARARGS, NULL},
-	 { (char *)"new_TrussBarStructureStaticProblem", _wrap_new_TrussBarStructureStaticProblem, METH_VARARGS, NULL},
-	 { (char *)"delete_TrussBarStructureStaticProblem", _wrap_delete_TrussBarStructureStaticProblem, METH_VARARGS, NULL},
-	 { (char *)"TrussBarStructureStaticProblem_evaluation", _wrap_TrussBarStructureStaticProblem_evaluation, METH_VARARGS, NULL},
-	 { (char *)"TrussBarStructureStaticProblem_getNumberOfBars", _wrap_TrussBarStructureStaticProblem_getNumberOfBars, METH_VARARGS, NULL},
-	 { (char *)"TrussBarStructureStaticProblem_getNLCase", _wrap_TrussBarStructureStaticProblem_getNLCase, METH_VARARGS, NULL},
-	 { (char *)"TrussBarStructureStaticProblem_getDisplacementConstraint", _wrap_TrussBarStructureStaticProblem_getDisplacementConstraint, METH_VARARGS, NULL},
-	 { (char *)"TrussBarStructureStaticProblem_swigregister", TrussBarStructureStaticProblem_swigregister, METH_VARARGS, NULL},
-	 { (char *)"new_F101Truss10Bar", _wrap_new_F101Truss10Bar, METH_VARARGS, NULL},
-	 { (char *)"delete_F101Truss10Bar", _wrap_delete_F101Truss10Bar, METH_VARARGS, NULL},
-	 { (char *)"F101Truss10Bar_swigregister", F101Truss10Bar_swigregister, METH_VARARGS, NULL},
+	 { (char *)"calculate", _wrap_calculate, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static void *_p_problem__TrussBarStructureStaticProblemTo_p_problem__Problem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
-    return (void *)((problem::Problem *)  ((problem::TrussBarStructureStaticProblem *) x));
-}
-static void *_p_problem__F101Truss10BarTo_p_problem__Problem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
-    return (void *)((problem::Problem *) (problem::TrussBarStructureStaticProblem *) ((problem::F101Truss10Bar *) x));
-}
-static void *_p_problem__F101Truss10BarTo_p_problem__TrussBarStructureStaticProblem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
-    return (void *)((problem::TrussBarStructureStaticProblem *)  ((problem::F101Truss10Bar *) x));
-}
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_double = {"_p_double", "double *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_p_double = {"_p_p_double", "double **", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_problem__F101Truss10Bar = {"_p_problem__F101Truss10Bar", "problem::F101Truss10Bar *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_problem__Problem = {"_p_problem__Problem", "problem::Problem *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_problem__TrussBarStructureStaticProblem = {"_p_problem__TrussBarStructureStaticProblem", "problem::TrussBarStructureStaticProblem *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_std__shared_ptrT_problem__Problem_t = {"_p_std__shared_ptrT_problem__Problem_t", "std::shared_ptr< problem::Problem > *|problem::ProblemPtr *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_string = {"_p_string", "string *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_void = {"_p_void", "void *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_char,
-  &_swigt__p_double,
   &_swigt__p_p_double,
-  &_swigt__p_problem__F101Truss10Bar,
-  &_swigt__p_problem__Problem,
-  &_swigt__p_problem__TrussBarStructureStaticProblem,
-  &_swigt__p_std__shared_ptrT_problem__Problem_t,
-  &_swigt__p_string,
-  &_swigt__p_void,
 };
 
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_double[] = {  {&_swigt__p_double, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_double[] = {  {&_swigt__p_p_double, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_problem__F101Truss10Bar[] = {  {&_swigt__p_problem__F101Truss10Bar, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_problem__Problem[] = {  {&_swigt__p_problem__Problem, 0, 0, 0},  {&_swigt__p_problem__TrussBarStructureStaticProblem, _p_problem__TrussBarStructureStaticProblemTo_p_problem__Problem, 0, 0},  {&_swigt__p_problem__F101Truss10Bar, _p_problem__F101Truss10BarTo_p_problem__Problem, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_problem__TrussBarStructureStaticProblem[] = {  {&_swigt__p_problem__TrussBarStructureStaticProblem, 0, 0, 0},  {&_swigt__p_problem__F101Truss10Bar, _p_problem__F101Truss10BarTo_p_problem__TrussBarStructureStaticProblem, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_std__shared_ptrT_problem__Problem_t[] = {  {&_swigt__p_std__shared_ptrT_problem__Problem_t, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_string[] = {  {&_swigt__p_string, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_char,
-  _swigc__p_double,
   _swigc__p_p_double,
-  _swigc__p_problem__F101Truss10Bar,
-  _swigc__p_problem__Problem,
-  _swigc__p_problem__TrussBarStructureStaticProblem,
-  _swigc__p_std__shared_ptrT_problem__Problem_t,
-  _swigc__p_string,
-  _swigc__p_void,
 };
 
 

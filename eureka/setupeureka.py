@@ -19,7 +19,7 @@ setup(name=name,
 """
 ***COMPILING***
 swig -python -c++ -o _eureka_module.cc eureka.i
-python setup.py build_ext --inplace
+python setupeureka.py build_ext --inplace
 
 ***IMPORTING***
 import sys

@@ -111,6 +111,22 @@ doubleArray_getitem = _eureka.doubleArray_getitem
 def doubleArray_setitem(ary, index, value):
     return _eureka.doubleArray_setitem(ary, index, value)
 doubleArray_setitem = _eureka.doubleArray_setitem
+
+def new_doubleddArray(rows, cols):
+    return _eureka.new_doubleddArray(rows, cols)
+new_doubleddArray = _eureka.new_doubleddArray
+
+def delete_ddArray(arr, rows, cols):
+    return _eureka.delete_ddArray(arr, rows, cols)
+delete_ddArray = _eureka.delete_ddArray
+
+def doubleddArray_setitem(array, row, col, value):
+    return _eureka.doubleddArray_setitem(array, row, col, value)
+doubleddArray_setitem = _eureka.doubleddArray_setitem
+
+def doubleddArray_getitem(array, row, col):
+    return _eureka.doubleddArray_getitem(array, row, col)
+doubleddArray_getitem = _eureka.doubleddArray_getitem
 class Problem(_object):
     __swig_setmethods__ = {}
     __setattr__ = lambda self, name, value: _swig_setattr(self, Problem, name, value)
