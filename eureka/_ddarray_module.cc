@@ -3113,6 +3113,17 @@ namespace swig {
 
 // Helper function to create a 2d array
 
+
+double **new_doubleddArrayTeste(int rows){
+	double **arr = new double *[rows];
+	return arr;
+}
+
+double **castToDouble(void *b){
+	return (double**)b;
+}
+
+
 double **new_doubleddArray(int rows, int cols) {
     int i;
     double **arr = new double *[rows];
@@ -3296,6 +3307,48 @@ SWIG_AsVal_int (PyObject * obj, int *val)
 #ifdef __cplusplus
 extern "C" {
 #endif
+SWIGINTERN PyObject *_wrap_new_doubleddArrayTeste(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  int arg1 ;
+  int val1 ;
+  int ecode1 = 0 ;
+  PyObject * obj0 = 0 ;
+  double **result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_doubleddArrayTeste",&obj0)) SWIG_fail;
+  ecode1 = SWIG_AsVal_int(obj0, &val1);
+  if (!SWIG_IsOK(ecode1)) {
+    SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_doubleddArrayTeste" "', argument " "1"" of type '" "int""'");
+  } 
+  arg1 = static_cast< int >(val1);
+  result = (double **)new_doubleddArrayTeste(arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_p_double, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_castToDouble(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  void *arg1 = (void *) 0 ;
+  int res1 ;
+  PyObject * obj0 = 0 ;
+  double **result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:castToDouble",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0,SWIG_as_voidptrptr(&arg1), 0, 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "castToDouble" "', argument " "1"" of type '" "void *""'"); 
+  }
+  result = (double **)castToDouble(arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_p_double, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
 SWIGINTERN PyObject *_wrap_new_doubleddArray(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   int arg1 ;
@@ -3496,6 +3549,8 @@ fail:
 
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"SWIG_PyInstanceMethod_New", (PyCFunction)SWIG_PyInstanceMethod_New, METH_O, NULL},
+	 { (char *)"new_doubleddArrayTeste", _wrap_new_doubleddArrayTeste, METH_VARARGS, NULL},
+	 { (char *)"castToDouble", _wrap_castToDouble, METH_VARARGS, NULL},
 	 { (char *)"new_doubleddArray", _wrap_new_doubleddArray, METH_VARARGS, NULL},
 	 { (char *)"delete_ddArray", _wrap_delete_ddArray, METH_VARARGS, NULL},
 	 { (char *)"doubleddArray_setitem", _wrap_doubleddArray_setitem, METH_VARARGS, NULL},

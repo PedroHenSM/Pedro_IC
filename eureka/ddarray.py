@@ -96,6 +96,14 @@ except __builtin__.Exception:
     _newclass = 0
 
 
+def new_doubleddArrayTeste(rows):
+    return _ddarray.new_doubleddArrayTeste(rows)
+new_doubleddArrayTeste = _ddarray.new_doubleddArrayTeste
+
+def castToDouble(b):
+    return _ddarray.castToDouble(b)
+castToDouble = _ddarray.castToDouble
+
 def new_doubleddArray(rows, cols):
     return _ddarray.new_doubleddArray(rows, cols)
 new_doubleddArray = _ddarray.new_doubleddArray

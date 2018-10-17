@@ -112,13 +112,17 @@ def doubleArray_setitem(ary, index, value):
     return _eureka.doubleArray_setitem(ary, index, value)
 doubleArray_setitem = _eureka.doubleArray_setitem
 
-def new_doubleddArray(rows, cols):
-    return _eureka.new_doubleddArray(rows, cols)
+def new_doubleddArray(rows):
+    return _eureka.new_doubleddArray(rows)
 new_doubleddArray = _eureka.new_doubleddArray
 
-def delete_ddArray(arr, rows, cols):
-    return _eureka.delete_ddArray(arr, rows, cols)
-delete_ddArray = _eureka.delete_ddArray
+def castToDouble(b):
+    return _eureka.castToDouble(b)
+castToDouble = _eureka.castToDouble
+
+def delete_doubleddArray(arr, rows, cols):
+    return _eureka.delete_doubleddArray(arr, rows, cols)
+delete_doubleddArray = _eureka.delete_doubleddArray
 
 def doubleddArray_setitem(array, row, col, value):
     return _eureka.doubleddArray_setitem(array, row, col, value)

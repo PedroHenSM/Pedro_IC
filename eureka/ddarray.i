@@ -2,6 +2,17 @@
 %inline %{
 // Helper function to create a 2d array
 
+
+double **new_doubleddArrayTeste(int rows){
+	double **arr = new double *[rows];
+	return arr;
+}
+
+double **castToDouble(void *b){
+	return (double**)b;
+}
+
+
 double **new_doubleddArray(int rows, int cols) {
     int i;
     double **arr = new double *[rows];

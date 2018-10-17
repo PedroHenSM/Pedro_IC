@@ -3351,7 +3351,15 @@ SWIG_AsVal_size_t (PyObject * obj, size_t *val)
 #include "TrussBarStructureStaticProblem.h"
 #include "TrussBarStructureStaticSimulator.h"
 
-// Helper function to create a 2d array
+double **new_doubleddArray(int rows){
+	double **arr = new double *[rows];
+	return arr;
+}
+
+double **castToDouble(void *b){
+	return (double**)b;
+}
+
 
 double **new_doubleddArray(int rows, int cols) {
     int i;
@@ -3361,7 +3369,7 @@ double **new_doubleddArray(int rows, int cols) {
     return arr;
 }
 
-void delete_ddArray (double **arr, int rows, int cols){
+void delete_doubleddArray (double **arr, int rows, int cols){
 	int i;
 	for (i=0; i<rows; i++)
 		delete[] arr[i];
@@ -3561,27 +3569,18 @@ fail:
 SWIGINTERN PyObject *_wrap_new_doubleddArray(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   int arg1 ;
-  int arg2 ;
   int val1 ;
   int ecode1 = 0 ;
-  int val2 ;
-  int ecode2 = 0 ;
   PyObject * obj0 = 0 ;
-  PyObject * obj1 = 0 ;
   double **result = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OO:new_doubleddArray",&obj0,&obj1)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"O:new_doubleddArray",&obj0)) SWIG_fail;
   ecode1 = SWIG_AsVal_int(obj0, &val1);
   if (!SWIG_IsOK(ecode1)) {
     SWIG_exception_fail(SWIG_ArgError(ecode1), "in method '" "new_doubleddArray" "', argument " "1"" of type '" "int""'");
   } 
   arg1 = static_cast< int >(val1);
-  ecode2 = SWIG_AsVal_int(obj1, &val2);
-  if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "new_doubleddArray" "', argument " "2"" of type '" "int""'");
-  } 
-  arg2 = static_cast< int >(val2);
-  result = (double **)new_doubleddArray(arg1,arg2);
+  result = (double **)new_doubleddArray(arg1);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_p_double, 0 |  0 );
   return resultobj;
 fail:
@@ -3589,7 +3588,27 @@ fail:
 }
 
 
-SWIGINTERN PyObject *_wrap_delete_ddArray(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+SWIGINTERN PyObject *_wrap_castToDouble(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  void *arg1 = (void *) 0 ;
+  int res1 ;
+  PyObject * obj0 = 0 ;
+  double **result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:castToDouble",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0,SWIG_as_voidptrptr(&arg1), 0, 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "castToDouble" "', argument " "1"" of type '" "void *""'"); 
+  }
+  result = (double **)castToDouble(arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_p_double, 0 |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_doubleddArray(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   double **arg1 = (double **) 0 ;
   int arg2 ;
@@ -3604,23 +3623,23 @@ SWIGINTERN PyObject *_wrap_delete_ddArray(PyObject *SWIGUNUSEDPARM(self), PyObje
   PyObject * obj1 = 0 ;
   PyObject * obj2 = 0 ;
   
-  if (!PyArg_ParseTuple(args,(char *)"OOO:delete_ddArray",&obj0,&obj1,&obj2)) SWIG_fail;
+  if (!PyArg_ParseTuple(args,(char *)"OOO:delete_doubleddArray",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_p_double, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_ddArray" "', argument " "1"" of type '" "double **""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_doubleddArray" "', argument " "1"" of type '" "double **""'"); 
   }
   arg1 = reinterpret_cast< double ** >(argp1);
   ecode2 = SWIG_AsVal_int(obj1, &val2);
   if (!SWIG_IsOK(ecode2)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "delete_ddArray" "', argument " "2"" of type '" "int""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode2), "in method '" "delete_doubleddArray" "', argument " "2"" of type '" "int""'");
   } 
   arg2 = static_cast< int >(val2);
   ecode3 = SWIG_AsVal_int(obj2, &val3);
   if (!SWIG_IsOK(ecode3)) {
-    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "delete_ddArray" "', argument " "3"" of type '" "int""'");
+    SWIG_exception_fail(SWIG_ArgError(ecode3), "in method '" "delete_doubleddArray" "', argument " "3"" of type '" "int""'");
   } 
   arg3 = static_cast< int >(val3);
-  delete_ddArray(arg1,arg2,arg3);
+  delete_doubleddArray(arg1,arg2,arg3);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -4423,7 +4442,8 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"doubleArray_getitem", _wrap_doubleArray_getitem, METH_VARARGS, NULL},
 	 { (char *)"doubleArray_setitem", _wrap_doubleArray_setitem, METH_VARARGS, NULL},
 	 { (char *)"new_doubleddArray", _wrap_new_doubleddArray, METH_VARARGS, NULL},
-	 { (char *)"delete_ddArray", _wrap_delete_ddArray, METH_VARARGS, NULL},
+	 { (char *)"castToDouble", _wrap_castToDouble, METH_VARARGS, NULL},
+	 { (char *)"delete_doubleddArray", _wrap_delete_doubleddArray, METH_VARARGS, NULL},
 	 { (char *)"doubleddArray_setitem", _wrap_doubleddArray_setitem, METH_VARARGS, NULL},
 	 { (char *)"doubleddArray_getitem", _wrap_doubleddArray_getitem, METH_VARARGS, NULL},
 	 { (char *)"delete_Problem", _wrap_delete_Problem, METH_VARARGS, NULL},

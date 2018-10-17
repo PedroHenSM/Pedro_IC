@@ -87,29 +87,14 @@ class Population(object):
                 elif function == 16 or function == 17:
                     values.append(np.random.uniform(-10, 10))
                 elif function == 19:  # 10 bar truss
-                    values.append(np.random.uniform(0.1, 40))  # TODO: Arrumar a matriz no swig, para fazer bounds 'automaticos'(com getBounds)
-                    """
-                    dimensionArray = eureka.new_doubleArray(f.getDimension())  # creates an array
-                    eureka.doubleArray_setitem(dimensionArray,j,np.random.uniform(0.1,40))
-                    eureka.delete_doubleArray(dimensionArray)
-                    """
+                    bounds = eureka.new_doubleddArray(truss.getDimension())
+                    bounds = eureka.castToDouble(truss.getBounds())
+                    lowerBound = eureka.doubleddArray_getitem(bounds,0,0)
+                    upperBound = eureka.doubleddArray_getitem(bounds,0,1)
+                    values.append(np.random.uniform(lowerBound,upperBound))
                 else:
                     print("Function not encountered")  # sys.exit("Function not encountered")
-                """   
-                #self.individuals[i].append(Individual(value))
-                if ( j == 0):
-                    self.individuals.append()
-                else: # 
-                    self.individuals[i].n.append(value)
-                self.individuals.insert(0,).n.append()
-                """
-
             self.individuals.append(Individual(values))
-
-    """
-    def __repr__(self):
-        return str(self.__dict__)
-    """
 
     # self,n = None, objectiveFunction = None, g = None, h =None,violations = None ,sigma = None, violationSum = None, fitness = None
     def copyIndividual(self, idxDest, idxToBeCopy, population, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
@@ -916,7 +901,6 @@ def main():
     DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
     # GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
     # ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
-
 
 if __name__ == '__main__':
     main()

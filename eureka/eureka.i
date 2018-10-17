@@ -13,7 +13,15 @@
 #include "TrussBarStructureStaticProblem.h"
 #include "TrussBarStructureStaticSimulator.h"
 
-// Helper function to create a 2d array
+double **new_doubleddArray(int rows){
+	double **arr = new double *[rows];
+	return arr;
+}
+
+double **castToDouble(void *b){
+	return (double**)b;
+}
+
 
 double **new_doubleddArray(int rows, int cols) {
     int i;
@@ -23,7 +31,7 @@ double **new_doubleddArray(int rows, int cols) {
     return arr;
 }
 
-void delete_ddArray (double **arr, int rows, int cols){
+void delete_doubleddArray (double **arr, int rows, int cols){
 	int i;
 	for (i=0; i<rows; i++)
 		delete[] arr[i];
@@ -41,9 +49,11 @@ double doubleddArray_getitem(double **array, int row, int col) {
 
 // Helper function to create a 2d array
 
-double **new_doubleddArray(int rows, int cols);
+double **new_doubleddArray(int rows);
 
-void delete_ddArray (double **arr, int rows, int cols);
+double **castToDouble(void *b);
+
+void delete_doubleddArray (double **arr, int rows, int cols);
 
 void doubleddArray_setitem(double **array, int row, int col, double value);
 
