@@ -3007,13 +3007,17 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 #define SWIGTYPE_p_double swig_types[1]
 #define SWIGTYPE_p_p_double swig_types[2]
 #define SWIGTYPE_p_problem__F101Truss10Bar swig_types[3]
-#define SWIGTYPE_p_problem__Problem swig_types[4]
-#define SWIGTYPE_p_problem__TrussBarStructureStaticProblem swig_types[5]
-#define SWIGTYPE_p_std__shared_ptrT_problem__Problem_t swig_types[6]
-#define SWIGTYPE_p_string swig_types[7]
-#define SWIGTYPE_p_void swig_types[8]
-static swig_type_info *swig_types[10];
-static swig_module_info swig_module = {swig_types, 9, 0, 0, 0, 0};
+#define SWIGTYPE_p_problem__F103Truss25Bar swig_types[4]
+#define SWIGTYPE_p_problem__F105Truss60Bar swig_types[5]
+#define SWIGTYPE_p_problem__F107Truss72Bar swig_types[6]
+#define SWIGTYPE_p_problem__F109Truss942Bar swig_types[7]
+#define SWIGTYPE_p_problem__Problem swig_types[8]
+#define SWIGTYPE_p_problem__TrussBarStructureStaticProblem swig_types[9]
+#define SWIGTYPE_p_std__shared_ptrT_problem__Problem_t swig_types[10]
+#define SWIGTYPE_p_string swig_types[11]
+#define SWIGTYPE_p_void swig_types[12]
+static swig_type_info *swig_types[14];
+static swig_module_info swig_module = {swig_types, 13, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -3346,10 +3350,14 @@ SWIG_AsVal_size_t (PyObject * obj, size_t *val)
 
 /* Inlcude headers files or function declarations */
 #include "EurekaOptimaException.h"
-#include "F101Truss10Bar.h"
 #include "Problem.h"
 #include "TrussBarStructureStaticProblem.h"
 #include "TrussBarStructureStaticSimulator.h"
+#include "F101Truss10Bar.h"
+#include "F103Truss25Bar.h"
+#include "F105Truss60Bar.h"
+#include "F107Truss72Bar.h"
+#include "F109Truss942Bar.h"
 
 double **new_doubleddArray(int rows){
 	double **arr = new double *[rows];
@@ -4435,6 +4443,507 @@ SWIGINTERN PyObject *F101Truss10Bar_swigregister(PyObject *SWIGUNUSEDPARM(self),
   return SWIG_Py_Void();
 }
 
+SWIGINTERN PyObject *_wrap_new_F103Truss25Bar__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F103Truss25Bar *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)":new_F103Truss25Bar")) SWIG_fail;
+  result = (problem::F103Truss25Bar *)new problem::F103Truss25Bar();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__F103Truss25Bar, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_F103Truss25Bar__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F103Truss25Bar *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  problem::F103Truss25Bar *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_F103Truss25Bar",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_problem__F103Truss25Bar,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_F103Truss25Bar" "', argument " "1"" of type '" "problem::F103Truss25Bar const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_F103Truss25Bar" "', argument " "1"" of type '" "problem::F103Truss25Bar const &""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F103Truss25Bar * >(argp1);
+  result = (problem::F103Truss25Bar *)new problem::F103Truss25Bar((problem::F103Truss25Bar const &)*arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__F103Truss25Bar, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_F103Truss25Bar(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[2] = {
+    0
+  };
+  Py_ssize_t ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = args ? PyObject_Length(args) : 0;
+  for (ii = 0; (ii < 1) && (ii < argc); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 0) {
+    return _wrap_new_F103Truss25Bar__SWIG_0(self, args);
+  }
+  if (argc == 1) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_problem__F103Truss25Bar, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      return _wrap_new_F103Truss25Bar__SWIG_1(self, args);
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_F103Truss25Bar'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    problem::F103Truss25Bar::F103Truss25Bar()\n"
+    "    problem::F103Truss25Bar::F103Truss25Bar(problem::F103Truss25Bar const &)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_F103Truss25Bar(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F103Truss25Bar *arg1 = (problem::F103Truss25Bar *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_F103Truss25Bar",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__F103Truss25Bar, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_F103Truss25Bar" "', argument " "1"" of type '" "problem::F103Truss25Bar *""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F103Truss25Bar * >(argp1);
+  delete arg1;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_F103Truss25Bar_evaluation(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F103Truss25Bar *arg1 = (problem::F103Truss25Bar *) 0 ;
+  void *arg2 = (void *) 0 ;
+  void *arg3 = (void *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  int res3 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:F103Truss25Bar_evaluation",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__F103Truss25Bar, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "F103Truss25Bar_evaluation" "', argument " "1"" of type '" "problem::F103Truss25Bar *""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F103Truss25Bar * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1,SWIG_as_voidptrptr(&arg2), 0, 0);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "F103Truss25Bar_evaluation" "', argument " "2"" of type '" "void *""'"); 
+  }
+  res3 = SWIG_ConvertPtr(obj2,SWIG_as_voidptrptr(&arg3), 0, 0);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "F103Truss25Bar_evaluation" "', argument " "3"" of type '" "void *""'"); 
+  }
+  (arg1)->evaluation(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *F103Truss25Bar_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char *)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_problem__F103Truss25Bar, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject *_wrap_new_F105Truss60Bar__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F105Truss60Bar *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)":new_F105Truss60Bar")) SWIG_fail;
+  result = (problem::F105Truss60Bar *)new problem::F105Truss60Bar();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__F105Truss60Bar, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_F105Truss60Bar__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F105Truss60Bar *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  problem::F105Truss60Bar *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_F105Truss60Bar",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_problem__F105Truss60Bar,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_F105Truss60Bar" "', argument " "1"" of type '" "problem::F105Truss60Bar const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_F105Truss60Bar" "', argument " "1"" of type '" "problem::F105Truss60Bar const &""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F105Truss60Bar * >(argp1);
+  result = (problem::F105Truss60Bar *)new problem::F105Truss60Bar((problem::F105Truss60Bar const &)*arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__F105Truss60Bar, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_F105Truss60Bar(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[2] = {
+    0
+  };
+  Py_ssize_t ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = args ? PyObject_Length(args) : 0;
+  for (ii = 0; (ii < 1) && (ii < argc); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 0) {
+    return _wrap_new_F105Truss60Bar__SWIG_0(self, args);
+  }
+  if (argc == 1) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_problem__F105Truss60Bar, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      return _wrap_new_F105Truss60Bar__SWIG_1(self, args);
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_F105Truss60Bar'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    problem::F105Truss60Bar::F105Truss60Bar()\n"
+    "    problem::F105Truss60Bar::F105Truss60Bar(problem::F105Truss60Bar const &)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_F105Truss60Bar(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F105Truss60Bar *arg1 = (problem::F105Truss60Bar *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_F105Truss60Bar",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__F105Truss60Bar, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_F105Truss60Bar" "', argument " "1"" of type '" "problem::F105Truss60Bar *""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F105Truss60Bar * >(argp1);
+  delete arg1;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_F105Truss60Bar_evaluation(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F105Truss60Bar *arg1 = (problem::F105Truss60Bar *) 0 ;
+  void *arg2 = (void *) 0 ;
+  void *arg3 = (void *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  int res3 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:F105Truss60Bar_evaluation",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__F105Truss60Bar, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "F105Truss60Bar_evaluation" "', argument " "1"" of type '" "problem::F105Truss60Bar *""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F105Truss60Bar * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1,SWIG_as_voidptrptr(&arg2), 0, 0);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "F105Truss60Bar_evaluation" "', argument " "2"" of type '" "void *""'"); 
+  }
+  res3 = SWIG_ConvertPtr(obj2,SWIG_as_voidptrptr(&arg3), 0, 0);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "F105Truss60Bar_evaluation" "', argument " "3"" of type '" "void *""'"); 
+  }
+  (arg1)->evaluation(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *F105Truss60Bar_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char *)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_problem__F105Truss60Bar, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject *_wrap_new_F107Truss72Bar__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F107Truss72Bar *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)":new_F107Truss72Bar")) SWIG_fail;
+  result = (problem::F107Truss72Bar *)new problem::F107Truss72Bar();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__F107Truss72Bar, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_F107Truss72Bar__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F107Truss72Bar *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  problem::F107Truss72Bar *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_F107Truss72Bar",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_problem__F107Truss72Bar,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_F107Truss72Bar" "', argument " "1"" of type '" "problem::F107Truss72Bar const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_F107Truss72Bar" "', argument " "1"" of type '" "problem::F107Truss72Bar const &""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F107Truss72Bar * >(argp1);
+  result = (problem::F107Truss72Bar *)new problem::F107Truss72Bar((problem::F107Truss72Bar const &)*arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__F107Truss72Bar, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_F107Truss72Bar(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[2] = {
+    0
+  };
+  Py_ssize_t ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = args ? PyObject_Length(args) : 0;
+  for (ii = 0; (ii < 1) && (ii < argc); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 0) {
+    return _wrap_new_F107Truss72Bar__SWIG_0(self, args);
+  }
+  if (argc == 1) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_problem__F107Truss72Bar, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      return _wrap_new_F107Truss72Bar__SWIG_1(self, args);
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_F107Truss72Bar'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    problem::F107Truss72Bar::F107Truss72Bar()\n"
+    "    problem::F107Truss72Bar::F107Truss72Bar(problem::F107Truss72Bar const &)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_F107Truss72Bar(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F107Truss72Bar *arg1 = (problem::F107Truss72Bar *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_F107Truss72Bar",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__F107Truss72Bar, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_F107Truss72Bar" "', argument " "1"" of type '" "problem::F107Truss72Bar *""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F107Truss72Bar * >(argp1);
+  delete arg1;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_F107Truss72Bar_evaluation(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F107Truss72Bar *arg1 = (problem::F107Truss72Bar *) 0 ;
+  void *arg2 = (void *) 0 ;
+  void *arg3 = (void *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  int res2 ;
+  int res3 ;
+  PyObject * obj0 = 0 ;
+  PyObject * obj1 = 0 ;
+  PyObject * obj2 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"OOO:F107Truss72Bar_evaluation",&obj0,&obj1,&obj2)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__F107Truss72Bar, 0 |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "F107Truss72Bar_evaluation" "', argument " "1"" of type '" "problem::F107Truss72Bar *""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F107Truss72Bar * >(argp1);
+  res2 = SWIG_ConvertPtr(obj1,SWIG_as_voidptrptr(&arg2), 0, 0);
+  if (!SWIG_IsOK(res2)) {
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "F107Truss72Bar_evaluation" "', argument " "2"" of type '" "void *""'"); 
+  }
+  res3 = SWIG_ConvertPtr(obj2,SWIG_as_voidptrptr(&arg3), 0, 0);
+  if (!SWIG_IsOK(res3)) {
+    SWIG_exception_fail(SWIG_ArgError(res3), "in method '" "F107Truss72Bar_evaluation" "', argument " "3"" of type '" "void *""'"); 
+  }
+  (arg1)->evaluation(arg2,arg3);
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *F107Truss72Bar_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char *)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_problem__F107Truss72Bar, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
+SWIGINTERN PyObject *_wrap_new_F109Truss942Bar__SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F109Truss942Bar *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)":new_F109Truss942Bar")) SWIG_fail;
+  result = (problem::F109Truss942Bar *)new problem::F109Truss942Bar();
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__F109Truss942Bar, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_F109Truss942Bar__SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F109Truss942Bar *arg1 = 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  problem::F109Truss942Bar *result = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:new_F109Truss942Bar",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_problem__F109Truss942Bar,  0  | 0);
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_F109Truss942Bar" "', argument " "1"" of type '" "problem::F109Truss942Bar const &""'"); 
+  }
+  if (!argp1) {
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_F109Truss942Bar" "', argument " "1"" of type '" "problem::F109Truss942Bar const &""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F109Truss942Bar * >(argp1);
+  result = (problem::F109Truss942Bar *)new problem::F109Truss942Bar((problem::F109Truss942Bar const &)*arg1);
+  resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_problem__F109Truss942Bar, SWIG_POINTER_NEW |  0 );
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *_wrap_new_F109Truss942Bar(PyObject *self, PyObject *args) {
+  Py_ssize_t argc;
+  PyObject *argv[2] = {
+    0
+  };
+  Py_ssize_t ii;
+  
+  if (!PyTuple_Check(args)) SWIG_fail;
+  argc = args ? PyObject_Length(args) : 0;
+  for (ii = 0; (ii < 1) && (ii < argc); ii++) {
+    argv[ii] = PyTuple_GET_ITEM(args,ii);
+  }
+  if (argc == 0) {
+    return _wrap_new_F109Truss942Bar__SWIG_0(self, args);
+  }
+  if (argc == 1) {
+    int _v;
+    int res = SWIG_ConvertPtr(argv[0], 0, SWIGTYPE_p_problem__F109Truss942Bar, 0);
+    _v = SWIG_CheckState(res);
+    if (_v) {
+      return _wrap_new_F109Truss942Bar__SWIG_1(self, args);
+    }
+  }
+  
+fail:
+  SWIG_SetErrorMsg(PyExc_NotImplementedError,"Wrong number or type of arguments for overloaded function 'new_F109Truss942Bar'.\n"
+    "  Possible C/C++ prototypes are:\n"
+    "    problem::F109Truss942Bar::F109Truss942Bar()\n"
+    "    problem::F109Truss942Bar::F109Truss942Bar(problem::F109Truss942Bar const &)\n");
+  return 0;
+}
+
+
+SWIGINTERN PyObject *_wrap_delete_F109Truss942Bar(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *resultobj = 0;
+  problem::F109Truss942Bar *arg1 = (problem::F109Truss942Bar *) 0 ;
+  void *argp1 = 0 ;
+  int res1 = 0 ;
+  PyObject * obj0 = 0 ;
+  
+  if (!PyArg_ParseTuple(args,(char *)"O:delete_F109Truss942Bar",&obj0)) SWIG_fail;
+  res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_problem__F109Truss942Bar, SWIG_POINTER_DISOWN |  0 );
+  if (!SWIG_IsOK(res1)) {
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_F109Truss942Bar" "', argument " "1"" of type '" "problem::F109Truss942Bar *""'"); 
+  }
+  arg1 = reinterpret_cast< problem::F109Truss942Bar * >(argp1);
+  delete arg1;
+  resultobj = SWIG_Py_Void();
+  return resultobj;
+fail:
+  return NULL;
+}
+
+
+SWIGINTERN PyObject *F109Truss942Bar_swigregister(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
+  PyObject *obj;
+  if (!PyArg_ParseTuple(args,(char *)"O:swigregister", &obj)) return NULL;
+  SWIG_TypeNewClientData(SWIGTYPE_p_problem__F109Truss942Bar, SWIG_NewClientData(obj));
+  return SWIG_Py_Void();
+}
+
 static PyMethodDef SwigMethods[] = {
 	 { (char *)"SWIG_PyInstanceMethod_New", (PyCFunction)SWIG_PyInstanceMethod_New, METH_O, NULL},
 	 { (char *)"new_doubleArray", _wrap_new_doubleArray, METH_VARARGS, NULL},
@@ -4466,25 +4975,68 @@ static PyMethodDef SwigMethods[] = {
 	 { (char *)"new_F101Truss10Bar", _wrap_new_F101Truss10Bar, METH_VARARGS, NULL},
 	 { (char *)"delete_F101Truss10Bar", _wrap_delete_F101Truss10Bar, METH_VARARGS, NULL},
 	 { (char *)"F101Truss10Bar_swigregister", F101Truss10Bar_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_F103Truss25Bar", _wrap_new_F103Truss25Bar, METH_VARARGS, NULL},
+	 { (char *)"delete_F103Truss25Bar", _wrap_delete_F103Truss25Bar, METH_VARARGS, NULL},
+	 { (char *)"F103Truss25Bar_evaluation", _wrap_F103Truss25Bar_evaluation, METH_VARARGS, NULL},
+	 { (char *)"F103Truss25Bar_swigregister", F103Truss25Bar_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_F105Truss60Bar", _wrap_new_F105Truss60Bar, METH_VARARGS, NULL},
+	 { (char *)"delete_F105Truss60Bar", _wrap_delete_F105Truss60Bar, METH_VARARGS, NULL},
+	 { (char *)"F105Truss60Bar_evaluation", _wrap_F105Truss60Bar_evaluation, METH_VARARGS, NULL},
+	 { (char *)"F105Truss60Bar_swigregister", F105Truss60Bar_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_F107Truss72Bar", _wrap_new_F107Truss72Bar, METH_VARARGS, NULL},
+	 { (char *)"delete_F107Truss72Bar", _wrap_delete_F107Truss72Bar, METH_VARARGS, NULL},
+	 { (char *)"F107Truss72Bar_evaluation", _wrap_F107Truss72Bar_evaluation, METH_VARARGS, NULL},
+	 { (char *)"F107Truss72Bar_swigregister", F107Truss72Bar_swigregister, METH_VARARGS, NULL},
+	 { (char *)"new_F109Truss942Bar", _wrap_new_F109Truss942Bar, METH_VARARGS, NULL},
+	 { (char *)"delete_F109Truss942Bar", _wrap_delete_F109Truss942Bar, METH_VARARGS, NULL},
+	 { (char *)"F109Truss942Bar_swigregister", F109Truss942Bar_swigregister, METH_VARARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
 
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
+static void *_p_problem__F103Truss25BarTo_p_problem__TrussBarStructureStaticProblem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((problem::TrussBarStructureStaticProblem *)  ((problem::F103Truss25Bar *) x));
+}
+static void *_p_problem__F107Truss72BarTo_p_problem__TrussBarStructureStaticProblem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((problem::TrussBarStructureStaticProblem *)  ((problem::F107Truss72Bar *) x));
+}
+static void *_p_problem__F109Truss942BarTo_p_problem__TrussBarStructureStaticProblem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((problem::TrussBarStructureStaticProblem *)  ((problem::F109Truss942Bar *) x));
+}
+static void *_p_problem__F105Truss60BarTo_p_problem__TrussBarStructureStaticProblem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((problem::TrussBarStructureStaticProblem *)  ((problem::F105Truss60Bar *) x));
+}
+static void *_p_problem__F101Truss10BarTo_p_problem__TrussBarStructureStaticProblem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((problem::TrussBarStructureStaticProblem *)  ((problem::F101Truss10Bar *) x));
+}
+static void *_p_problem__F103Truss25BarTo_p_problem__Problem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((problem::Problem *) (problem::TrussBarStructureStaticProblem *) ((problem::F103Truss25Bar *) x));
+}
+static void *_p_problem__F107Truss72BarTo_p_problem__Problem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((problem::Problem *) (problem::TrussBarStructureStaticProblem *) ((problem::F107Truss72Bar *) x));
+}
+static void *_p_problem__F109Truss942BarTo_p_problem__Problem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((problem::Problem *) (problem::TrussBarStructureStaticProblem *) ((problem::F109Truss942Bar *) x));
+}
+static void *_p_problem__F105Truss60BarTo_p_problem__Problem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
+    return (void *)((problem::Problem *) (problem::TrussBarStructureStaticProblem *) ((problem::F105Truss60Bar *) x));
+}
 static void *_p_problem__TrussBarStructureStaticProblemTo_p_problem__Problem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((problem::Problem *)  ((problem::TrussBarStructureStaticProblem *) x));
 }
 static void *_p_problem__F101Truss10BarTo_p_problem__Problem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
     return (void *)((problem::Problem *) (problem::TrussBarStructureStaticProblem *) ((problem::F101Truss10Bar *) x));
 }
-static void *_p_problem__F101Truss10BarTo_p_problem__TrussBarStructureStaticProblem(void *x, int *SWIGUNUSEDPARM(newmemory)) {
-    return (void *)((problem::TrussBarStructureStaticProblem *)  ((problem::F101Truss10Bar *) x));
-}
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_double = {"_p_double", "double *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_p_double = {"_p_p_double", "double **", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_problem__F101Truss10Bar = {"_p_problem__F101Truss10Bar", "problem::F101Truss10Bar *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_problem__F103Truss25Bar = {"_p_problem__F103Truss25Bar", "problem::F103Truss25Bar *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_problem__F105Truss60Bar = {"_p_problem__F105Truss60Bar", "problem::F105Truss60Bar *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_problem__F107Truss72Bar = {"_p_problem__F107Truss72Bar", "problem::F107Truss72Bar *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_problem__F109Truss942Bar = {"_p_problem__F109Truss942Bar", "problem::F109Truss942Bar *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_problem__Problem = {"_p_problem__Problem", "problem::Problem *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_problem__TrussBarStructureStaticProblem = {"_p_problem__TrussBarStructureStaticProblem", "problem::TrussBarStructureStaticProblem *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__shared_ptrT_problem__Problem_t = {"_p_std__shared_ptrT_problem__Problem_t", "std::shared_ptr< problem::Problem > *|problem::ProblemPtr *", 0, 0, (void*)0, 0};
@@ -4496,6 +5048,10 @@ static swig_type_info *swig_type_initial[] = {
   &_swigt__p_double,
   &_swigt__p_p_double,
   &_swigt__p_problem__F101Truss10Bar,
+  &_swigt__p_problem__F103Truss25Bar,
+  &_swigt__p_problem__F105Truss60Bar,
+  &_swigt__p_problem__F107Truss72Bar,
+  &_swigt__p_problem__F109Truss942Bar,
   &_swigt__p_problem__Problem,
   &_swigt__p_problem__TrussBarStructureStaticProblem,
   &_swigt__p_std__shared_ptrT_problem__Problem_t,
@@ -4507,8 +5063,12 @@ static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0,
 static swig_cast_info _swigc__p_double[] = {  {&_swigt__p_double, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_p_double[] = {  {&_swigt__p_p_double, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_problem__F101Truss10Bar[] = {  {&_swigt__p_problem__F101Truss10Bar, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_problem__Problem[] = {  {&_swigt__p_problem__Problem, 0, 0, 0},  {&_swigt__p_problem__TrussBarStructureStaticProblem, _p_problem__TrussBarStructureStaticProblemTo_p_problem__Problem, 0, 0},  {&_swigt__p_problem__F101Truss10Bar, _p_problem__F101Truss10BarTo_p_problem__Problem, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_problem__TrussBarStructureStaticProblem[] = {  {&_swigt__p_problem__TrussBarStructureStaticProblem, 0, 0, 0},  {&_swigt__p_problem__F101Truss10Bar, _p_problem__F101Truss10BarTo_p_problem__TrussBarStructureStaticProblem, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_problem__F103Truss25Bar[] = {  {&_swigt__p_problem__F103Truss25Bar, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_problem__F105Truss60Bar[] = {  {&_swigt__p_problem__F105Truss60Bar, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_problem__F107Truss72Bar[] = {  {&_swigt__p_problem__F107Truss72Bar, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_problem__F109Truss942Bar[] = {  {&_swigt__p_problem__F109Truss942Bar, 0, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_problem__Problem[] = {  {&_swigt__p_problem__F103Truss25Bar, _p_problem__F103Truss25BarTo_p_problem__Problem, 0, 0},  {&_swigt__p_problem__F107Truss72Bar, _p_problem__F107Truss72BarTo_p_problem__Problem, 0, 0},  {&_swigt__p_problem__F109Truss942Bar, _p_problem__F109Truss942BarTo_p_problem__Problem, 0, 0},  {&_swigt__p_problem__F105Truss60Bar, _p_problem__F105Truss60BarTo_p_problem__Problem, 0, 0},  {&_swigt__p_problem__Problem, 0, 0, 0},  {&_swigt__p_problem__TrussBarStructureStaticProblem, _p_problem__TrussBarStructureStaticProblemTo_p_problem__Problem, 0, 0},  {&_swigt__p_problem__F101Truss10Bar, _p_problem__F101Truss10BarTo_p_problem__Problem, 0, 0},{0, 0, 0, 0}};
+static swig_cast_info _swigc__p_problem__TrussBarStructureStaticProblem[] = {  {&_swigt__p_problem__F103Truss25Bar, _p_problem__F103Truss25BarTo_p_problem__TrussBarStructureStaticProblem, 0, 0},  {&_swigt__p_problem__F107Truss72Bar, _p_problem__F107Truss72BarTo_p_problem__TrussBarStructureStaticProblem, 0, 0},  {&_swigt__p_problem__F109Truss942Bar, _p_problem__F109Truss942BarTo_p_problem__TrussBarStructureStaticProblem, 0, 0},  {&_swigt__p_problem__F105Truss60Bar, _p_problem__F105Truss60BarTo_p_problem__TrussBarStructureStaticProblem, 0, 0},  {&_swigt__p_problem__TrussBarStructureStaticProblem, 0, 0, 0},  {&_swigt__p_problem__F101Truss10Bar, _p_problem__F101Truss10BarTo_p_problem__TrussBarStructureStaticProblem, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_std__shared_ptrT_problem__Problem_t[] = {  {&_swigt__p_std__shared_ptrT_problem__Problem_t, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_string[] = {  {&_swigt__p_string, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_void[] = {  {&_swigt__p_void, 0, 0, 0},{0, 0, 0, 0}};
@@ -4518,6 +5078,10 @@ static swig_cast_info *swig_cast_initial[] = {
   _swigc__p_double,
   _swigc__p_p_double,
   _swigc__p_problem__F101Truss10Bar,
+  _swigc__p_problem__F103Truss25Bar,
+  _swigc__p_problem__F105Truss60Bar,
+  _swigc__p_problem__F107Truss72Bar,
+  _swigc__p_problem__F109Truss942Bar,
   _swigc__p_problem__Problem,
   _swigc__p_problem__TrussBarStructureStaticProblem,
   _swigc__p_std__shared_ptrT_problem__Problem_t,

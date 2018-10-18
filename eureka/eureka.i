@@ -8,10 +8,14 @@
 %{
 /* Inlcude headers files or function declarations */
 #include "EurekaOptimaException.h"
-#include "F101Truss10Bar.h"
 #include "Problem.h"
 #include "TrussBarStructureStaticProblem.h"
 #include "TrussBarStructureStaticSimulator.h"
+#include "F101Truss10Bar.h"
+#include "F103Truss25Bar.h"
+#include "F105Truss60Bar.h"
+#include "F107Truss72Bar.h"
+#include "F109Truss942Bar.h"
 
 double **new_doubleddArray(int rows){
 	double **arr = new double *[rows];
@@ -203,6 +207,73 @@ namespace problem {
         F101Truss10Bar();
         F101Truss10Bar(const F101Truss10Bar& orig);
         virtual ~F101Truss10Bar();
+    };
+
+}
+
+namespace problem {
+
+    class F103Truss25Bar: public TrussBarStructureStaticProblem {
+    public:
+        F103Truss25Bar();
+        F103Truss25Bar(const F103Truss25Bar& orig);
+        virtual ~F103Truss25Bar();
+		virtual void evaluation(void* vector, void* values);
+	protected:
+		virtual int* const getGrouping();
+    private:
+        int* grouping;
+    };
+
+}
+
+namespace problem {
+
+    class F105Truss60Bar: public TrussBarStructureStaticProblem {
+    public:
+        F105Truss60Bar();
+        F105Truss60Bar(const F105Truss60Bar& orig);
+        virtual ~F105Truss60Bar();
+		virtual void evaluation(void* vector, void* values);
+	protected:
+        virtual int* const getGrouping();
+		virtual void fillAreasAux(double* x);
+    private:
+        int* grouping;
+		double displacementConstraint2;
+		double displacementConstraint3;
+    };
+
+}
+
+namespace problem {
+
+    class F107Truss72Bar: public TrussBarStructureStaticProblem {
+    public:
+        F107Truss72Bar();
+        F107Truss72Bar(const F107Truss72Bar& orig);
+        virtual ~F107Truss72Bar();
+		virtual void evaluation(void* vector, void* values);
+	protected:
+        virtual int* const getGrouping();
+    private:
+        int* grouping;
+    };
+
+}
+
+namespace problem {
+
+    class F109Truss942Bar: public TrussBarStructureStaticProblem {
+    public:
+        F109Truss942Bar();
+        F109Truss942Bar(const F109Truss942Bar& orig);
+        virtual ~F109Truss942Bar();
+    protected:
+        virtual int* const getGrouping();
+		virtual void fillAreasAux(double* x);
+	private:
+		int* grouping;
     };
 
 }

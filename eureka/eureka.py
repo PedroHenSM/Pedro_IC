@@ -225,6 +225,103 @@ class F101Truss10Bar(TrussBarStructureStaticProblem):
 F101Truss10Bar_swigregister = _eureka.F101Truss10Bar_swigregister
 F101Truss10Bar_swigregister(F101Truss10Bar)
 
+class F103Truss25Bar(TrussBarStructureStaticProblem):
+    __swig_setmethods__ = {}
+    for _s in [TrussBarStructureStaticProblem]:
+        __swig_setmethods__.update(getattr(_s, '__swig_setmethods__', {}))
+    __setattr__ = lambda self, name, value: _swig_setattr(self, F103Truss25Bar, name, value)
+    __swig_getmethods__ = {}
+    for _s in [TrussBarStructureStaticProblem]:
+        __swig_getmethods__.update(getattr(_s, '__swig_getmethods__', {}))
+    __getattr__ = lambda self, name: _swig_getattr(self, F103Truss25Bar, name)
+    __repr__ = _swig_repr
+
+    def __init__(self, *args):
+        this = _eureka.new_F103Truss25Bar(*args)
+        try:
+            self.this.append(this)
+        except __builtin__.Exception:
+            self.this = this
+    __swig_destroy__ = _eureka.delete_F103Truss25Bar
+    __del__ = lambda self: None
+
+    def evaluation(self, vector, values):
+        return _eureka.F103Truss25Bar_evaluation(self, vector, values)
+F103Truss25Bar_swigregister = _eureka.F103Truss25Bar_swigregister
+F103Truss25Bar_swigregister(F103Truss25Bar)
+
+class F105Truss60Bar(TrussBarStructureStaticProblem):
+    __swig_setmethods__ = {}
+    for _s in [TrussBarStructureStaticProblem]:
+        __swig_setmethods__.update(getattr(_s, '__swig_setmethods__', {}))
+    __setattr__ = lambda self, name, value: _swig_setattr(self, F105Truss60Bar, name, value)
+    __swig_getmethods__ = {}
+    for _s in [TrussBarStructureStaticProblem]:
+        __swig_getmethods__.update(getattr(_s, '__swig_getmethods__', {}))
+    __getattr__ = lambda self, name: _swig_getattr(self, F105Truss60Bar, name)
+    __repr__ = _swig_repr
+
+    def __init__(self, *args):
+        this = _eureka.new_F105Truss60Bar(*args)
+        try:
+            self.this.append(this)
+        except __builtin__.Exception:
+            self.this = this
+    __swig_destroy__ = _eureka.delete_F105Truss60Bar
+    __del__ = lambda self: None
+
+    def evaluation(self, vector, values):
+        return _eureka.F105Truss60Bar_evaluation(self, vector, values)
+F105Truss60Bar_swigregister = _eureka.F105Truss60Bar_swigregister
+F105Truss60Bar_swigregister(F105Truss60Bar)
+
+class F107Truss72Bar(TrussBarStructureStaticProblem):
+    __swig_setmethods__ = {}
+    for _s in [TrussBarStructureStaticProblem]:
+        __swig_setmethods__.update(getattr(_s, '__swig_setmethods__', {}))
+    __setattr__ = lambda self, name, value: _swig_setattr(self, F107Truss72Bar, name, value)
+    __swig_getmethods__ = {}
+    for _s in [TrussBarStructureStaticProblem]:
+        __swig_getmethods__.update(getattr(_s, '__swig_getmethods__', {}))
+    __getattr__ = lambda self, name: _swig_getattr(self, F107Truss72Bar, name)
+    __repr__ = _swig_repr
+
+    def __init__(self, *args):
+        this = _eureka.new_F107Truss72Bar(*args)
+        try:
+            self.this.append(this)
+        except __builtin__.Exception:
+            self.this = this
+    __swig_destroy__ = _eureka.delete_F107Truss72Bar
+    __del__ = lambda self: None
+
+    def evaluation(self, vector, values):
+        return _eureka.F107Truss72Bar_evaluation(self, vector, values)
+F107Truss72Bar_swigregister = _eureka.F107Truss72Bar_swigregister
+F107Truss72Bar_swigregister(F107Truss72Bar)
+
+class F109Truss942Bar(TrussBarStructureStaticProblem):
+    __swig_setmethods__ = {}
+    for _s in [TrussBarStructureStaticProblem]:
+        __swig_setmethods__.update(getattr(_s, '__swig_setmethods__', {}))
+    __setattr__ = lambda self, name, value: _swig_setattr(self, F109Truss942Bar, name, value)
+    __swig_getmethods__ = {}
+    for _s in [TrussBarStructureStaticProblem]:
+        __swig_getmethods__.update(getattr(_s, '__swig_getmethods__', {}))
+    __getattr__ = lambda self, name: _swig_getattr(self, F109Truss942Bar, name)
+    __repr__ = _swig_repr
+
+    def __init__(self, *args):
+        this = _eureka.new_F109Truss942Bar(*args)
+        try:
+            self.this.append(this)
+        except __builtin__.Exception:
+            self.this = this
+    __swig_destroy__ = _eureka.delete_F109Truss942Bar
+    __del__ = lambda self: None
+F109Truss942Bar_swigregister = _eureka.F109Truss942Bar_swigregister
+F109Truss942Bar_swigregister(F109Truss942Bar)
+
 # This file is compatible with both classic and new-style classes.
 
 

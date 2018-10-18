@@ -9,7 +9,7 @@ version = "1.0"
   
 # specify the name of the extension and source files 
 # required to compile this 
-ext_modules = Extension(name='_eureka',sources=["_eureka_module.cc","EurekaOptimaException.cpp","F101Truss10Bar.cpp","Problem.cpp","TrussBarStructureStaticProblem.cpp","TrussBarStructureStaticSimulator.cpp"]) 
+ext_modules = Extension(name='_eureka',sources=["_eureka_module.cc","EurekaOptimaException.cpp","Problem.cpp","TrussBarStructureStaticProblem.cpp","TrussBarStructureStaticSimulator.cpp","F101Truss10Bar.cpp","F103Truss25Bar.cpp","F105Truss60Bar.cpp","F107Truss72Bar.cpp","F109Truss942Bar.cpp"]) 
   
 setup(name=name, 
       version=version, 

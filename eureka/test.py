@@ -6,12 +6,13 @@ Created on Sun May 20 17:53:50 2018
 @author: pedrohen
 """
 import sys
-sys.path.insert(0, "eureka")
+#sys.path.insert(0, "eureka")
+sys.path.append("eureka")
 import eureka
 import numpy as np
 import operator as op
 # import ctypes
-from functions import Functions
+#from functions import Functions
 
 """
 n = search space dimension
@@ -28,12 +29,12 @@ fitness = Fitness of each individual (for APM)
 class Individual(object):
     # noinspection PyUnusedLocal
     def __init__(self, n=None, objectiveFunction=None, g=None, h=None, violations=None, sigma=None, violationSum=None, fitness=None):
-        self.n = [-1 for i in range(1000)] if n is None else n
+        self.n = [-1 for i in range(100)] if n is None else n
         self.objectiveFunction = [-1 for i in range(1)] if objectiveFunction is None else objectiveFunction
-        self.g = [-1 for i in range(1000)] if g is None else g
-        self.h = [-1 for i in range(1000)] if h is None else h
-        self.sigma = [-1 for i in range(1000)] if sigma is None else sigma
-        self.violations = [-1 for i in range(1000)] if violations is None else violations
+        self.g = [-1 for i in range(100)] if g is None else g
+        self.h = [-1 for i in range(100)] if h is None else h
+        self.sigma = [-1 for i in range(100)] if sigma is None else sigma
+        self.violations = [-1 for i in range(100)] if violations is None else violations
         self.violationSum = -1 if violationSum is None else violationSum
         self.fitness = -1 if fitness is None else fitness
 
@@ -168,18 +169,17 @@ class Population(object):
                 Functions.C17(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
             elif function == 18:
                 Functions.C18(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function > 18:  # evaluate method on c++ : evalute(*vector, *values) where value is the dimension of the problem and values is the objFunction + constraints
-                valuesArraySize = truss.getNumberObjectives() + truss.getNumberConstraints()  # the length will be objFunction (1) + gSize
+            elif function >18:
+                valuesArraySize = truss.getNumberObjectives() + truss.getNumberConstraints()  # the length will be objFunct(1) + gSize
                 dimensionArray = eureka.new_doubleArray(truss.getDimension())  # creates an array
                 valuesArray = eureka.new_doubleArray(valuesArraySize)  # the length will be objFunct(1) + gSize
                 build_array(dimensionArray, self.individuals[i].n, truss.getDimension())  # transfers values to C++ array
                 valuesList = self.individuals[i].objectiveFunction + self.individuals[i].g  # concatenates the two lists
                 build_array(valuesArray, valuesList, valuesArraySize)
                 truss.evaluation(dimensionArray, valuesArray)
-                # truss.evaluate(dimensionArray, valuesArray)
                 build_list(self.individuals[i].n, dimensionArray, 0, truss.getDimension())  # transfers values to python list
                 self.individuals[i].objectiveFunction[0] = eureka.doubleArray_getitem(valuesArray, 0)
-                build_list(self.individuals[i].g, valuesArray, 1, valuesArraySize)
+                build_list(self.individuals[i].g, valuesArray, 1, truss.getNumberConstraints())
                 eureka.delete_doubleArray(dimensionArray)
                 eureka.delete_doubleArray(valuesArray)
             else:
@@ -660,7 +660,9 @@ def initializeTruss(function): #  Initializes truss and bounds
     if function == 19:
         truss = eureka.F101Truss10Bar()
     elif function == 20:
+        print("funcionou funcao")
         truss = eureka.F103Truss25Bar()
+        print("aaaa")
     elif function == 21:
         truss = eureka.F105Truss60Bar()
     elif function == 22:
@@ -670,6 +672,7 @@ def initializeTruss(function): #  Initializes truss and bounds
     else:
         print("Function not encountered")
         sys.exit("Function not encountered")
+    print("funcionou funcao")
     bounds = eureka.new_doubleddArray(truss.getDimension())
     bounds = eureka.castToDouble(truss.getBounds())
     lowerBound = eureka.doubleddArray_getitem(bounds, 0, 0)
@@ -796,7 +799,11 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, ma
     functionEvaluations = 0
     offspringsSize = parentsSize * generatedOffspring
     if function > 18:  # solving trusses
+        print("funcionou")
         truss, lowerBound, upperBound = initializeTruss(function)
+        # truss = eureka.F103Truss25Bar()
+
+        print("funcionou")
         nSize = truss.getDimension()
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
@@ -811,6 +818,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, ma
         parents = Population(parentsSize, nSize, function)  # Initialize parents population
         offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations)  # Evaluate parents
+
     if penaltyMethod == 1:  # Padrao?  (not apm)
         parents.sumViolations(parentsSize, gSize, hSize)
     elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
@@ -905,27 +913,23 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, ma
 
 def main():
     # function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,crossoverProb,esType,globalSigma
-    """
-    tales rodou 150 gerações
-    function 19: truss 10 bars
-    function 20: truss 25 bars
-    function 21: truss 60 bars
-    function 22: truss 72 bars
-    function 23: truss 942 bars
-    """
-    function = 23  # continuo
+    function = 19
     seed = 1
     penaltyMethod = 1
     parentsSize = 50
     nSize = 10
-    generatedOffspring = 10
+    generatedOffspring = 1
     maxFE = 20000
-    crossoverProb = 100
+    crossoverProb = 60
     esType = 0  # 0 Es + and 1 Es ,
     globalSigma = 1
     # DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
-    GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
+    # GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
     # ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
+    truss1 = eureka.F101Truss10Bar()
+    print("works")
+    truss = eureka.F103Truss25Bar()
+    print("works too")
 
 
 if __name__ == '__main__':
