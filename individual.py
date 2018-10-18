@@ -8,6 +8,7 @@ Created on Sun May 20 17:53:50 2018
 import sys
 sys.path.insert(0, "eureka")
 import eureka
+import argparse
 import numpy as np
 import operator as op
 # import ctypes
@@ -64,34 +65,35 @@ class Individual(object):
 
 class Population(object):
     def __init__(self, popSize, nSize, function, truss=None, lowerBound=None, upperBound=None):
+        strFunction = str(function)
         self.individuals = []
         for i in range(popSize):
             values = []
             for j in range(nSize):  # Dimension
-                if function == 1:
-                    values.append(np.random.uniform(0, 10))  # value = np.random.uniform(0,10)
-                elif function == 2:
-                    values.append(np.random.uniform(-5, 5))
-                elif function == 3 or function == 12 or function == 14 or function == 15:
-                    values.append(np.random.uniform(-1000, 1000))
-                elif function == 4 or function == 18:
-                    values.append(np.random.uniform(-50, 50))
-                elif function == 5 or function == 6:
-                    values.append(np.random.uniform(-600, 600))
-                elif function == 7 or function == 8:
-                    values.append(np.random.uniform(-140, 140))
-                elif function == 9 or function == 10 or function == 13:
-                    values.append(np.random.uniform(-500, 500))
-                elif function == 11:
-                    values.append(np.random.uniform(-100, 100))
-                elif function == 16 or function == 17:
-                    values.append(np.random.uniform(-10, 10))
-                elif function > 18:  #  Truss problem
+                if strFunction[0] == "1":  # "Normal" problems (functions to be minimized)
+                    if function == 11:
+                        values.append(np.random.uniform(0, 10))  # value = np.random.uniform(0,10)
+                    elif function == 12:
+                        values.append(np.random.uniform(-5, 5))
+                    elif function == 13 or function == 112 or function == 114 or function == 115:
+                        values.append(np.random.uniform(-1000, 1000))
+                    elif function == 14 or function == 118:
+                        values.append(np.random.uniform(-50, 50))
+                    elif function == 15 or function == 16:
+                        values.append(np.random.uniform(-600, 600))
+                    elif function == 17 or function == 18:
+                        values.append(np.random.uniform(-140, 140))
+                    elif function == 19 or function == 110 or function == 113:
+                        values.append(np.random.uniform(-500, 500))
+                    elif function == 111:
+                        values.append(np.random.uniform(-100, 100))
+                    elif function == 116 or function == 117:
+                        values.append(np.random.uniform(-10, 10))
+                elif strFunction[0] == "2":  # Truss problems
                     values.append(np.random.uniform(lowerBound, upperBound))
                 else:
                     print("Function not encountered")  # sys.exit("Function not encountered")
             self.individuals.append(Individual(values))
-
 
     # self,n = None, objectiveFunction = None, g = None, h =None,violations = None ,sigma = None, violationSum = None, fitness = None
     def copyIndividual(self, idxDest, idxToBeCopy, population, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
@@ -116,59 +118,61 @@ class Population(object):
             self.individuals[idxDest].fitness = population.individuals[idxToBeCopy].fitness
 
     def evaluate(self, popSize, function, nSize, gSize, hSize, fe, truss=None):
+        strFunction = str(function)
         for i in range(popSize):
             fe = fe + 1
-            if function == 1:
-                Functions.C01(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-                """
-                cLib.C01.restype = None  # void
-                # Seta 4 param( ponteiros para float) e 4 ultimos param (inteiros)
-                cLib.C01.argtypes = (ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_float),ctypes.POINTER( ctypes.c_float),ctypes.POINTER(ctypes.c_float),  ctypes.c_int,ctypes.c_int, ctypes.c_int,ctypes.c_int)
-                nParam = (ctypes.c_float * nSize) (*(self.individuals[i].n))
-                objFuncParam = (ctypes.c_float * nSize)(*(self.individuals[i].objectiveFunction))
-                gParam = (ctypes.c_float * nSize)(*(self.individuals[i].g))
-                hParam = (ctypes.c_float * nSize)(*(self.individuals[i].h))
-                cLib.C01(nParam, objFuncParam, gParam, hParam, nSize, 1, gSize, hSize)
-                self.individuals[i].n = [x for x in nParam]  # copia array
-                self.individuals[i].objectiveFunction = [x for x in objFuncParam]
-                self.individuals[i].g = [x for x in gParam]  # copia array
-                self.individuals[i].h = [x for x in hParam]  # copia array
-                """
-            elif function == 2:
-                Functions.C02(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 3:
-                Functions.C03(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 4:
-                Functions.C04(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 5:
-                Functions.C05(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 6:
-                Functions.C06(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 7:
-                Functions.C07(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 8:
-                Functions.C08(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 9:
-                Functions.C09(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 10:
-                Functions.C10(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 11:
-                Functions.C11(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 12:
-                Functions.C12(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 13:
-                Functions.C13(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 14:
-                Functions.C14(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 15:
-                Functions.C15(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 16:
-                Functions.C16(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 17:
-                Functions.C17(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function == 18:
-                Functions.C18(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-            elif function > 18:  # evaluate method on c++ : evalute(*vector, *values) where value is the dimension of the problem and values is the objFunction + constraints
+            if strFunction[0] == "1":  # "Normal" problems (functions to be minimized)
+                if function == 11:
+                    Functions.C01(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                    """
+                    cLib.C01.restype = None  # void
+                    # Seta 4 param( ponteiros para float) e 4 ultimos param (inteiros)
+                    cLib.C01.argtypes = (ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_float),ctypes.POINTER( ctypes.c_float),ctypes.POINTER(ctypes.c_float),  ctypes.c_int,ctypes.c_int, ctypes.c_int,ctypes.c_int)
+                    nParam = (ctypes.c_float * nSize) (*(self.individuals[i].n))
+                    objFuncParam = (ctypes.c_float * nSize)(*(self.individuals[i].objectiveFunction))
+                    gParam = (ctypes.c_float * nSize)(*(self.individuals[i].g))
+                    hParam = (ctypes.c_float * nSize)(*(self.individuals[i].h))
+                    cLib.C01(nParam, objFuncParam, gParam, hParam, nSize, 1, gSize, hSize)
+                    self.individuals[i].n = [x for x in nParam]  # copia array
+                    self.individuals[i].objectiveFunction = [x for x in objFuncParam]
+                    self.individuals[i].g = [x for x in gParam]  # copia array
+                    self.individuals[i].h = [x for x in hParam]  # copia array
+                    """
+                elif function == 12:
+                    Functions.C02(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 13:
+                    Functions.C03(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 14:
+                    Functions.C04(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 15:
+                    Functions.C05(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 16:
+                    Functions.C06(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 17:
+                    Functions.C07(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 18:
+                    Functions.C08(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 19:
+                    Functions.C09(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 110:
+                    Functions.C10(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 111:
+                    Functions.C11(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 112:
+                    Functions.C12(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 113:
+                    Functions.C13(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 114:
+                    Functions.C14(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 115:
+                    Functions.C15(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 116:
+                    Functions.C16(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 117:
+                    Functions.C17(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                elif function == 118:
+                    Functions.C18(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+            elif strFunction[0] == "2":  # evaluate method on c++ : evalute(*vector, *values) where value is the dimension of the problem and values is the objFunction + constraints
                 valuesArraySize = truss.getNumberObjectives() + truss.getNumberConstraints()  # the length will be objFunction (1) + gSize
                 dimensionArray = eureka.new_doubleArray(truss.getDimension())  # creates an array
                 valuesArray = eureka.new_doubleArray(valuesArraySize)  # the length will be objFunct(1) + gSize
@@ -275,34 +279,37 @@ class Population(object):
                 self.individuals[i].n[j] = self.individuals[i].n[j] + np.random.normal(MEAN, STD)
 
     def bounding(self, nSize, function, popSize, lowerBound=None, upperBound=None):
-        if function == 1:
-            nMin = 0
-            nMax = 10
-        elif function == 2:
-            nMin = -5.12
-            nMax = 5.12
-        elif function == 3 or function == 12 or function == 14 or function == 15:
-            nMin = -1000
-            nMax = 1000
-        elif function == 4 or function == 18:
-            nMin = -50
-            nMax = 50
-        elif function == 5 or function == 6:
-            nMin = -600
-            nMax = 600
-        elif function == 7 or function == 8:
-            nMin = -140
-            nMax = 140
-        elif function == 9 or function == 10 or function == 13:
-            nMin = -500
-            nMax = 500
-        elif function == 11:
-            nMin = -100
-            nMax = 100
-        elif function == 16 or function == 17:
-            nMin = -10
-            nMax = 10
-        elif function > 18:  #  Truss problem
+        strFunction = str(function)
+        nMin = nMax = 0
+        if strFunction[0] == "1":
+            if function == 11:
+                nMin = 0
+                nMax = 10
+            elif function == 12:
+                nMin = -5.12
+                nMax = 5.12
+            elif function == 13 or function == 112 or function == 114 or function == 115:
+                nMin = -1000
+                nMax = 1000
+            elif function == 14 or function == 118:
+                nMin = -50
+                nMax = 50
+            elif function == 15 or function == 16:
+                nMin = -600
+                nMax = 600
+            elif function == 17 or function == 18:
+                nMin = -140
+                nMax = 140
+            elif function == 19 or function == 110 or function == 113:
+                nMin = -500
+                nMax = 500
+            elif function == 111:
+                nMin = -100
+                nMax = 100
+            elif function == 116 or function == 117:
+                nMin = -10
+                nMax = 10
+        elif strFunction[0] == "2":  # Truss problems
             nMin = lowerBound
             nMax = upperBound
         else:
@@ -615,39 +622,39 @@ def crossoverProbability(crossoverProb):
 
 
 def initializeConstraints(function):
-    if function == 1:
+    if function == 11:
         g = 2
         h = 0
         return g, h, g + h
-    elif function == 2 or function == 17:
+    elif function == 12 or function == 117:
         g = 2
         h = 1
         return g, h, g + h
-    elif function == 3 or function == 9 or function == 10 or function == 11:
+    elif function == 13 or function == 19 or function == 110 or function == 111:
         g = 0
         h = 1
         return g, h, g + h
-    elif function == 4:
+    elif function == 14:
         g = 0
         h = 4
         return g, h, g + h
-    elif function == 5 or function == 6:
+    elif function == 15 or function == 16:
         g = 0
         h = 2
         return g, h, g + h
-    elif function == 7 or function == 8:
+    elif function == 17 or function == 18:
         g = 1
         h = 0
         return g, h, g + h
-    elif function == 12 or function == 18:
+    elif function == 112 or function == 118:
         g = 1
         h = 1
         return g, h, g + h
-    elif function == 13 or function == 14 or function == 15:
+    elif function == 113 or function == 114 or function == 115:
         g = 3
         h = 0
         return g, h, g + h
-    elif function == 16:
+    elif function == 116:
         g = 2
         h = 2
         return g, h, g + h
@@ -656,16 +663,16 @@ def initializeConstraints(function):
         sys.exit("Function not encountered")
 
 
-def initializeTruss(function): #  Initializes truss and bounds
-    if function == 19:
+def initializeTruss(function):  # Initializes truss and bounds
+    if function == 210:  # Truss 10 bars
         truss = eureka.F101Truss10Bar()
-    elif function == 20:
+    elif function == 225:  # Truss 25 bars
         truss = eureka.F103Truss25Bar()
-    elif function == 21:
+    elif function == 260:  # Truss 60 bars
         truss = eureka.F105Truss60Bar()
-    elif function == 22:
+    elif function == 272:  # Truss 72 bars
         truss = eureka.F107Truss72Bar()
-    elif function == 23:
+    elif function == 2942:  # Truss 942 bars
         truss = eureka.F109Truss942Bar()
     else:
         print("Function not encountered")
@@ -714,7 +721,7 @@ function = function to be minimized  --- TIPO FUNCAO
 seed = seed to be used --- SEED
 penaltyMethod = Standard or Adaptive Penalty Method (APM)
 popSize = Size of population
-generatedOffspring = Number of offsprings generated by each parent
+offspringsSize = λ is number of offsprings, offsprings population size
 maxFE = Max number of function evaluations
 probCrossover = Crossover probability (0 - 100)
 esType = Type of evolution strategies ( + or , )
@@ -724,13 +731,15 @@ each individual has an array of sigma.
 '''
 
 
-def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma):  # Genetic Algorithm
+def GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Genetic Algorithm
+    strFunction = str(function)
     esType = globalSigma = -1
     np.random.seed(seed)
     crossoverType = 1
     functionEvaluations = 0
-    offspringsSize = parentsSize * generatedOffspring
-    if function > 18:  # solving trusses
+    generatedOffspring = int(offspringsSize / parentsSize)
+    lowerBound = upperBound = truss = 0
+    if strFunction[0] == "2":  # solving trusses
         truss, lowerBound, upperBound = initializeTruss(function)
         nSize = truss.getDimension()
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
@@ -766,7 +775,7 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, ma
                 print("Crossover type not encountered")
                 sys.exit("Crossover type not encountered")
         offsprings.mutation(nSize, offspringsSize)
-        if function > 18:
+        if strFunction[0] == "2":
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
             functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         else:
@@ -788,17 +797,19 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, ma
             print("implementar apm depois")
 
 
-def DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma):  # Differential Evolution
+def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Differential Evolution
+    strFunction = str(function)
     crossoverProb = esType = globalSigma = -1
     np.random.seed(seed)
     CR = 0.9
     F = 0.5
     functionEvaluations = 0
-    offspringsSize = parentsSize * generatedOffspring
-    if function > 18:  # solving trusses
+    generatedOffspring = int(offspringsSize / parentsSize)
+    lowerBound = upperBound = truss = 0
+    if strFunction[0] == "2":  # solving trusses
         truss, lowerBound, upperBound = initializeTruss(function)
         nSize = truss.getDimension()
-        gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
+        gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)  # TODO: Juntar com o initializeConstraints?!
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
         parents = Population(parentsSize, nSize, function, truss, lowerBound, upperBound)
@@ -838,7 +849,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, ma
                     else:
                         offsprings.individuals[offspringIdx].n[j] = parents.individuals[i].n[j]
                 offspringIdx = offspringIdx + 1
-        if function > 18:
+        if strFunction[0] == "2":
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
             functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         else:
@@ -854,12 +865,14 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, ma
         parents.printBest(parentsSize, penaltyMethod)
 
 
-def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
+def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
+    strFunction = str(function)
     crossoverProb = -1
     np.random.seed(seed)
     functionEvaluations = 0
-    offspringsSize = parentsSize * generatedOffspring
-    if function > 18:  # solving trusses
+    generatedOffspring = (offspringsSize / parentsSize)
+    lowerBound = upperBound = truss = 0
+    if strFunction[0] == "2":  # solving trusses
         truss, lowerBound, upperBound = initializeTruss(function)
         nSize = truss.getDimension()
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
@@ -887,7 +900,7 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, ma
     parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
     while functionEvaluations < maxFE:
         parents.sigmaSelfAdaptation(offsprings, nSize, parentsSize, generatedOffspring, globalSigma)
-        if function > 18:
+        if strFunction[0] == "2":
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
             functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         else:
@@ -903,29 +916,50 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, ma
         parents.printBest(parentsSize, penaltyMethod)
 
 
+# noinspection PyShadowingNames
+def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):
+    if algorithm == "GA":  # Genetic Algorithm
+        GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
+    elif algorithm == "DE":  # Differential Evolution
+        DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
+    elif algorithm == "ES":  # Evolution Strategy
+        ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
+    else:
+        print("Algorithm not encountered")
+        sys.exit("Algorithm not encountered")
+
+
 def main():
-    # function,seed,penaltyMethod,parentsSize,nSize,generatedOffspring,maxFE,crossoverProb,esType,globalSigma
-    """
-    tales rodou 150 gerações
-    function 19: truss 10 bars
-    function 20: truss 25 bars
-    function 21: truss 60 bars
-    function 22: truss 72 bars
-    function 23: truss 942 bars
-    """
-    function = 23  # continuo
-    seed = 1
-    penaltyMethod = 1
-    parentsSize = 50
-    nSize = 10
-    generatedOffspring = 10
-    maxFE = 20000
-    crossoverProb = 100
-    esType = 0  # 0 Es + and 1 Es ,
-    globalSigma = 1
-    # DE(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
-    GA(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
-    # ES(function, seed, penaltyMethod, parentsSize, nSize, generatedOffspring, maxFE, crossoverProb, esType, globalSigma)
+    # function,seed,penaltyMethod,parentsSize,nSize,offspringsSize,maxFE,crossoverProb,esType,globalSigma
+    # ES µ ≈ λ/4
+    parser = argparse.ArgumentParser(description="Evolutionary Algorithms")
+    parser.add_argument("--algorithm", "-a", type=str, default="DE", help="Algorithm to be used (GA, ES or DE)")
+    parser.add_argument("--function", "-f", type=int, default=210, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
+                        "For the truss problem, the first digit must be 2, followed by the number of the bars in the problem. "
+                        "Example: 225, is for the truss of 25 bars")
+    parser.add_argument("--seed", "-s", type=int, default=1, help="Seed to be used")
+    parser.add_argument("--penaltyMethod", "-p", type=int, default=1, help="Penalty method to be used. 1 for Deb Penalty or 2 for APM")
+    parser.add_argument("--parentsSize", "-u", type=int, default=50, help="µ is the parental population size")  # u from µ (mi) | µ ≈ λ/4
+    parser.add_argument("--nSize", "-n", type=int, default=10, help="Search space dimension")
+    parser.add_argument("--offspringsSize", "-l", type=int, default=200, help="λ is number of offsprings, offsprings population size")  # l from λ (lambda) | µ ≈ λ/4
+    parser.add_argument("--maxFE", "-m", type=int, default=20000, help="The max number of functions evaluations")
+    parser.add_argument("--crossoverProb", "-c", type=int, default=100, help="The crossover probability [0,100]")
+    parser.add_argument("--esType", "-e", type=int, default=0, help="The type of ES. 0 for ES(µ + λ) or 1 for ES(µ , λ)")
+    parser.add_argument("--globalSigma", "-g", type=int, default=0, help="If the σ parameter is global or not. 1 for global σ or 0 if not")
+    args = parser.parse_args()
+    args.algorithm = "DE"
+    args.function = 11
+    args.seed = 1
+    args.penaltyMethod = 1
+    args.parentsSize = 50  # µ | µ ≈ λ/4
+    args.nSize = 10
+    args.offspringsSize = 50  # λ | µ ≈ λ/4
+    args.maxFE = 20000
+    args.crossoverProb = 100
+    args.esType = 0  # 0 Es + and 1 Es ,
+    args.globalSigma = 1
+    algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize,
+              args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
 
 
 if __name__ == '__main__':
