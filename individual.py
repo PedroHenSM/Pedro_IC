@@ -947,6 +947,7 @@ def main():
     parser.add_argument("--esType", "-e", type=int, default=0, help="The type of ES. 0 for ES(µ + λ) or 1 for ES(µ , λ)")
     parser.add_argument("--globalSigma", "-g", type=int, default=0, help="If the σ parameter is global or not. 1 for global σ or 0 if not")
     args = parser.parse_args()
+    """
     args.algorithm = "DE"
     args.function = 11
     args.seed = 1
@@ -958,8 +959,9 @@ def main():
     args.crossoverProb = 100
     args.esType = 0  # 0 Es + and 1 Es ,
     args.globalSigma = 1
-    algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize,
-              args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
+    """
+    # algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
+    print(args)
 
 
 if __name__ == '__main__':
