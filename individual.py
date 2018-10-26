@@ -347,7 +347,24 @@ class Population(object):
                     if offsprings.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]:
                         self.individuals[i] = offsprings.individuals[i]
 
-    def printBest(self, parentsSize, penaltyMethod):
+    def printBest(self, nSize, parentsSize, penaltyMethod):
+        best = bestIndividual(self, parentsSize, penaltyMethod)
+        if penaltyMethod == 1:  # not apm
+            # print("Violation\t{:e}\tObjectiveFunction\t{:e}\t".format(best.violationSum, best.objectiveFunction[0]), end = " ")
+            print("{:}\t{:}\t".format(best.violationSum, best.objectiveFunction[0]), end = " ")
+            for i in range(nSize):
+                print("{}\t".format(best.n[i]), end = " ")
+            print("")
+        elif penaltyMethod == 2:  # APM
+            # print("Fitness\t{:e}\tObjectiveFunction\t{:e}\t".format(best.fitness, best.objectiveFunction[0]), end = " ")
+            print("{:}\t{:}\t".format(best.fitness, best.objectiveFunction[0]), end=" ")
+            for i in range(nSize):
+                print("{}\t".format(best.n[i]), end = " ")
+            print("")
+            if best.fitness == best.objectiveFunction[0]:
+                print("Fitness == objectiveFunction")
+
+    def printBestFO(self, parentsSize, penaltyMethod):
         best = bestIndividual(self, parentsSize, penaltyMethod)
         if penaltyMethod == 1:  # not apm
             print("Violation\t{:e}\tObjectiveFunction\t{:e}\n".format(best.violationSum, best.objectiveFunction[0]))
@@ -791,10 +808,7 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         parents.elitism(offsprings, parentsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
         parents.sort(offsprings, penaltyMethod)
         # print("FE: {}".format(functionEvaluations))
-        if penaltyMethod == 1:
-            parents.printBest(parentsSize, penaltyMethod)
-        elif penaltyMethod == 2:
-            print("implementar apm depois")
+        parents.printBest(nSize, parentsSize, penaltyMethod)
 
 
 def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Differential Evolution
@@ -862,7 +876,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
             avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
         parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
-        parents.printBest(parentsSize, penaltyMethod)
+        parents.printBest(nSize, parentsSize, penaltyMethod)
 
 
 def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
@@ -913,7 +927,7 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
             avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
         parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod)
-        parents.printBest(parentsSize, penaltyMethod)
+        parents.printBest(nSize, parentsSize, penaltyMethod)
 
 
 # noinspection PyShadowingNames
@@ -960,8 +974,10 @@ def main():
     args.esType = 0  # 0 Es + and 1 Es ,
     args.globalSigma = 1
     """
-    # algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
-    print(args)
+    args.maxFE = 300
+    args.offspringsSize = args.parentsSize
+    algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
+    # print(args)
 
 
 if __name__ == '__main__':
