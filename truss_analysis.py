@@ -106,15 +106,27 @@ def printLatex(algorithmsVariations, de, functionEvaluations, populations, offsp
     stds = []
     bests = []
     worsts = []
-    objectiveFunctions = [[]]
-    print(*algorithmsVariations, sep="\n")
+    # objectiveFunctions = [[]] * totalAlgorithmsVariations # doesnt work
+    objectiveFunctions = [[] for i in range(totalAlgorithmsVariations)]
+    # print("objectionFunctions")
+    print(objectiveFunctions)
+    # print(*algorithmsVariations, sep="\n")
     for a in range(totalAlgorithmsVariations):
         for i in range(totalSeeds):
+            # print("algorithmsVariations[{}][{}][0]: {}".format(a, i, algorithmsVariations[a][i][0]))
             objectiveFunctions[a].append(algorithmsVariations[a][i][0])
         means.append(np.mean(objectiveFunctions[a]))
         stds.append(np.std(objectiveFunctions[a]))
         bests.append(np.amin(objectiveFunctions[a]))
         worsts.append(np.amax(objectiveFunctions[a]))
+    """
+    print(*algorithmsVariations, sep="\n")
+    print("objectiveFunction[a]")
+    print(objectiveFunctions[0])
+    print("objectiveFunction")
+    print(objectiveFunctions, sep="\n")
+    """
+    sys.exit("tchaa")
     values = ([])
     values.append(means)
     values.append(stds)
