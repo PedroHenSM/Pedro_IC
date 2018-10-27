@@ -1,9 +1,65 @@
 import numpy as np
+# noinspection PyUnresolvedReferences
 import sys
 
+
+# noinspection PyShadowingNames
+def defineParameters():
+    totalAlgorithms = 1
+    algorithms = ['DE', 'ES', 'GA']
+    a = 0
+
+    totalFunctions = 1  # Funcoes
+    functions = [210, 225, 260, 272, 2942]
+    func = 0
+
+    totalSeeds = 3  # Seeds
+    seeds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+    s = 0
+
+    totalPenaltyMethods = 1  # Penalty Methods
+    penaltyMethods = [1, 2]
+    pm = 0
+
+    totalPopulation = 1  # Tamanho Populacao
+    populations = [50, 100]
+    p = 0
+
+    """
+    totalDimensions = 1  # TamX
+    # dimensions=(10 30)
+    dimensions = [10, 8, 25, 16, 59] # 10, 25, 60 , 72 and 942 bars and respctives dimensions
+    d = 0
+    """
+    totaloffsprings = 1
+    offsprings = [50, 100, 150, 200]
+    l = 0
+
+    totalFE = 1  # Max funtions evaluations (inicalmente 1 - apenas 20000)
+    functionEvaluations = [300, 20000, 100000, 500000]
+    fe = 0
+
+    totalProbCrossover = 1  # Probabilidade Crossover
+    probCrossovers = [100, 80]
+    c = 0
+
+    totalTipoES = 2  # Tipos de ES (+ ,)
+    tipoES = [0, 1]  # 0 + | 1 ,
+    es = 0
+
+    totalSigma = 2  # Sigma global
+    sigmas = [1, 2]  # 1 sigmaGlobal | (!=1)sigmaIndividual
+    sig = 0
+
+    return algorithms, totalAlgorithms, totalFunctions, functions, totalSeeds, seeds, totalPenaltyMethods, penaltyMethods, totalPopulation, populations, totaloffsprings, offsprings, totalFE, functionEvaluations, totalProbCrossover, probCrossovers, totalTipoES, tipoES, totalSigma, sigmas
+
+
+# noinspection PyShadowingNames
 def cabecalho(functions, func):
     print("C{:02}\tMean\t\tStd\t\tBest\t\tWorst".format(functions[func]))
 
+
+# noinspection PyShadowingNames
 def headerLatex(functions, func):
     print("\\begin{table}[h]")  # h de Here
     print("\centering")
@@ -15,16 +71,22 @@ def headerLatex(functions, func):
     print("Algorithm & Mean & Std & Best & Worst \\\\")
     print("\hline")
 
-def footerLatex():
+
+# noinspection PyShadowingNames
+def footerLatex(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm):
     print("\end{tabular}")
     print("\end{table}")
-    print("\\textbf{{N}}: {}\t\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Children/Gen.}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(dimensions[d], functionEvaluations[fe], populations[p], filhosGerados[fi], probCrossovers[c], penaltyMethodsStr[pm]))
+    print("\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Offsprings.}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(functionEvaluations[fe], populations[p], offsprings[l], probCrossovers[c], penaltyMethodsStr[pm]))
     print("\n\n")
 
-def latexModel():
-    headerLatex(functions, func)
-    footerLatex()
 
+# noinspection PyShadowingNames
+def latexModel(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm):
+    headerLatex(functions, func)
+    footerLatex(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm)
+
+
+# noinspection PyShadowingNames
 def imprime(de, es01, es02, es11, es12, ag):
     print("DE\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(de), np.std(de), np.amin(de), np.amax(de)))
     print("AG\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(ag), np.std(ag), np.amin(ag), np.amax(ag)))
@@ -33,168 +95,119 @@ def imprime(de, es01, es02, es11, es12, ag):
     print("ES , G\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es11), np.std(es11), np.amin(es11), np.amax(es11)))
     print("ES , I\t{:e}\t{:e}\t{:e}\t{:e}".format(np.mean(es12), np.std(es12), np.amin(es12), np.amax(es12)))
 
-#def printLatex(de, es01, es02, es11, es12, ag, totalSeeds):
-def printLatex(de):
-    algorithmsStr = ["DE", "AG", "ES + G", "ES + I", "ES , G", "ES , I"]
-    algorithms = []
-    algorithms.append(de)
-    """
-    algorithms.append(ag)
-    algorithms.append(es01)
-    algorithms.append(es02)
-    algorithms.append(es11)
-    algorithms.append(es12)
-    """
-    # print(algorithms)
-    totalSeeds = 3
+
+# def printLatex(de,es01, es02, es11, es12, ga, dimensions, functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, d, fe, p, l, c, pm, totalSeeds):
+# noinspection PyShadowingNames
+def printLatex(algorithmsVariations, de, functionEvaluations, populations, offsprings, probCrossovers, fe, p, l, c, pm, totalSeeds, totalAlgorithmsVariations):
+    algorithmsStr = ["DE", "GA", "ES + G", "ES + I", "ES , G", "ES , I"]
+    penaltyMethodsStr = ["Deb Penalty", "APM"]
     means = []
     stds = []
     bests = []
     worsts = []
-    for i in range(6): # number of algorithms
-        means.append(np.mean(algorithms[i], axis = 3))
-        stds.append(np.std(algorithms[i], axis = 3))
-        bests.append(np.amin(algorithms[i], axis = 3))
-        worsts.append(np.amax(algorithms[i], axis = 3))
-
-    values = []
+    objectiveFunctions = [[]]
+    for a in range(totalAlgorithmsVariations):
+        for i in range(totalSeeds):
+            objectiveFunctions[a].append(algorithmsVariations[a][i][0])
+        means.append(np.mean(objectiveFunctions[a]))
+        stds.append(np.std(objectiveFunctions[a]))
+        bests.append(np.amin(objectiveFunctions[a]))
+        worsts.append(np.amax(objectiveFunctions[a]))
+    values = ([])
     values.append(means)
     values.append(stds)
     values.append(bests)
     values.append(worsts)
+    bestValues = [values[0][0], values[1][0], values[2][0], values[3][0]]  # means, stds, bests, worsts | first idx is the analysis(means,std,etc)and second is the algorithm(de,ga,etc)
 
-    print(values)
-    sys.exit()
-    # print(values[1][0])
-    bestValues = [np.mean(de), np.std(de), np.amin(de), np.amax(de)]
-    # print(bestValues)
-    for m in range(1, 6):  # Pick best means | stds | bests | worsts
-        if np.mean(algorithms[m]) < bestValues[0]:  # Mean
-            bestValues[0] = np.mean(algorithms[m])
-        if np.std(algorithms[m]) < bestValues[1]:  # Std
-            bestValues[1] = np.std(algorithms[m])
-        if np.amin(algorithms[m]) < bestValues[2]:  # Best
-            bestValues[2] = np.amin(algorithms[m])
-        if np.amax(algorithms[m]) < bestValues[3]:  # Worst
-            bestValues[3] = np.amax(algorithms[m])
-
+    for a in range(1, totalAlgorithmsVariations):  # Pick best means | stds | bests | worsts
+        if np.mean(objectiveFunctions[a]) < bestValues[0]:  # Mean
+            bestValues[0] = np.mean(objectiveFunctions[a])
+        if np.std(objectiveFunctions[a]) < bestValues[1]:  # Std
+            bestValues[1] = np.std(objectiveFunctions[a])
+        if np.amin(objectiveFunctions[a]) < bestValues[2]:  # Best
+            bestValues[2] = np.amin(objectiveFunctions[a])
+        if np.amax(objectiveFunctions[a]) < bestValues[3]:  # Worst
+            bestValues[3] = np.amax(objectiveFunctions[a])
     headerLatex(functions, func)
-
-    for m in range(6):
-        print(algorithmsStr[m] + " &", end=' ')
-        for p in range(4):
-            if bestValues[p] == values[p][m]:
-                if p == 3:
-                    print("\\textbf{{{:e}}}".format(values[p][m]), end=' ')
-                # print("\\text{{{:e}}}\t".format(values[p][m]), end = ' ')
+    for a in range(totalAlgorithmsVariations):
+        print(algorithmsStr[a] + " &", end=' ')
+        for j in range(4):
+            if bestValues[j] == values[j][a]:  # if actual algorithm is the best, put bold
+                if j == 3:  # just for formatting
+                    print("\\textbf{{{:e}}}".format(values[j][a]), end=' ')
                 else:
-                    print("\\textbf{{{:e}}} &".format(values[p][m]), end=' ')
-            # else:
-            # print("{:e}\t".format(values[p][m]),end = ' ')
+                    print("\\textbf{{{:e}}} &".format(values[j][a]), end=' ')
             else:
-                if p == 3:
-                    print("{:e}".format(values[p][m]), end=' ')
+                if j == 3:  # just for formatting
+                    print("{:e}".format(values[j][a]), end=' ')
                 else:
-                    print("{:e} &".format(values[p][m]), end=' ')
+                    print("{:e} &".format(values[j][a]), end=' ')
         print("\\\\")
 
-    footerLatex()
+    footerLatex(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm)
 
-totalAlgorithms = 1
-algorithms = ['DE', 'ES', 'AG']
-a = 0
 
-totalFunctions = 1  # Funcoes
-functions = [210, 225, 260, 272, 2942]
-func = 0
-
-totalSeeds = 3  # Seeds
-seeds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
-s = 0
-
-totalPenaltyMethods = 1  # Penalty Methods
-penaltyMethods = [1, 2]
-penaltyMethodsStr = ["Padrao", "APM"]
-pm = 0
-
-totalPopulation = 1  # Tamanho Populacao
-populations = [50, 100]
-p = 0
-
-totalDimensions = 1  # TamX
-# dimensions=(10 30)
-dimensions = [10, 30]
-d = 0
-
-totaloffsprings = 1
-offsprings = [50, 100, 150, 200]
-l = 0
-
-totalFE = 1  # Max funtions evaluations (inicalmente 1 - apenas 20000)
-functionEvaluations = [300, 20000, 100000, 500000]
-fe = 0
-
-totalProbCrossover = 1  # Probabilidade Crossover
-probCrossovers = [100, 80]
-c = 0
-
-totalTipoES = 2  # Tipos de ES (+ ,)
-tipoES = [0, 1]  # 0 + | 1 ,
-es = 0
-
-totalSigma = 2  # Sigma global
-sigmas = [1, 2]  # 1 sigmaGlobal | (!=1)sigmaIndividual
-sig = 0
-
-for func in range(totalFunctions):
-    for l in range(totaloffsprings):
-        for p in range(totalPopulation):
-            for pm in range(totalPenaltyMethods):
-                de = []  # DE
-                es_0_1 = []  # ES 0 sigma global (+ 1)
-                es_0_2 = []  # ES 0 sigma indivudal (+ 2)
-                es_1_1 = []  # ES 1 sigma global (, 1)
-                es_1_2 = []  # ES 1 sigma individual (, 2)
-                ag = []  # AG
-                for a in range(totalAlgorithms):
-                    for es in range(totalTipoES):
-                        for sig in range(totalSigma):
-                            for s in range(totalSeeds):
-                                if algorithms[a] == 'DE' and es == 0 and sig == 0:
-                                    file = open("/home/pedrohen/Documentos/PedroIC/Resultados/trusses/DE/DE_truss_{}_{}_{}_{}_{}_{}.txt".format(functions[func], seeds[s], penaltyMethods[pm], populations[p], offsprings[l], functionEvaluations[fe]), "r")
-                                    line = file.readline()
-                                    splittedLine = line.split("\t")  # | Line Model is Violation\t ObjectiveFunction \t dimensions
+if __name__ == '__main__':
+    algorithms, totalAlgorithms, totalFunctions, functions, totalSeeds, seeds, totalPenaltyMethods, penaltyMethods, totalPopulation, populations, totaloffsprings, offsprings, totalFE, functionEvaluations, totalProbCrossover, probCrossovers, totalTipoES, tipoES, totalSigma, sigmas = defineParameters()
+    fe = c = 0
+    print(algorithms)
+    print(fe)
+    for func in range(totalFunctions):
+        for l in range(totaloffsprings):
+            for p in range(totalPopulation):
+                for pm in range(totalPenaltyMethods):
+                    totalAlgorithmsVariations = 1
+                    idxAlgorithmVariation = 0
+                    de = []  # DE
+                    es_0_1 = []  # ES 0 sigma global (+ 1)
+                    es_0_2 = []  # ES 0 sigma indivudal (+ 2)
+                    es_1_1 = []  # ES 1 sigma global (, 1)
+                    es_1_2 = []  # ES 1 sigma individual (, 2)
+                    ga = []  # AG
+                    algorithmsVariations = ([])
+                    algorithmsVariations.append(de)
+                    algorithmsVariations.append(ga)
+                    algorithmsVariations.append(es_0_1)
+                    algorithmsVariations.append(es_0_2)
+                    algorithmsVariations.append(es_1_1)
+                    algorithmsVariations.append(es_1_2)
+                    # print(algorithmsVariations)
+                    # sys.exit("ui")
+                    for a in range(totalAlgorithms):
+                        for es in range(totalTipoES):
+                            for sig in range(totalSigma):
+                                for s in range(totalSeeds):
+                                    if algorithms[a] == 'DE' and es == 0 and sig == 0:
+                                        idxAlgorithmVariation = 0
+                                        file = open("/home/pedrohen/Documentos/PedroIC/Resultados/trusses/DE/DE_truss_{}_{}_{}_{}_{}_{}.txt".format(functions[func], seeds[s], penaltyMethods[pm], populations[p], offsprings[l], functionEvaluations[fe]), "r")  # de.append(bestLine)
+                                    elif algorithms[a] == 'GA' and es == 0 and sig == 0:
+                                        idxAlgorithmVariation = 1
+                                        file = open("/home/pedrohen/Documentos/PedroIC/Resultados/trusses/GA/GA_truss_{}_{}_{}_{}_{}_{}_{}.txt".format(functions[func], seeds[s], penaltyMethods[pm], populations[p], offsprings[l], functionEvaluations[fe], probCrossovers[c]), "r")
+                                    elif algorithms[a] == 'ES':
+                                        if tipoES[es] == 0:  # Es0 +
+                                            if sigmas[sig] == 1:  # Sigma Global
+                                                idxAlgorithmVariation = 2
+                                                file = open("/home/pedrohen/Documentos/PedroIC/Resultados/trusses/ES/ES0/sigmaGlobal/ES_truss_{}_{}_{}_{}_{}_{}_{}_{}.txt".format(functions[func], seeds[s], penaltyMethods[pm], populations[p], offsprings[l], functionEvaluations[fe], tipoES[es], sigmas[sig]), "r")
+                                            elif sigmas[sig] == 2:  # Sigma Individual
+                                                idxAlgorithmVariation = 3
+                                                file = open("/home/pedrohen/Documentos/PedroIC/Resultados/trusses/ES/ES0/sigmaIndividual/ES_truss_{}_{}_{}_{}_{}_{}_{}_{}.txt".format(functions[func], seeds[s], penaltyMethods[pm], populations[p], offsprings[l], functionEvaluations[fe], tipoES[es], sigmas[sig]), "r")
+                                        elif tipoES[es] == 1:  # Es1 ,
+                                            if sigmas[sig] == 1:  # Sigma Global
+                                                idxAlgorithmVariation = 4
+                                                file = open("/home/pedrohen/Documentos/PedroIC/Resultados/trusses/ES/ES1/sigmaGlobal/ES_truss_{}_{}_{}_{}_{}_{}_{}_{}.txt".format(functions[func], seeds[s], penaltyMethods[pm], populations[p], offsprings[l], functionEvaluations[fe], tipoES[es], sigmas[sig]), "r")
+                                            elif sigmas[sig] == 2:  # Sigma Individual
+                                                idxAlgorithmVariation = 5
+                                                file = open("/home/pedrohen/Documentos/PedroIC/Resultados/trusses/ES/ES1/sigmaIndividual/ES_truss_{}_{}_{}_{}_{}_{}_{}_{}.txt".format(functions[func], seeds[s], penaltyMethods[pm], populations[p], offsprings[l], functionEvaluations[fe], tipoES[es], sigmas[sig]), "r")
+                                    splittedLine = file.readline().split("\t")  # | Line Model is Violation\t ObjectiveFunction \t dimensions
                                     bestLine = splittedLine
-                                    # print(bestLine)
-                                    # print(bestLine[3])
-                                    for line in file:
+                                    for line in file:  # continues reading file
                                         splittedLine = line.split("\t")
-                                        if float(splittedLine[0]) == 0 and splittedLine[1] < bestLine[1]:  # Tests if violation is 0 Compares objecive Function
+                                        if float(splittedLine[0]) == 0 and splittedLine[1] < bestLine[1]:  # Tests if violation is 0 and then compares objecive Function
                                             bestLine = splittedLine
-
-                                    print(bestLine)
-                                    bestLine = bestLine[1:-1] # removes violation and '\n' from list, now the first idx is the ObjFunction
-                                    print(bestLine)
-                                    bestLine = [float(i) for i in bestLine] # converts all str values to float
-                                    de.append(bestLine)
-                                elif algorithms[a] == 'ES':  # ES_FUNC _ SEED _ POP _ X _ FILHOS _ FE _ TIPOES _ SIGMAGLOBAL
-                                    if tipoES[es] == 0:  # Es0 +
-                                        if sigmas[sig] == 1:  # Sigma Global
-                                            print("to be implemented")
-                                        elif sigmas[sig] == 2:  # Sigma Individual
-                                            print("to be implemented")
-                                    elif tipoES[es] == 1:  # Es1 ,
-                                        if sigmas[sig] == 1:  # Sigma Global
-                                            print("to be implemented")
-                                        elif sigmas[sig] == 2:  # Sigma Individual
-                                            print("to be implemented")
-                                elif algorithms[a] == 'AG' and es == 0 and sig == 0:  # AG_FUNC _ SEED _ POP _ X _ FILHOS _ FE _ PROBCROSSOVER
-                                    print("to be implemented")
-                #if ((populations[p] == 50 and filhosGerados[fi] == 1) or (populations[p] == 25 and filhosGerados[fi] == 100)):
-                if 1 == 1:
-                    # Imprime apenas as relações de tamPop 50 e filhos 1 e tamPop 25 e filhos 100, para apm e padrao
-                    # printLatex(de, es_0_1, es_0_2, es_1_1, es_1_2, ag)
-                    print("Impressao do DE")
-                    print(*de, sep = "\n")
-                    print(type(de[0][3]))
-                    print(type(de[0]))
+                                    bestLine = bestLine[1:-1]  # removes violation and '\n' from list, now the first idx is the ObjFunction
+                                    bestLine = [float(i) for i in bestLine]  # converts all str values to float
+                                    algorithmsVariations[idxAlgorithmVariation].append(bestLine)
+                    if populations[p] == 50 and offsprings[l] == 50 or populations[p] == 50 and offsprings[l] == 200:
+                        printLatex(algorithmsVariations, de, functionEvaluations, populations, offsprings, probCrossovers, fe, p, l, c, pm, totalSeeds,
+                                   totalAlgorithmsVariations)  # printLatex(de, dimensions, functionEvaluations, populations, offsprings, probCrossovers, d, fe, p, l, c, pm, totalSeeds, totalAlgorithmsVariations)
