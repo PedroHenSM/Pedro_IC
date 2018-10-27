@@ -76,9 +76,9 @@ def headerLatex(functions, func):
 # noinspection PyShadowingNames
 def footerLatex(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm):
     print("\end{tabular}")
-    print("\end{table}")
     print("\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Offsprings.}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(functionEvaluations[fe], populations[p], offsprings[l], probCrossovers[c], penaltyMethodsStr[pm]))
-    print("\n\n")
+    print("\end{table}")
+    print("\n")
 
 
 # noinspection PyShadowingNames
@@ -106,10 +106,10 @@ def printLatex(algorithmsVariations, de, functionEvaluations, populations, offsp
     stds = []
     bests = []
     worsts = []
-    # objectiveFunctions = [[]] * totalAlgorithmsVariations # doesnt work
+    # objectiveFunctions = [[]] * totalAlgorithmsVariations # doesnt work, same id for lists
     objectiveFunctions = [[] for i in range(totalAlgorithmsVariations)]
     # print("objectionFunctions")
-    print(objectiveFunctions)
+    # print(objectiveFunctions)
     # print(*algorithmsVariations, sep="\n")
     for a in range(totalAlgorithmsVariations):
         for i in range(totalSeeds):
@@ -126,7 +126,7 @@ def printLatex(algorithmsVariations, de, functionEvaluations, populations, offsp
     print("objectiveFunction")
     print(objectiveFunctions, sep="\n")
     """
-    sys.exit("tchaa")
+    # sys.exit("tchaa")
     values = ([])
     values.append(means)
     values.append(stds)
