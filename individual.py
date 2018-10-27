@@ -979,7 +979,7 @@ def main():
     args.globalSigma = 1
     """
     args.maxFE = 300
-    args.offspringsSize = args.parentsSize
+    # args.offspringsSize = args.parentsSize
     algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
     # print(args)
 
