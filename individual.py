@@ -351,15 +351,15 @@ class Population(object):
         best = bestIndividual(self, parentsSize, penaltyMethod)
         if penaltyMethod == 1:  # not apm
             # print("Violation\t{:e}\tObjectiveFunction\t{:e}\t".format(best.violationSum, best.objectiveFunction[0]), end = " ")
-            print("{:}\t{:}\t".format(best.violationSum, best.objectiveFunction[0]), end = " ")
+            print("{:}\t{:}\t".format(best.violationSum, best.objectiveFunction[0]), end=" ")
             for i in range(nSize):
-                print("{}\t".format(best.n[i]), end = " ")
+                print("{}\t".format(best.n[i]), end=" ")
             print("")
         elif penaltyMethod == 2:  # APM
             # print("Fitness\t{:e}\tObjectiveFunction\t{:e}\t".format(best.fitness, best.objectiveFunction[0]), end = " ")
             print("{:}\t{:}\t".format(best.fitness, best.objectiveFunction[0]), end=" ")
             for i in range(nSize):
-                print("{}\t".format(best.n[i]), end = " ")
+                print("{}\t".format(best.n[i]), end=" ")
             print("")
             if best.fitness == best.objectiveFunction[0]:
                 print("Fitness == objectiveFunction")
@@ -457,15 +457,19 @@ class Population(object):
                     if globalSigma == 1:  # 1 sigma for each individual, utilizes only the first position of sigma array
                         offsprings.individuals[m].n[k] = self.individuals[i].n[k] + offsprings.individuals[m].sigma[0] * np.random.normal(MEAN, STD)
                     else:
-                        offsprings.individuals[m].sigma[k] = self.individuals[i].sigma[k] * np.exp(epsilon) * np.exp(epsilon)  # NOTE: Is the double produ   ct necessary?
+                        offsprings.individuals[m].sigma[k] = self.individuals[i].sigma[k] * np.exp(epsilon) * np.exp(epsilon)  # NOTE: Is the double product necessary?
                         offsprings.individuals[m].n[k] = self.individuals[i].n[k] + offsprings.individuals[m].sigma[k] * np.random.normal(MEAN, STD)
                 m = m + 1
 
-    def elitismES(self, offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod):
+    def elitismES(self, offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound):
         if esType == 0:  # Es + | Pick bests individuals among parents and offsprings
             # parents = Population(parentsSize,nSize,function) # Initialize
             # parents population
-            aux = Population(parentsSize + offspringsSize, nSize, 1)
+            if strFunction[0] == "2":  # truss
+                aux = Population(parentsSize + offspringsSize, nSize, 2, truss, lowerBound, upperBound)
+            elif strFunction[0] == "1":
+                aux = Population(parentsSize + offspringsSize, nSize, 1)
+
             k = 0
             for i in range(parentsSize + offspringsSize):
                 if i < parentsSize:
@@ -543,7 +547,7 @@ class Population(object):
         for l in range(numberOfConstraints):
             sumViolation.append(0)
             for i in range(popSize):
-                if self.individuals[i].violations[l] > 0:  # TODO: inser 'fancy' IF here
+                if self.individuals[i].violations[l] > 0:  # TODO: insert 'fancy' IF here
                     sumViolation[l] = sumViolation[l] + self.individuals[i].violations[l]
                 """
                 else:
@@ -884,7 +888,7 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
     crossoverProb = -1
     np.random.seed(seed)
     functionEvaluations = 0
-    generatedOffspring = (offspringsSize / parentsSize)
+    generatedOffspring = int(offspringsSize / parentsSize)
     lowerBound = upperBound = truss = 0
     if strFunction[0] == "2":  # solving trusses
         truss, lowerBound, upperBound = initializeTruss(function)
@@ -926,7 +930,7 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
             offsprings.uniteConstraints(offspringsSize, gSize, hSize)
             avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod)
+        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
         parents.printBest(nSize, parentsSize, penaltyMethod)
 
 

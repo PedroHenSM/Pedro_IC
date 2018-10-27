@@ -5,7 +5,7 @@ import sys
 
 # noinspection PyShadowingNames
 def defineParameters():
-    totalAlgorithms = 1
+    totalAlgorithms = 3
     algorithms = ['DE', 'ES', 'GA']
     a = 0
 
@@ -31,8 +31,9 @@ def defineParameters():
     dimensions = [10, 8, 25, 16, 59] # 10, 25, 60 , 72 and 942 bars and respctives dimensions
     d = 0
     """
-    totaloffsprings = 1
-    offsprings = [50, 100, 150, 200]
+    totaloffsprings = 2
+    # offsprings = [50, 100, 200, 400]
+    offsprings = [50, 200]
     l = 0
 
     totalFE = 1  # Max funtions evaluations (inicalmente 1 - apenas 20000)
@@ -40,7 +41,7 @@ def defineParameters():
     fe = 0
 
     totalProbCrossover = 1  # Probabilidade Crossover
-    probCrossovers = [100, 80]
+    probCrossovers = [80, 100]
     c = 0
 
     totalTipoES = 2  # Tipos de ES (+ ,)
@@ -100,12 +101,13 @@ def imprime(de, es01, es02, es11, es12, ag):
 # noinspection PyShadowingNames
 def printLatex(algorithmsVariations, de, functionEvaluations, populations, offsprings, probCrossovers, fe, p, l, c, pm, totalSeeds, totalAlgorithmsVariations):
     algorithmsStr = ["DE", "GA", "ES + G", "ES + I", "ES , G", "ES , I"]
-    penaltyMethodsStr = ["Deb Penalty", "APM"]
+    penaltyMethodsStr = ["Deb", "APM"]
     means = []
     stds = []
     bests = []
     worsts = []
     objectiveFunctions = [[]]
+    print(*algorithmsVariations, sep="\n")
     for a in range(totalAlgorithmsVariations):
         for i in range(totalSeeds):
             objectiveFunctions[a].append(algorithmsVariations[a][i][0])
@@ -151,14 +153,14 @@ def printLatex(algorithmsVariations, de, functionEvaluations, populations, offsp
 if __name__ == '__main__':
     algorithms, totalAlgorithms, totalFunctions, functions, totalSeeds, seeds, totalPenaltyMethods, penaltyMethods, totalPopulation, populations, totaloffsprings, offsprings, totalFE, functionEvaluations, totalProbCrossover, probCrossovers, totalTipoES, tipoES, totalSigma, sigmas = defineParameters()
     fe = c = 0
+    print(totalSeeds)
     print(algorithms)
     print(fe)
     for func in range(totalFunctions):
         for l in range(totaloffsprings):
             for p in range(totalPopulation):
                 for pm in range(totalPenaltyMethods):
-                    totalAlgorithmsVariations = 1
-                    idxAlgorithmVariation = 0
+                    totalAlgorithmsVariations = 6
                     de = []  # DE
                     es_0_1 = []  # ES 0 sigma global (+ 1)
                     es_0_2 = []  # ES 0 sigma indivudal (+ 2)
@@ -207,7 +209,10 @@ if __name__ == '__main__':
                                             bestLine = splittedLine
                                     bestLine = bestLine[1:-1]  # removes violation and '\n' from list, now the first idx is the ObjFunction
                                     bestLine = [float(i) for i in bestLine]  # converts all str values to float
-                                    algorithmsVariations[idxAlgorithmVariation].append(bestLine)
+                                    # print("Fora do printLatex")
+                                    # print(*algorithmsVariations, sep="\n")
+                                    if idxAlgorithmVariation != -1:
+                                        algorithmsVariations[idxAlgorithmVariation].append(bestLine)
+                                        idxAlgorithmVariation = -1
                     if populations[p] == 50 and offsprings[l] == 50 or populations[p] == 50 and offsprings[l] == 200:
-                        printLatex(algorithmsVariations, de, functionEvaluations, populations, offsprings, probCrossovers, fe, p, l, c, pm, totalSeeds,
-                                   totalAlgorithmsVariations)  # printLatex(de, dimensions, functionEvaluations, populations, offsprings, probCrossovers, d, fe, p, l, c, pm, totalSeeds, totalAlgorithmsVariations)
+                        printLatex(algorithmsVariations, de, functionEvaluations, populations, offsprings, probCrossovers, fe, p, l, c, pm, totalSeeds, totalAlgorithmsVariations)  # printLatex(de, dimensions, functionEvaluations, populations, offsprings, probCrossovers, d, fe, p, l, c, pm, totalSeeds, totalAlgorithmsVariations)
