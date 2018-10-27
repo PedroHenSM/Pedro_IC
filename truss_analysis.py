@@ -65,7 +65,6 @@ def headerLatex(functions, func):
     print("\\begin{table}[h]")  # h de Here
     print("\centering")
     print("\caption{{Function C{:02}}}".format(functions[func]))
-    # print("\\label{Label}")
     print("\\vspace{0.5cm}")
     print("\\begin{tabular}{@{} l | r r r r @{}}")  # r Divide primeira coluna das outras e rl alinha a direita
     print("\hline")
@@ -73,9 +72,31 @@ def headerLatex(functions, func):
     print("\hline")
 
 
+# noinspection PyShadowingNames,SpellCheckingInspection
+def headerLatex1(functions, func, algorithmsStr):
+    print("\\begin{table}[h]")  # h de Here
+    print("\centering")
+    print("\caption{{Function C{:02}}}".format(functions[func]))
+    print("\\vspace{0.5cm}")
+    print("\\resizebox{\\textwidth}{!} {%")
+    print("\\begin{tabular}{@{} l | r r r r r r@{}}")  # r Divide primeira coluna das outras e rl alinha a direita
+    print("\hline")
+    print("Algorithm & {} & {} & {} & {} & {} & {} \\\\".format(algorithmsStr[0], algorithmsStr[1], algorithmsStr[2], algorithmsStr[3], algorithmsStr[4], algorithmsStr[5]))
+    print("\hline")
+
+
 # noinspection PyShadowingNames
 def footerLatex(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm):
     print("\end{tabular}")
+    print("\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Offsprings.}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(functionEvaluations[fe], populations[p], offsprings[l], probCrossovers[c], penaltyMethodsStr[pm]))
+    print("\end{table}")
+    print("\n")
+
+
+# noinspection PyShadowingNames
+def footerLatex1(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm):
+    print("\end{tabular}%")
+    print("}")
     print("\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Offsprings.}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(functionEvaluations[fe], populations[p], offsprings[l], probCrossovers[c], penaltyMethodsStr[pm]))
     print("\end{table}")
     print("\n")
@@ -99,9 +120,8 @@ def imprime(de, es01, es02, es11, es12, ag):
 
 # def printLatex(de,es01, es02, es11, es12, ga, dimensions, functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, d, fe, p, l, c, pm, totalSeeds):
 # noinspection PyShadowingNames
-def printLatex(algorithmsVariations, de, functionEvaluations, populations, offsprings, probCrossovers, fe, p, l, c, pm, totalSeeds, totalAlgorithmsVariations):
-    algorithmsStr = ["DE", "GA", "ES + G", "ES + I", "ES , G", "ES , I"]
-    penaltyMethodsStr = ["Deb", "APM"]
+def objectiveFunctionAnalysis(algorithmsStr, statisticalAnalysisStr):
+    totalStatisticalAnalysis = 4  # Mean, std, max and min
     means = []
     stds = []
     bests = []
@@ -126,7 +146,7 @@ def printLatex(algorithmsVariations, de, functionEvaluations, populations, offsp
     print("objectiveFunction")
     print(objectiveFunctions, sep="\n")
     """
-    # sys.exit("tchaa")
+
     values = ([])
     values.append(means)
     values.append(stds)
@@ -143,31 +163,60 @@ def printLatex(algorithmsVariations, de, functionEvaluations, populations, offsp
             bestValues[2] = np.amin(objectiveFunctions[a])
         if np.amax(objectiveFunctions[a]) < bestValues[3]:  # Worst
             bestValues[3] = np.amax(objectiveFunctions[a])
-    headerLatex(functions, func)
-    for a in range(totalAlgorithmsVariations):
-        print(algorithmsStr[a] + " &", end=' ')
-        for j in range(4):
-            if bestValues[j] == values[j][a]:  # if actual algorithm is the best, put bold
-                if j == 3:  # just for formatting
-                    print("\\textbf{{{:e}}}".format(values[j][a]), end=' ')
-                else:
-                    print("\\textbf{{{:e}}} &".format(values[j][a]), end=' ')
-            else:
-                if j == 3:  # just for formatting
-                    print("{:e}".format(values[j][a]), end=' ')
-                else:
-                    print("{:e} &".format(values[j][a]), end=' ')
-        print("\\\\")
 
-    footerLatex(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm)
+    return bestValues, values, totalStatisticalAnalysis
+
+
+# noinspection PyShadowingNames
+def printLatex(algorithmsVariations, de, functionEvaluations, populations, offsprings, probCrossovers, fe, p, l, c, pm, totalSeeds, totalAlgorithmsVariations):
+    algorithmsStr = ["DE", "GA", "ES + G", "ES + I", "ES , G", "ES , I"]
+    statisticalAnalysisStr = ["Mean", "Std", "Best", "Worst"]
+    penaltyMethodsStr = ["Deb", "APM"]
+    algorithmsOnColumns = True
+    bestValues, values, totalStatisticalAnalysis = objectiveFunctionAnalysis(algorithmsStr, statisticalAnalysisStr)
+    if algorithmsOnColumns:
+        headerLatex1(functions, func, algorithmsStr)
+        for s in range(totalStatisticalAnalysis):
+            print(statisticalAnalysisStr[s] + " &", end=" ")
+            # print(algorithmsStr[a] + " &", end=' ')
+            for j in range(totalAlgorithmsVariations):
+                if bestValues[s] == values[s][j]:  # if actual algorithm is the best, put bold
+                    if j == totalAlgorithmsVariations - 1:  # just for formatting
+                        print("\\textbf{{{:e}}}".format(values[s][j]), end=' ')
+                    else:
+                        print("\\textbf{{{:e}}} &".format(values[s][j]), end=' ')
+                else:
+                    if j == totalAlgorithmsVariations - 1:  # just for formatting
+                        print("{:e}".format(values[s][j]), end=' ')
+                    else:
+                        print("{:e} &".format(values[s][j]), end=' ')
+            print("\\\\")
+        footerLatex1(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm)
+    else:
+        headerLatex(functions, func)
+        for a in range(totalAlgorithmsVariations):
+            print(algorithmsStr[a] + " &", end=' ')
+            for j in range(totalStatisticalAnalysis):
+                if bestValues[j] == values[j][a]:  # if actual algorithm is the best, put bold
+                    if j == totalStatisticalAnalysis - 1:  # just for formatting
+                        print("\\textbf{{{:e}}}".format(values[j][a]), end=' ')
+                    else:
+                        print("\\textbf{{{:e}}} &".format(values[j][a]), end=' ')
+                else:
+                    if j == totalStatisticalAnalysis - 1:  # just for formatting
+                        print("{:e}".format(values[j][a]), end=' ')
+                    else:
+                        print("{:e} &".format(values[j][a]), end=' ')
+            print("\\\\")
+        footerLatex(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm)
 
 
 if __name__ == '__main__':
     algorithms, totalAlgorithms, totalFunctions, functions, totalSeeds, seeds, totalPenaltyMethods, penaltyMethods, totalPopulation, populations, totaloffsprings, offsprings, totalFE, functionEvaluations, totalProbCrossover, probCrossovers, totalTipoES, tipoES, totalSigma, sigmas = defineParameters()
     fe = c = 0
-    print(totalSeeds)
-    print(algorithms)
-    print(fe)
+    # print(totalSeeds)
+    # print(algorithms)
+    # print(fe)
     for func in range(totalFunctions):
         for l in range(totaloffsprings):
             for p in range(totalPopulation):
