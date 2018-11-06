@@ -357,10 +357,11 @@ class Population(object):
             print("")
         elif penaltyMethod == 2:  # APM
             # print("Fitness\t{:e}\tObjectiveFunction\t{:e}\t".format(best.fitness, best.objectiveFunction[0]), end = " ")
-            print("{:}\t{:}\t".format(best.fitness, best.objectiveFunction[0]), end=" ")
-            for i in range(nSize):
-                print("{}\t".format(best.n[i]), end=" ")
-            print("")
+            if best.fitness == best.objectiveFunction[0]:
+                print("{:}\t{:}\t".format(best.fitness, best.objectiveFunction[0]), end=" ")
+                for i in range(nSize):
+                    print("{}\t".format(best.n[i]), end=" ")
+                print("")
 
             """
             if best.fitness == best.objectiveFunction[0]:
@@ -885,8 +886,8 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
             avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
         parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
-        # parents.printBest(nSize, parentsSize, penaltyMethod)
-        parents.printBestFO(parentsSize, penaltyMethod)
+        parents.printBest(nSize, parentsSize, penaltyMethod)
+        #  parents.printBestFO(parentsSize, penaltyMethod)
 
 def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
     strFunction = str(function)
@@ -983,13 +984,15 @@ def main():
     args.esType = 0  # 0 Es + and 1 Es ,
     args.globalSigma = 1
     """
-    args.maxFE = 20000
-    args.penaltyMethod = 2
-    args.function = 11
-    args.offspringsSize = args.parentsSize
-    args.seed = 1
+    args.algorithm = "ES"
+    args.globalSigma = 1
+    args.maxFE = 1000
+    # args.penaltyMethod = 2
+    # args.function = 210
+    # args.offspringsSize = args.parentsSize
+    # args.seed = 1
     algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
-    # print(args)
+    print(args)
 
 
 if __name__ == '__main__':

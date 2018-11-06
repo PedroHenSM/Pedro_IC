@@ -6,7 +6,7 @@ import sys
 # noinspection PyShadowingNames
 def defineParameters():
     totalAlgorithms = 3
-    algorithms = ['DE', 'ES', 'GA']
+    algorithms = ['DE', 'GA', 'ES']
     a = 0
 
     totalFunctions = 1  # Funcoes
@@ -17,7 +17,7 @@ def defineParameters():
     seeds = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
     s = 0
 
-    totalPenaltyMethods = 1  # Penalty Methods
+    totalPenaltyMethods = 2  # Penalty Methods
     penaltyMethods = [1, 2]
     pm = 0
 
@@ -101,7 +101,7 @@ def headerLatexVariableProjects(functions, func, algorithmsStr):
 # noinspection PyShadowingNames
 def footerLatex(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm):
     print("\end{tabular}")
-    print("\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Offsprings.}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(functionEvaluations[fe], populations[p], offsprings[l], probCrossovers[c], penaltyMethodsStr[pm]))
+    print("\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Offsprings}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(functionEvaluations[fe], populations[p], offsprings[l], probCrossovers[c], penaltyMethodsStr[pm]))
     print("\end{table}")
     print("\n")
 
@@ -110,7 +110,7 @@ def footerLatex(functionEvaluations, populations, offsprings, probCrossovers, pe
 def footerLatex1(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm):
     print("\end{tabular}%")
     print("}")
-    print("\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Offsprings.}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(functionEvaluations[fe], populations[p], offsprings[l], probCrossovers[c], penaltyMethodsStr[pm]))
+    print("\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Offsprings}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(functionEvaluations[fe], populations[p], offsprings[l], probCrossovers[c], penaltyMethodsStr[pm]))
     print("\end{table}")
     print("\n")
 
@@ -119,7 +119,7 @@ def footerLatex1(functionEvaluations, populations, offsprings, probCrossovers, p
 def footerLatexProjectVariables(functionEvaluations, populations, offsprings, probCrossovers, penaltyMethodsStr, fe, p, l, c, pm):
     print("\end{tabular}%")
     print("}")
-    print("\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Offsprings.}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(functionEvaluations[fe], populations[p], offsprings[l], probCrossovers[c], penaltyMethodsStr[pm]))
+    print("\\textbf{{FE}}: {}\t\\textbf{{Population}}: {}\t\\textbf{{Offsprings}}: {}\t\\textbf{{Crossover}}: {}\%\t\\textbf{{PenalthyMethod}}: {} \\\\ ".format(functionEvaluations[fe], populations[p], offsprings[l], probCrossovers[c], penaltyMethodsStr[pm]))
     print("\end{table}")
     print("\n")
 
@@ -337,15 +337,19 @@ if __name__ == '__main__':
                                     bestLine = splittedLine
                                     for line in file:  # continues reading file
                                         splittedLine = line.split("\t")
-                                        if float(splittedLine[0]) == 0 and splittedLine[1] < bestLine[1]:  # Tests if violation is 0 and then compares objecive Function
-                                            bestLine = splittedLine
+                                        if penaltyMethods[pm] == 1:  # Deb Penalty
+                                            if float(splittedLine[0]) == 0 and splittedLine[1] < bestLine[1]:  # Tests if violation is 0 and then compares objecive Function
+                                                bestLine = splittedLine
+                                        elif penaltyMethods[pm] == 2:  # APM
+                                            if float(splittedLine[0]) == float(splittedLine[1]) and splittedLine[1] < bestLine[1]:  # Test if fitness is equal to objectiveFunction and compares objectiveFunction
+                                                bestLine = splittedLine
                                     bestLine = bestLine[1:-1]  # removes violation and '\n' from list, now the first idx is the ObjFunction
                                     bestLine = [float(i) for i in bestLine]  # converts all str values to float
                                     # print("Fora do printLatex")
                                     # print(*algorithmsVariations, sep="\n")
                                     if idxAlgorithmVariation != -1:
                                         algorithmsVariations[idxAlgorithmVariation].append(bestLine)
-                                        if s == 0:  # If is the first iteration
+                                        if s == 0:  # If is the first iteration (seed 0)
                                             bestOfEachAlgorithm[idxAlgorithmVariation].append(bestLine)
                                         else:
                                             if bestLine[0] < bestOfEachAlgorithm[idxAlgorithmVariation][0][0]:  # compares objective function
