@@ -230,9 +230,9 @@ class Population(object):
                 idx1 = np.random.randint(0, parentsSize)
                 idx2 = np.random.randint(0, parentsSize)
                 if parents.individuals[idx1].fitness < parents.individuals[idx2].fitness:
-                    self.individuals[i] = parents.individuals[idx1]
+                    self.copyIndividual(i,idx1, parents, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                 elif parents.individuals[idx1].fitness >= parents.individuals[idx2].fitness:
-                    self.individuals[i] = parents.individuals[idx2]
+                    self.copyIndividual(i, idx2, parents, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
 
     def standardCrossover(self, nSize, offspringsSize):
         # Randomizes uniform value between n1 and n2
