@@ -332,20 +332,12 @@ class Population(object):
             offsprings.individuals.sort(key=op.attrgetter("fitness", "objectiveFunction"))
 
     def elitism(self, offsprings, parentsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
-        if penaltyMethod == 1:  # Not apm
-            copyStart = 5
-            i = 0
-            for j in range(copyStart, parentsSize):  # J iterates on parents
-                self.copyIndividual(j, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
-                # self.individuals[j] = offsprings.individuals[i]
-                i = i + 1
-        elif penaltyMethod == 2:  # APM | Chooses the best individual beetwen parent-offspring
-            for i in range(parentsSize):
-                if offsprings.individuals[i].fitness < self.individuals[i].fitness:
-                    self.individuals[i] = offsprings.individuals[i]
-                elif offsprings.individuals[i].fitness == self.individuals[i].fitness:
-                    if offsprings.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]:
-                        self.individuals[i] = offsprings.individuals[i]
+        copyStart = 5
+        i = 0
+        for j in range(copyStart, parentsSize):  # J iterates on parents
+            self.copyIndividual(j, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
+            # self.individuals[j] = offsprings.individuals[i]
+            i = i + 1
 
     def printBest(self, nSize, parentsSize, penaltyMethod):
         best = bestIndividual(self, parentsSize, penaltyMethod)
@@ -473,7 +465,7 @@ class Population(object):
             if strFunction[0] == "2":  # truss
                 aux = Population(parentsSize + offspringsSize, nSize, 2, truss, lowerBound, upperBound)
             elif strFunction[0] == "1":
-                aux = Population(parentsSize + offspringsSize, nSize, 1)
+                aux = Population(parentsSize + offspringsSize, nSize, 11)
 
             k = 0
             for i in range(parentsSize + offspringsSize):
@@ -889,6 +881,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         parents.printBest(nSize, parentsSize, penaltyMethod)
         #  parents.printBestFO(parentsSize, penaltyMethod)
 
+
 def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
     strFunction = str(function)
     crossoverProb = -1
@@ -985,12 +978,13 @@ def main():
     args.globalSigma = 1
     """
     args.algorithm = "ES"
-    args.globalSigma = 1
-    args.maxFE = 1000
-    # args.penaltyMethod = 2
-    # args.function = 210
+    #args.globalSigma = 1
+    #args.maxFE = 1000
+    args.esType = 1
+    args.penaltyMethod = 2
+    args.function = 11
     # args.offspringsSize = args.parentsSize
-    # args.seed = 1
+    # args.seed = 2
     algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
     print(args)
 
