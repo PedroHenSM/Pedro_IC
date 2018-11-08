@@ -230,7 +230,7 @@ class Population(object):
                 idx1 = np.random.randint(0, parentsSize)
                 idx2 = np.random.randint(0, parentsSize)
                 if parents.individuals[idx1].fitness < parents.individuals[idx2].fitness:
-                    self.copyIndividual(i,idx1, parents, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
+                    self.copyIndividual(i, idx1, parents, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
                 elif parents.individuals[idx1].fitness >= parents.individuals[idx2].fitness:
                     self.copyIndividual(i, idx2, parents, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
 
@@ -591,6 +591,14 @@ class Population(object):
         for i in range(popSize):
             print(self.individuals[i])
 
+    def calculateTrussWeight(self, parentsSize, penaltyMethod, bars):
+        PropertyE = 0.1
+        weight = 0
+        best = bestIndividual(self, parentsSize, penaltyMethod)
+        for i in range(len(bars)):  # len(bars) == len(n) (nSize)
+            weight = weight + best.n[i] * PropertyE * bars[i][-1]
+        return weight
+
 
 def copyOneIndividual(individual, idxToBeCopy, population, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
     for j in range(nSize):  # Copies n
@@ -748,6 +756,54 @@ globalSigma = Sigma parameter for ES. If sigmaGlobal equals 1 , each individual 
 each individual has an array of sigma.
 
 '''
+# nodes = [idxNode, x, y, z]
+# bars = [idxBar, nodeIdx1, nodeIdx2]
+
+
+def calculateBarLength(nodes, bars):
+    for i in range(len(bars)):
+        idx1 = bars[i][1] - 1  # 5
+        idx2 = bars[i][2] - 1  # 3
+        x = np.power(nodes[idx1][1] - nodes[idx2][1], 2)  # (x1 - x2)²
+        y = np.power(nodes[idx1][2] - nodes[idx2][2], 2)
+        z = np.power(nodes[idx1][3] - nodes[idx2][3], 2)
+        bars[i].append(np.sqrt(x+y+z))  # appends length of each bar
+    # return np.sqrt(x+y+z)
+
+
+# noinspection PyTypeChecker,PyTypeChecker
+def readTrussInput():
+    nodes = []
+    bars = []
+    file = open("input10.dat", "r")
+    file.readline()  # Ignores first line (name of truss)
+    numNodes = int(file.readline().split()[0])
+    for i in range(numNodes):
+        buffer = file.readline().split()
+        for j in range(3):  # removes useless information
+            buffer.pop(1)
+        buffer[0] = int(buffer[0])
+        for index in range(1, len(buffer)):  # saves nodes's idx and coordenates x, y and z
+            buffer[index] = float(buffer[index])
+        nodes.append(buffer)  # Insert the line in to the list
+    ignore = int(file.readline().split()[-1])
+    for i in range(ignore):  # ignores the next lines
+        file.readline()
+    numBars = int(file.readline().split()[1])
+    PropertyE = 10000000.
+    for i in range(numBars):  # bars properties | ignores (always 10000000)
+        file.readline()
+    for i in range(numBars):  # which bar is connected to who
+        buffer = file.readline().split()
+        buffer = buffer[:-2]
+        for index in range(len(buffer)):  # converts to int
+            buffer[index] = int(buffer[index])
+        bars.append(buffer)
+    # print(*bars, sep="\n")
+    # print(len(bars))
+    calculateBarLength(nodes, bars)
+    # print(*bars, sep="\n")
+    return bars
 
 
 def GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Genetic Algorithm
@@ -823,6 +879,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
     generatedOffspring = int(offspringsSize / parentsSize)
     lowerBound = upperBound = truss = 0
     if strFunction[0] == "2":  # solving trusses
+        bars = readTrussInput()
         truss, lowerBound, upperBound = initializeTruss(function)
         nSize = truss.getDimension()
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)  # TODO: Juntar com o initializeConstraints?!
@@ -878,8 +935,10 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
             avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
         parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
-        parents.printBest(nSize, parentsSize, penaltyMethod)
-        #  parents.printBestFO(parentsSize, penaltyMethod)
+        # parents.printBest(nSize, parentsSize, penaltyMethod)
+        parents.printBestFO(parentsSize, penaltyMethod)
+        weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
+        print("Weigth: {:e}".format(weight))
 
 
 def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
@@ -977,16 +1036,20 @@ def main():
     args.esType = 0  # 0 Es + and 1 Es ,
     args.globalSigma = 1
     """
-    args.algorithm = "ES"
-    #args.globalSigma = 1
-    #args.maxFE = 1000
-    args.esType = 1
-    args.penaltyMethod = 2
-    args.function = 11
+    # args.algorithm = "ES"
+    # args.globalSigma = 1
+    args.maxFE = 800
+    # args.esType = 0
+    # args.penaltyMethod = 2
+    # args.function = 2942
     # args.offspringsSize = args.parentsSize
+    # 10, 72 - 10 000
+    # 942 - 150 000
+    # Demais - 15 000
     # args.seed = 2
+    readTrussInput()
     algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
-    print(args)
+    # print(args)
 
 
 if __name__ == '__main__':
