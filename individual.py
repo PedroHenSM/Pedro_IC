@@ -64,7 +64,10 @@ class Individual(object):
 
 
 class Population(object):
-    def __init__(self, popSize, nSize, function, truss=None, lowerBound=None, upperBound=None):
+    def __init__(self, popSize, nSize, function, lowerBound=None, upperBound=None):  # TODO Remover parametro truss?
+        if lowerBound is not None and upperBound is not None:
+            mu = (lowerBound + upperBound) / 2  # midpoint of interval
+            sigma = (mu - lowerBound) / 4  # std which is 1/4 of the radius
         strFunction = str(function)
         self.individuals = []
         for i in range(popSize):
@@ -90,7 +93,9 @@ class Population(object):
                     elif function == 116 or function == 117:
                         values.append(np.random.uniform(-10, 10))
                 elif strFunction[0] == "2":  # Truss problems
-                    values.append(np.random.uniform(lowerBound, upperBound))
+                    values.append(np.random.normal(mu, sigma))
+                    # print(values)
+                    # values.append(np.random.uniform(lowerBound, upperBound))
                 else:
                     print("Function not encountered")  # sys.exit("Function not encountered")
             self.individuals.append(Individual(values))
@@ -463,7 +468,7 @@ class Population(object):
             # parents = Population(parentsSize,nSize,function) # Initialize
             # parents population
             if strFunction[0] == "2":  # truss
-                aux = Population(parentsSize + offspringsSize, nSize, 2, truss, lowerBound, upperBound)
+                aux = Population(parentsSize + offspringsSize, nSize, 2, lowerBound, upperBound)
             elif strFunction[0] == "1":
                 aux = Population(parentsSize + offspringsSize, nSize, 11)
 
@@ -590,6 +595,12 @@ class Population(object):
     def printPopulation(self, popSize):
         for i in range(popSize):
             print(self.individuals[i])
+
+    def printDimensionsAndViolationPopulation(self, popSize, nSize):
+        for i in range(popSize):
+            for j in range(nSize):
+                print(self.individuals[i].n[j], end="\t")
+            print(self.individuals[i].violationSum)
 
     def calculateTrussWeight(self, parentsSize, penaltyMethod, bars):
         PropertyE = 0.1
@@ -820,8 +831,8 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function, truss, lowerBound, upperBound)
-        offsprings = Population(offspringsSize, nSize, function, truss, lowerBound, upperBound)
+        parents = Population(parentsSize, nSize, function, lowerBound, upperBound)
+        offsprings = Population(offspringsSize, nSize, function, lowerBound, upperBound)
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
     else:
         gSize, hSize, constraintsSize = initializeConstraints(function)  # constraintsSize is the sum of gSize and hSize
@@ -885,8 +896,8 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)  # TODO: Juntar com o initializeConstraints?!
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function, truss, lowerBound, upperBound)
-        offsprings = Population(offspringsSize, nSize, function, truss, lowerBound, upperBound)
+        parents = Population(parentsSize, nSize, function, lowerBound, upperBound)
+        offsprings = Population(offspringsSize, nSize, function, lowerBound, upperBound)
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
     else:  # Solving 'normal' functions
         gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
@@ -904,9 +915,14 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
     else:
         print("Penalthy method not encountered")
         sys.exit("Penalty method not encountered")
-
+    firstIteration = True
     while functionEvaluations < maxFE:
         offsprings.selection(parents, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
+        if firstIteration:  # gets first set of offsprings
+            # print("wtf")
+            offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)
+            firstIteration = False
+            sys.exit("hue")
         flags = [-1, -1, -1]
         offspringIdx = 0
         for i in range(parentsSize):
@@ -923,6 +939,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
                         offsprings.individuals[offspringIdx].n[j] = parents.individuals[i].n[j]
                 offspringIdx = offspringIdx + 1
         if strFunction[0] == "2":
+            # Modelo Robson. Primeira vez, passar x(n) e violationSum(cSum). Retornará x(n) e e violationSum(csum). Selecionar os melhores e avaliar no simulador.
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
             functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         else:
@@ -937,8 +954,8 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
         # parents.printBest(nSize, parentsSize, penaltyMethod)
         parents.printBestFO(parentsSize, penaltyMethod)
-        weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
-        print("Weigth: {:e}".format(weight))
+        # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
+        # print("Weigth: {:e}".format(weight))
 
 
 def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
@@ -954,8 +971,8 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function, truss, lowerBound, upperBound)
-        offsprings = Population(offspringsSize, nSize, function, truss, lowerBound, upperBound)
+        parents = Population(parentsSize, nSize, function, lowerBound, upperBound)
+        offsprings = Population(offspringsSize, nSize, function, lowerBound, upperBound)
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
     else:
         gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
@@ -1037,17 +1054,17 @@ def main():
     args.globalSigma = 1
     """
     # args.algorithm = "ES"
-    # args.globalSigma = 1
-    args.maxFE = 800
-    # args.esType = 0
+    # args.globalSigma = 0
+    # args.maxFE = 20000
+    # args.esType = 1
     # args.penaltyMethod = 2
-    # args.function = 2942
+    # args.function = 11
     # args.offspringsSize = args.parentsSize
     # 10, 72 - 10 000
     # 942 - 150 000
     # Demais - 15 000
     # args.seed = 2
-    readTrussInput()
+    # readTrussInput()
     algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
     # print(args)
 
