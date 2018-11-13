@@ -11,6 +11,8 @@ import eureka
 import argparse
 import numpy as np
 import operator as op
+import random
+from scipy.stats import truncnorm
 # import ctypes
 from functions import Functions
 
@@ -67,7 +69,7 @@ class Population(object):
     def __init__(self, popSize, nSize, function, lowerBound=None, upperBound=None):  # TODO Remover parametro truss?
         if lowerBound is not None and upperBound is not None:
             mu = (lowerBound + upperBound) / 2  # midpoint of interval
-            sigma = (mu - lowerBound) / 4  # std which is 1/4 of the radius
+            sigma = (upperBound - lowerBound) / 4  # std which is 1/4 of the diameter
         strFunction = str(function)
         self.individuals = []
         for i in range(popSize):
@@ -93,11 +95,29 @@ class Population(object):
                     elif function == 116 or function == 117:
                         values.append(np.random.uniform(-10, 10))
                 elif strFunction[0] == "2":  # Truss problems
-                    values.append(np.random.normal(mu, sigma))
+                    """
+                    s = get_truncated_normal(mu, sigma, lowerBound, upperBound).rvs(nSize)
+                    s = s.tolist()
+                    for it in range(nSize):
+                        values.append(s[it])
+                    """
+                    """
+                    flag = True
+                    while flag:
+                        # val = np.random.normal(mu, sigma)
+                        val = random.gauss(mu, sigma)
+                        if val >= lowerBound and val <= upperBound:  # lowerBound <= val <= upperBound
+                            values.append(val)
+                            flag = False
+                    """
                     # print(values)
                     # values.append(np.random.uniform(lowerBound, upperBound))
                 else:
                     print("Function not encountered")  # sys.exit("Function not encountered")
+            s = get_truncated_normal(mu, sigma, lowerBound, upperBound).rvs(nSize)
+            s = s.tolist()
+            for it in range(nSize):
+                values.append(s[it])
             self.individuals.append(Individual(values))
 
     # self,n = None, objectiveFunction = None, g = None, h =None,violations = None ,sigma = None, violationSum = None, fitness = None
@@ -611,6 +631,10 @@ class Population(object):
         return weight
 
 
+def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
+    return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
+
+
 def copyOneIndividual(individual, idxToBeCopy, population, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
     for j in range(nSize):  # Copies n
         individual.n[j] = population.individuals[idxToBeCopy].n[j]  # self.individuals[idxDest].n[j] = population.individuals[idxToBeCopy].n[j]
@@ -899,6 +923,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         parents = Population(parentsSize, nSize, function, lowerBound, upperBound)
         offsprings = Population(offspringsSize, nSize, function, lowerBound, upperBound)
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
+        lol = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # TODO: LINHA CODIGO ROBSON
     else:  # Solving 'normal' functions
         gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
@@ -908,6 +933,9 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations)  # Evaluate parents
     if penaltyMethod == 1:  # Padrao?  (not apm)
         parents.sumViolations(parentsSize, gSize, hSize)
+        offsprings.sumViolations(offspringsSize, gSize, hSize)  # TODO: LINHA CODIGO ROBSON
+        offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)
+        sys.exit("saiu antes ainda")
     elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
         parents.uniteConstraints(parentsSize, gSize, hSize)
         avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
