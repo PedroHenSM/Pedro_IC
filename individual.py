@@ -630,6 +630,32 @@ class Population(object):
             weight = weight + best.n[i] * PropertyE * bars[i][-1]
         return weight
 
+    def calculateTrussWeightGrouping(self, parentsSize, penaltyMethod, bars, grouping, function):
+        PropertyE = 0.1
+        weight = 0
+        j = 0
+        best = bestIndividual(self, parentsSize, penaltyMethod)
+        if function == 210:  # function 210
+            for i in range(len(bars)):  # len(bars) == len(n) (nSize)
+                weight = weight + best.n[i] * PropertyE * bars[i][-1]
+        elif function == 260:
+            for i in range(len(bars)):  # len(bars) == len(n) (nSize)
+                weight = weight + best.n[grouping[i]] * PropertyE * bars[i][-1]
+        elif function == 2942:
+            for i in range(len(grouping)):  # len(bars) == len(n) (nSize)
+                integer = int(best.n[i])
+                if integer > 200:
+                    integer = 200
+                while j < grouping[i]:
+                    weight = weight + integer * PropertyE * bars[j][-1]
+                    j = j + 1
+        else:
+            for i in range(len(grouping)):  # len(bars) == len(n) (nSize)
+                while j < grouping[i]:
+                    weight = weight + best.n[i] * PropertyE * bars[j][-1]
+                    j = j + 1
+        return weight
+
 
 def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
     return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
@@ -806,13 +832,30 @@ def calculateBarLength(nodes, bars):
     # return np.sqrt(x+y+z)
 
 
-# noinspection PyTypeChecker,PyTypeChecker
-def readTrussInput():
+# noinspection PyTypeChecker,PyTypeChecker,PyShadowingNames
+def readTrussInput(function):
     nodes = []
     bars = []
-    file = open("input10.dat", "r")
+    groupSize = -1
+    if function == 210:  # working
+        groupSize = -1
+        file = open("input10.dat", "r")
+    elif function == 225:  # working
+        groupSize = 8
+        file = open("input25.dat", "r")
+    elif function == 260:  # not working
+        groupSize = 60
+        file = open("input60.dat", "r")
+    elif function == 272:  # working
+        groupSize = 16
+        file = open("input72.dat", "r")
+    elif function == 2942:
+        groupSize = 59
+        file = open("input942.dat", "r")
+
     file.readline()  # Ignores first line (name of truss)
     numNodes = int(file.readline().split()[0])
+    # print(numNodes)
     for i in range(numNodes):
         buffer = file.readline().split()
         for j in range(3):  # removes useless information
@@ -822,9 +865,15 @@ def readTrussInput():
             buffer[index] = float(buffer[index])
         nodes.append(buffer)  # Insert the line in to the list
     ignore = int(file.readline().split()[-1])
+    if function == 260:  # ignore da leitura, fora de padrao?!
+        ignore = 10
+    elif function == 272:
+        ignore = 8
     for i in range(ignore):  # ignores the next lines
         file.readline()
     numBars = int(file.readline().split()[1])
+    # print(numBars)
+    # sys.exit()
     PropertyE = 10000000.
     for i in range(numBars):  # bars properties | ignores (always 10000000)
         file.readline()
@@ -836,9 +885,168 @@ def readTrussInput():
         bars.append(buffer)
     # print(*bars, sep="\n")
     # print(len(bars))
+    # sys.exit("uaai")
     calculateBarLength(nodes, bars)
     # print(*bars, sep="\n")
-    return bars
+    if function == 210:
+        grouping = -1
+    elif function == 225:
+        grouping = [0 for i in range(groupSize)]
+        grouping[0] = 1
+        grouping[1] = 5
+        grouping[2] = 9
+        grouping[3] = 11
+        grouping[4] = 13
+        grouping[5] = 17
+        grouping[6] = 21
+        grouping[7] = 25
+    elif function == 260:
+        grouping = [0 for i in range(groupSize)]
+        grouping[0] = 1
+        grouping[1] = 2
+        grouping[2] = 3
+        grouping[3] = 4
+        grouping[4] = 5
+        grouping[5] = 6
+        grouping[6] = 7
+        grouping[7] = 8
+        grouping[8] = 9
+        grouping[9] = 10
+        grouping[10] = 11
+        grouping[11] = 12
+        grouping[12] = 1
+        grouping[13] = 2
+        grouping[14] = 3
+        grouping[15] = 4
+        grouping[16] = 5
+        grouping[17] = 6
+        grouping[18] = 7
+        grouping[19] = 8
+        grouping[20] = 9
+        grouping[21] = 10
+        grouping[22] = 11
+        grouping[23] = 12
+        grouping[24] = 13
+        grouping[25] = 14
+        grouping[26] = 15
+        grouping[27] = 16
+        grouping[28] = 17
+        grouping[29] = 18
+        grouping[30] = 19
+        grouping[31] = 20
+        grouping[32] = 21
+        grouping[33] = 22
+        grouping[34] = 23
+        grouping[35] = 24
+        grouping[36] = 13
+        grouping[37] = 14
+        grouping[38] = 15
+        grouping[39] = 16
+        grouping[40] = 17
+        grouping[41] = 18
+        grouping[42] = 19
+        grouping[43] = 20
+        grouping[44] = 21
+        grouping[45] = 22
+        grouping[46] = 23
+        grouping[47] = 24
+        grouping[48] = 0
+        grouping[49] = 0
+        grouping[50] = 0
+        grouping[51] = 0
+        grouping[52] = 0
+        grouping[53] = 0
+        grouping[54] = 0
+        grouping[55] = 0
+        grouping[56] = 0
+        grouping[57] = 0
+        grouping[58] = 0
+        grouping[59] = 0
+    elif function == 272:
+        grouping = [0 for i in range(groupSize)]
+        grouping[0] = 4
+        grouping[1] = 12
+        grouping[2] = 16
+        grouping[3] = 18
+        grouping[4] = 22
+        grouping[5] = 30
+        grouping[6] = 34
+        grouping[7] = 36
+        grouping[8] = 40
+        grouping[9] = 48
+        grouping[10] = 52
+        grouping[11] = 54
+        grouping[12] = 58
+        grouping[13] = 66
+        grouping[14] = 70
+        grouping[15] = 72
+    elif function == 2942:
+        grouping = [0 for i in range(groupSize)]
+        grouping[0] = 2
+        grouping[1] = 10
+        grouping[2] = 18
+        grouping[3] = 34
+        grouping[4] = 46
+        grouping[5] = 58
+        grouping[6] = 82
+        grouping[7] = 86
+        grouping[8] = 90
+        grouping[9] = 98
+        grouping[10] = 106
+        grouping[11] = 122
+        grouping[12] = 130
+        grouping[13] = 162
+        grouping[14] = 170
+        grouping[15] = 186
+        grouping[16] = 194
+        grouping[17] = 226
+        grouping[18] = 234
+        grouping[19] = 258
+        grouping[20] = 270
+        grouping[21] = 318
+        grouping[22] = 330
+        grouping[23] = 338
+        grouping[24] = 342
+        grouping[25] = 350
+        grouping[26] = 358
+        grouping[27] = 366
+        grouping[28] = 382
+        grouping[29] = 390
+        grouping[30] = 398
+        grouping[31] = 430
+        grouping[32] = 446
+        grouping[33] = 462
+        grouping[34] = 486
+        grouping[35] = 498
+        grouping[36] = 510
+        grouping[37] = 558
+        grouping[38] = 582
+        grouping[39] = 606
+        grouping[40] = 630
+        grouping[41] = 642
+        grouping[42] = 654
+        grouping[43] = 702
+        grouping[44] = 726
+        grouping[45] = 750
+        grouping[46] = 774
+        grouping[47] = 786
+        grouping[48] = 798
+        grouping[49] = 846
+        grouping[50] = 870
+        grouping[51] = 894
+        grouping[52] = 902
+        grouping[53] = 906
+        grouping[54] = 910
+        grouping[55] = 918
+        grouping[56] = 926
+        grouping[57] = 934
+        grouping[58] = 942
+
+    # print(grouping)
+    # print(len(grouping))
+    # print(*bars, sep="\n")
+    # sys.exit("saiu na barra")
+    return bars, grouping
 
 
 def GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Genetic Algorithm
@@ -914,7 +1122,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
     generatedOffspring = int(offspringsSize / parentsSize)
     lowerBound = upperBound = truss = 0
     if strFunction[0] == "2":  # solving trusses
-        bars = readTrussInput()
+        bars, grouping = readTrussInput(function)
         truss, lowerBound, upperBound = initializeTruss(function)
         nSize = truss.getDimension()
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)  # TODO: Juntar com o initializeConstraints?!
@@ -923,7 +1131,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         parents = Population(parentsSize, nSize, function, lowerBound, upperBound)
         offsprings = Population(offspringsSize, nSize, function, lowerBound, upperBound)
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
-        lol = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # TODO: LINHA CODIGO ROBSON
+        # lol = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # TODO: LINHA CODIGO ROBSON
     else:  # Solving 'normal' functions
         gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
@@ -935,7 +1143,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         parents.sumViolations(parentsSize, gSize, hSize)
         offsprings.sumViolations(offspringsSize, gSize, hSize)  # TODO: LINHA CODIGO ROBSON
         offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)
-        sys.exit("saiu antes ainda")
+        # sys.exit("saiu antes ainda")
     elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
         parents.uniteConstraints(parentsSize, gSize, hSize)
         avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
@@ -950,7 +1158,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
             # print("wtf")
             offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)
             firstIteration = False
-            sys.exit("hue")
+            # sys.exit("hue")
         flags = [-1, -1, -1]
         offspringIdx = 0
         for i in range(parentsSize):
@@ -983,7 +1191,8 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         # parents.printBest(nSize, parentsSize, penaltyMethod)
         parents.printBestFO(parentsSize, penaltyMethod)
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
-        # print("Weigth: {:e}".format(weight))
+        weight = parents.calculateTrussWeightGrouping(parentsSize, penaltyMethod, bars, grouping, function)
+        print("Weigth: {:e}".format(weight))
 
 
 def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
@@ -1083,10 +1292,10 @@ def main():
     """
     # args.algorithm = "ES"
     # args.globalSigma = 0
-    # args.maxFE = 20000
+    args.maxFE = 2000
     # args.esType = 1
     # args.penaltyMethod = 2
-    # args.function = 11
+    args.function = 2942
     # args.offspringsSize = args.parentsSize
     # 10, 72 - 10 000
     # 942 - 150 000
