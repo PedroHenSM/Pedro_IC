@@ -80,10 +80,9 @@ def surGPR_training (data, n, p):
     p1 = 1/ (1-(len(csum[csum == 0])/n))
     x = pesos(x, csum, p0, p1)
         
-    theta = hyperPar(x,csum)
-    
+    theta = hyperPar(x,csum)  # TODO: comentado, voltar?!
     kernel = (C(theta[0], (1e-4, 1e3))) * RBF(theta[1], (1e-4, 1e3))
-    gpr  =  GaussianProcessRegressor( kernel=kernel, n_restarts_optimizer=9, normalize_y = False).fit(x,csum) 
+    gpr  =  GaussianProcessRegressor( kernel=kernel, n_restarts_optimizer=9, normalize_y = False).fit(x,csum)
     
     crossV = model_selection.cross_val_score(gpr, x, csum, cv=5, scoring='explained_variance')
     # print ( "% 0.2f, % 0.2f "  %  ( crossV.mean(),  crossV.std()))
