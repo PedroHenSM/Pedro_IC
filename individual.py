@@ -16,6 +16,7 @@ from scipy.stats import truncnorm
 # import ctypes
 from functions import Functions
 import modelo_GPR_log
+import pandas as pd
 
 """
 n = search space dimension
@@ -67,7 +68,7 @@ class Individual(object):
 
 
 class Population(object):
-    def __init__(self, popSize, nSize, function, lowerBound=None, upperBound=None):  # TODO Remover parametro truss?
+    def __init__(self, popSize, nSize, function, lowerBound=None, upperBound=None):
         if lowerBound is not None and upperBound is not None:
             mu = (lowerBound + upperBound) / 2  # midpoint of interval
             sigma = (upperBound - lowerBound) / 4  # std which is 1/4 of the diameter
@@ -406,7 +407,7 @@ class Population(object):
                     if offsprings.individuals[j].violationSum < offsprings.individuals[bestIdx].violationSum:
                         bestIdx = j
                     elif offsprings.individuals[j].violationSum == offsprings.individuals[bestIdx].violationSum:
-                        if offsprings.individuals[j].objectiveFunction[0] < offsprings.individuals[bestIdx].violationSum:
+                        if offsprings.individuals[j].objectiveFunction[0] < offsprings.individuals[bestIdx].objectiveFunction[0]:
                             bestIdx = j
                     j = j + 1
                 # get the best individual among the parent and the best offspring
@@ -631,7 +632,7 @@ class Population(object):
             weight = weight + best.n[i] * PropertyE * bars[i][-1]
         return weight
 
-    def calculateTrussWeightGrouping(self, parentsSize, penaltyMethod, bars, grouping, function):
+    def calculateTrussWeightGroupingBest(self, parentsSize, penaltyMethod, bars, grouping, function):
         PropertyE = 0.1
         weight = 0
         j = 0
@@ -657,6 +658,33 @@ class Population(object):
                     j = j + 1
         return weight
 
+    def calculateTrussWeightGrouping(self, popSize, bars, grouping, function):
+        PropertyE = 0.1
+        weight = 0
+        j = 0
+        # best = bestIndividual(self, parentsSize, penaltyMethod)
+        for it in range(popSize):
+            if function == 210:  # function 210
+                for i in range(len(bars)):  # len(bars) == len(n) (nSize)
+                    weight = weight + best.n[i] * PropertyE * bars[i][-1]
+            elif function == 260:
+                for i in range(len(bars)):  # len(bars) == len(n) (nSize)
+                    weight = weight + best.n[grouping[i]] * PropertyE * bars[i][-1]
+            elif function == 2942:
+                for i in range(len(grouping)):  # len(bars) == len(n) (nSize)
+                    integer = int(best.n[i])
+                    if integer > 200:
+                        integer = 200
+                    while j < grouping[i]:
+                        weight = weight + integer * PropertyE * bars[j][-1]
+                        j = j + 1
+            else:  # 25 and 72 bars trusses
+                for i in range(len(grouping)):  # len(bars) == len(n) (nSize)
+                    while j < grouping[i]:
+                        weight = weight + best.n[i] * PropertyE * bars[j][-1]
+                        j = j + 1
+            self.individuals[it].objectiveFunction[0] = weight
+
     def makePopulationList(self, popSize, nSize, booleanViolSum):  # big list of all individuals and vilationSum for model_gpr
         populationList = []
         for i in range(popSize):
@@ -665,6 +693,54 @@ class Population(object):
             if booleanViolSum:
                 populationList.append(self.individuals[i].violationSum)  # copies csum
         return populationList
+
+    def evaluateOnGPRModel(self, popSize, nSize, modelGPR, bars, grouping, function):
+        populationList = self.makePopulationList(popSize, nSize, False)  # not passing csum to modelGpr
+        df = pd.DataFrame(np.array(populationList).reshape(popSize, nSize))  # converts do dataframe
+        # print(type(df))
+        csums = modelGPR.predict(np.log(df))  # predict cSums
+        # print(type(csums))
+        csums = csums.tolist()  # converts np.array to list
+        #print(type(csums))
+        # print(len(csums))
+        # print(csums)
+        for i in range(popSize):  # copies csums predicted values to offsprings individuals
+            self.individuals[i].violationSum = csums[i]
+        self.calculateTrussWeightGrouping(popSize, bars, grouping, function)  # calculates weight(objectiveFunction) for each individual
+
+    def evaluteOnlyBestsFromModelGPR(self, offsprings, generatedOffspring, popSize, nSize, gSize, hSize, constraintsSize, penaltyMethod):
+        bestsIndividuals = Population(parentsSize, nSize, 2, -1, -1)  # last two parameters is lowerBound and upperBound, will be subscribed
+        ahaha = Population()
+        if penaltyMethod == 1:
+            j = 0
+            for i in range(popSize):
+                bestIdx = j  # gets idx of best offspring of each parent
+                while j < generatedOffspring * (i + 1):  # walks through every n offsprings of each parent
+                    # get the best individual among the offsprings
+                    if offsprings.individuals[j].violationSum < offsprings.individuals[bestIdx].violationSum:
+                        bestIdx = j
+                    elif offsprings.individuals[j].violationSum == offsprings.individuals[bestIdx].violationSum:
+                        if offsprings.individuals[j].objectiveFunction[0] < offsprings.individuals[bestIdx].objectiveFunction[0]:
+                            bestIdx = j
+                    j = j + 1
+                offsprings.evaluate()
+        elif penaltyMethod == 2:
+            j = 0
+            for i in range(popSize):
+                bestIdx = j
+                while j < generatedOffspring * (i + 1):  # walks through every n offspring of each parent
+                    if offsprings.individuals[j].fitness < offsprings.individuals[bestIdx].fitness:
+                        bestIdx = j  # self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+                    elif offsprings.individuals[j].fitness == offsprings.individuals[bestIdx].fitness:
+                        if offsprings.individuals[j].objectiveFunction[0] < offsprings.individuals[bestIdx].objectiveFunction[0]:  # Offspring better than parent
+                            bestIdx = j  # self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+                    j = j + 1
+                # get the best individual among the parent and the best offspring
+                if offsprings.individuals[bestIdx].fitness < self.individuals[i].fitness:
+                    self.copyIndividual(i, bestIdx, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+                elif offsprings.individuals[bestIdx].fitness == self.individuals[i].fitness:
+                    if offsprings.individuals[bestIdx].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]:
+                        self.copyIndividual(i, bestIdx, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
 
 
 def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
@@ -1056,6 +1132,7 @@ def readTrussInput(function):
     # print(len(grouping))
     # print(*bars, sep="\n")
     # sys.exit("saiu na barra")
+    file.close()
     return bars, grouping
 
 
@@ -1201,7 +1278,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         # parents.printBest(nSize, parentsSize, penaltyMethod)
         parents.printBestFO(parentsSize, penaltyMethod)
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
-        weight = parents.calculateTrussWeightGrouping(parentsSize, penaltyMethod, bars, grouping, function)
+        weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
         print("Weigth: {:e}".format(weight))
 
 
@@ -1237,9 +1314,12 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         parents.sumViolations(parentsSize, gSize, hSize)
         offsprings.sumViolations(offspringsSize, gSize, hSize)  # TODO: LINHA CODIGO ROBSON
         populationList = offsprings.makePopulationList(offspringsSize, nSize, True)  # true stands for adding violationSum to populationList
-        print(len(populationList))
+        # print(len(populationList))
         # sys.exit("aaa")
-        modelGPR = modelo_GPR_log.surGPR_training(populationList, offspringsSize, nSize + 1)  # TODO: TREINAR MODELO ROBSON
+        file = open('crossVDatas.txt', 'w')
+        modelGPR, crossVMean, crossVStd = modelo_GPR_log.surGPR_training(populationList, offspringsSize, nSize + 1)  # TODO: TREINAR MODELO ROBSON
+        print(crossVMean, crossVStd)
+        file.write("{}\t{}\n".format(crossVMean, crossVStd))
         # offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)  # TODO: LINHA CODIGO ROBSON
         # sys.exit("saiu antes ainda")
     elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
@@ -1272,7 +1352,9 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         if strFunction[0] == "2":
             # Modelo Robson. Primeira vez, passar x(n) e violationSum(cSum). Retornará x(n) e e violationSum(csum). Selecionar os melhores e avaliar no simulador.
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
-            # modelGPR.predict(np.log())  # TODO: Finalizar codigo Robson
+            offsprings.evaluateOnGPRModel(offspringsSize, nSize, modelGPR, bars, grouping, function)
+            offsprings.evaluteOnlyBestsFromModelGPR()
+            sys.exit("acima csums")
             functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         else:
             offsprings.bounding(nSize, function, offspringsSize)
@@ -1287,7 +1369,7 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         # parents.printBest(nSize, parentsSize, penaltyMethod)
         parents.printBestFO(parentsSize, penaltyMethod)
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
-        weight = parents.calculateTrussWeightGrouping(parentsSize, penaltyMethod, bars, grouping, function)
+        weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
         print("Weigth: {:e}".format(weight))
 
 

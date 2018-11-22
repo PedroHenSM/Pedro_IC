@@ -4,11 +4,10 @@
 import numpy as np
 import pandas as pd
 
-from sklearn import preprocessing
+from sklearn import model_selection
 from sklearn.gaussian_process  import  GaussianProcessRegressor 
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
-from sklearn.model_selection import cross_val_score
-from sklearn import cross_validation, metrics
+
 
 import random
 
@@ -38,7 +37,7 @@ def hyperPar (x,y):
     aux = pd.DataFrame(np.zeros(shape=(20, 3)), columns = ['TAX', 'sig', 'l'])
     
     for i in range(20):
-        x_train, x_test, y_train, y_test = cross_validation.train_test_split(x, y)
+        x_train, x_test, y_train, y_test = model_selection.train_test_split(x, y)
         aux.iloc[i,1] = np.random.uniform(1.0, 10.0, 1)
         aux.iloc[i,2] = np.random.uniform(2.0, 10.0, 1)
                 
@@ -52,7 +51,7 @@ def hyperPar (x,y):
         
         aux.iloc[i,0] = ranked(pred, y_test)
 
-    print(aux)
+    # print(aux)
     aux1 = list(aux.TAX)
     aux2 = aux1.index(max(aux.TAX))
     return([aux.sig[aux2], aux.l[aux2]])
@@ -72,7 +71,8 @@ def surGPR_training (data, n, p):
     #n = número de indivíduos
     #p = dimensão da estrutura (número de X) + 1 (csum)
     df = pd.DataFrame(np.array(data).reshape(n,p))
-    df = data
+    # df = data
+    # print(type(df))
     x = np.log(df.iloc[:,0:(p-1)])
     csum = df.iloc[:,(p-1)]
     
@@ -85,11 +85,12 @@ def surGPR_training (data, n, p):
     kernel = (C(theta[0], (1e-4, 1e3))) * RBF(theta[1], (1e-4, 1e3))
     gpr  =  GaussianProcessRegressor( kernel=kernel, n_restarts_optimizer=9, normalize_y = False).fit(x,csum) 
     
-    crossV = cross_val_score(gpr, x, csum, cv=5, scoring='explained_variance')
-    print ( "% 0.2f, % 0.2f "  %  ( crossV.mean(),  crossV.std()))
+    crossV = model_selection.cross_val_score(gpr, x, csum, cv=5, scoring='explained_variance')
+    # print ( "% 0.2f, % 0.2f "  %  ( crossV.mean(),  crossV.std()))
     #escrever o valor do CV e desvio sempre que rodar a função    
-    return(gpr)
+    return gpr, crossV.mean(), crossV.std()
 
+print("Rodou")
 #Como proceder:
     #(A) surGPR_training é a função de ajuste/treino do modelo. Ela retorna
     #   a estrutura do modelo ajustado. Ex.: model_GPR = surGPR_training (lista, 200, 11)
