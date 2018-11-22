@@ -15,6 +15,7 @@ import random
 from scipy.stats import truncnorm
 # import ctypes
 from functions import Functions
+import modelo_GPR_log
 
 """
 n = search space dimension
@@ -656,6 +657,15 @@ class Population(object):
                     j = j + 1
         return weight
 
+    def makePopulationList(self, popSize, nSize, booleanViolSum):  # big list of all individuals and vilationSum for model_gpr
+        populationList = []
+        for i in range(popSize):
+            for j in range(nSize):
+                populationList.append(self.individuals[i].n[j])  # copies n values
+            if booleanViolSum:
+                populationList.append(self.individuals[i].violationSum)  # copies csum
+        return populationList
+
 
 def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
     return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
@@ -1226,7 +1236,10 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
     if penaltyMethod == 1:  # Padrao?  (not apm)
         parents.sumViolations(parentsSize, gSize, hSize)
         offsprings.sumViolations(offspringsSize, gSize, hSize)  # TODO: LINHA CODIGO ROBSON
-        # TODO: TREINAR MODELO ROBSON
+        populationList = offsprings.makePopulationList(offspringsSize, nSize, True)  # true stands for adding violationSum to populationList
+        print(len(populationList))
+        # sys.exit("aaa")
+        modelGPR = modelo_GPR_log.surGPR_training(populationList, offspringsSize, nSize + 1)  # TODO: TREINAR MODELO ROBSON
         # offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)  # TODO: LINHA CODIGO ROBSON
         # sys.exit("saiu antes ainda")
     elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
@@ -1259,6 +1272,7 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         if strFunction[0] == "2":
             # Modelo Robson. Primeira vez, passar x(n) e violationSum(cSum). Retornará x(n) e e violationSum(csum). Selecionar os melhores e avaliar no simulador.
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
+            # modelGPR.predict(np.log())  # TODO: Finalizar codigo Robson
             functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         else:
             offsprings.bounding(nSize, function, offspringsSize)
