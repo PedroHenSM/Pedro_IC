@@ -13,9 +13,12 @@ import numpy as np
 import operator as op
 import random
 from scipy.stats import truncnorm
+from timeit import default_timer as timer
 # import ctypes
 from functions import Functions
 import modelo_GPR_log
+# import modelo_GPR_log_corrigido as modelo_GPR_log  # modelo novo
+# import modelo_GPR_log_corrigido
 import pandas as pd
 
 """
@@ -362,6 +365,12 @@ class Population(object):
             self.individuals.sort(key=op.attrgetter("fitness", 'objectiveFunction'))
             offsprings.individuals.sort(key=op.attrgetter("fitness", "objectiveFunction"))
 
+    def sortPopulation(self, penaltyMethod):
+        if penaltyMethod == 1:  # Sort based on violatiom and then objective function
+            self.individuals.sort(key=op.attrgetter("violationSum", "objectiveFunction"))
+        elif penaltyMethod == 2:  # Sort based on fitness and then objective function
+            self.individuals.sort(key=op.attrgetter("fitness", 'objectiveFunction'))
+
     def elitism(self, offsprings, parentsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
         copyStart = 5
         i = 0
@@ -437,6 +446,24 @@ class Population(object):
                 elif offsprings.individuals[bestIdx].fitness == self.individuals[i].fitness:
                     if offsprings.individuals[bestIdx].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]:
                         self.copyIndividual(i, bestIdx, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+
+    def DESelectionModelGPR(self, bestsIndividuals, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod):
+        if penaltyMethod == 1:
+            for i in range(parentsSize):
+                # get the best individual among the parent and the best offspring
+                if bestsIndividuals.individuals[i].violationSum < self.individuals[i].violationSum:
+                    self.copyIndividual(i, i, bestsIndividuals, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+                elif bestsIndividuals.individuals[i].violationSum == self.individuals[i].violationSum:
+                    if bestsIndividuals.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]:
+                        self.copyIndividual(i, i, bestsIndividuals, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+        elif penaltyMethod == 2:
+            for i in range(parentsSize):
+                # get the best individual among the parent and the best offspring
+                if bestsIndividuals.individuals[i].fitness < self.individuals[i].fitness:
+                    self.copyIndividual(i, i, bestsIndividuals, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+                elif bestsIndividuals.individuals[i].fitness == self.individuals[i].fitness:
+                    if bestsIndividuals.individuals[i].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]:
+                        self.copyIndividual(i, i, bestsIndividuals, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
 
     def DESelectionWorking(self, offsprings, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod):
         if penaltyMethod == 1:
@@ -622,6 +649,10 @@ class Population(object):
         for i in range(popSize):
             print(self.individuals[i])
 
+    def printViolationSum(self, popSize):
+        for i in range(popSize):
+            print(self.individuals[i].violationSum, end="\t")
+
     def printDimensionsAndViolationPopulation(self, popSize, nSize):
         for i in range(popSize):
             for j in range(nSize):
@@ -664,9 +695,11 @@ class Population(object):
 
     def calculateTrussWeightGrouping(self, popSize, bars, grouping, function, functionEvaluations):
         PropertyE = 0.1
-        weight = 0
-        j = 0
+        # weight = 0
+        # j = 0
         for it in range(popSize):
+            weight = 0
+            j = 0
             if function == 210:  # function 210
                 for i in range(len(bars)):  # len(bars) == len(n) (nSize)
                     weight = weight + self.individuals[it].n[i] * PropertyE * bars[i][-1]
@@ -690,34 +723,43 @@ class Population(object):
             self.individuals[it].objectiveFunction[0] = weight
         return functionEvaluations
 
-    def makePopulationList(self, popSize, nSize, booleanViolSum):  # big list of all individuals and vilationSum for model_gpr
+    def makePopulationList(self, popSize, nSize, booleanViolSum, penaltyMethod):  # big list of all individuals and vilationSum for model_gpr
         populationList = []
         for i in range(popSize):
             for j in range(nSize):
                 populationList.append(self.individuals[i].n[j])  # copies n values
             if booleanViolSum:
-                populationList.append(self.individuals[i].violationSum)  # copies csum
+                if penaltyMethod == 1:  # deb
+                    populationList.append(self.individuals[i].violationSum)  # copies csum
+                elif penaltyMethod == 2:  # apm
+                    populationList.append(self.individuals[i].fitness)  # copies fitness
+        # print("population list {}".format(populationList))
         return populationList
 
-    def evaluateOnGPRModel(self, popSize, nSize, modelGPR, bars, grouping, function, functionEvaluations):
-        populationList = self.makePopulationList(popSize, nSize, False)  # not passing csum to modelGpr
+    def evaluateOnGPRModel(self, popSize, nSize, modelGPR, bars, grouping, function, functionEvaluations, penaltyMethod):
+        populationList = self.makePopulationList(popSize, nSize, False, penaltyMethod)  # not passing csum to modelGpr
         df = pd.DataFrame(np.array(populationList).reshape(popSize, nSize))  # converts do dataframe
         # print(type(df))
         csums = modelGPR.predict(np.log(df))  # predict cSums
         # print(type(csums))
+        # sys.exit("printando pop list")
         csums = csums.tolist()  # converts np.array to list
         # print(type(csums))
         # print(len(csums))
         # print(csums)
         for i in range(popSize):  # copies csums predicted values to offsprings individuals
-            self.individuals[i].violationSum = csums[i]
+            if penaltyMethod == 1:  # deb
+                self.individuals[i].violationSum = csums[i]
+            elif penaltyMethod == 2:  # apm
+                self.individuals[i].fitness = csums[i]
+        # if penaltyMethod == 1:  # calculates objective function only if deb penalization
         functionEvaluations = self.calculateTrussWeightGrouping(popSize, bars, grouping, function, functionEvaluations)  # calculates weight(objectiveFunction) for each individual
         return functionEvaluations
 
-    def evaluateOnlyBestsFromModelGPR(self, generatedOffspring, offspringsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod, function, functionEvaluations, truss):
+    def evaluateOnlyBestsFromModelGPR(self, bestsIndividuals, generatedOffspring, offspringsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod, function, functionEvaluations, truss):
         parentsSize = int(offspringsSize / generatedOffspring)
         # print(parentsSize)
-        bestsIndividuals = Population(parentsSize, nSize, 2, False, -1, -1)  # last two parameters is lowerBound and upperBound, will be subscribed
+        # bestsIndividuals = Population(parentsSize, nSize, 2, False, -1, -1)  # last two parameters is lowerBound and upperBound, will be subscribed
         auxIdxBestsIndividuals = []  # saves the indexes of bests individuals of offsprings
         # self.individuals[j].violationSum
         if penaltyMethod == 1:
@@ -734,33 +776,31 @@ class Population(object):
                             bestIdx = j
                     j = j + 1
                 # aux.copyIndividual(i, i, self, nSize, 1, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)  # aux.individuals.append(self.individuals[i])
-                auxIdxBestsIndividuals.append(bestIdx)
+                # auxIdxBestsIndividuals.append(bestIdx)
                 bestsIndividuals.copyIndividual(i, bestIdx, self, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)  # adds best offsprings to be evaluate on simulator
             functionEvaluations = bestsIndividuals.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # evaluate on simulator
-
+            """
             for i in range(parentsSize):  # copies best individuals to offsprings
                 idxDest = auxIdxBestsIndividuals[i]  # gets the index to where the evaluate offspring will be copied
                 self.copyIndividual(idxDest, i, bestsIndividuals, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
             return functionEvaluations
+            """
+            return bestsIndividuals, functionEvaluations
 
         elif penaltyMethod == 2:
             j = 0
-            for i in range(popSize):
+            for i in range(parentsSize):
                 bestIdx = j
                 while j < generatedOffspring * (i + 1):  # walks through every n offspring of each parent
-                    if offsprings.individuals[j].fitness < offsprings.individuals[bestIdx].fitness:
+                    if self.individuals[j].fitness < self.individuals[bestIdx].fitness:
                         bestIdx = j  # self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
-                    elif offsprings.individuals[j].fitness == offsprings.individuals[bestIdx].fitness:
-                        if offsprings.individuals[j].objectiveFunction[0] < offsprings.individuals[bestIdx].objectiveFunction[0]:  # Offspring better than parent
+                    elif self.individuals[j].fitness == self.individuals[bestIdx].fitness:
+                        if self.individuals[j].objectiveFunction[0] < self.individuals[bestIdx].objectiveFunction[0]:  # Offspring better than parent
                             bestIdx = j  # self.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
                     j = j + 1
-                # get the best individual among the parent and the best offspring
-                if offsprings.individuals[bestIdx].fitness < self.individuals[i].fitness:
-                    self.copyIndividual(i, bestIdx, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
-                elif offsprings.individuals[bestIdx].fitness == self.individuals[i].fitness:
-                    if offsprings.individuals[bestIdx].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]:
-                        self.copyIndividual(i, bestIdx, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
-
+                bestsIndividuals.copyIndividual(i, bestIdx, self, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)  # adds best offsprings to be evaluate on simulator
+            functionEvaluations = bestsIndividuals.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # evaluate on simulator
+            return bestsIndividuals, functionEvaluations
 
 def get_truncated_normal(mean=0, sd=1, low=0, upp=10):
     return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
@@ -1155,9 +1195,12 @@ def readTrussInput(function):
     return bars, grouping
 
 
-def adjustGPRModel(offsprings, offspringsSize, nSize):
-    populationList = offsprings.makePopulationList(offspringsSize, nSize, True)  # true stands for adding violationSum to populationList
+def adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod):
+    populationList = offsprings.makePopulationList(offspringsSize, nSize, True, penaltyMethod)  # true stands for adding violationSum to populationList
+    # print("offspringsSize {}".format(offspringsSize))
+    # print("population list {}".format(len(populationList)))
     modelGPR, crossVMean, crossVStd = modelo_GPR_log.surGPR_training(populationList, offspringsSize, nSize + 1)  # TODO: TREINAR MODELO ROBSON
+    # modelGPR, crossVMean, crossVstd = modelo_GPR_log_corrigido.surGPR_training(populationList, offspringsSize, nSize + 1)
     # print("Modelo atualizado")
     return modelGPR, crossVMean, crossVStd
 
@@ -1324,6 +1367,8 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)  # TODO: Juntar com o initializeConstraints?!
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
+        avgObjFuncPar = -1
+        file = open('crossVDatas.txt', 'w')
         parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
         offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
@@ -1339,20 +1384,32 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
     if penaltyMethod == 1:  # Padrao?  (not apm)
         parents.sumViolations(parentsSize, gSize, hSize)
         offsprings.sumViolations(offspringsSize, gSize, hSize)  # TODO: LINHA CODIGO ROBSON
+        # parents.sort(offsprings, penaltyMethod)
+        offsprings.sortPopulation(penaltyMethod)
+        for i in range(parentsSize):
+            parents.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
         # populationList = offsprings.makePopulationList(offspringsSize, nSize, True)  # true stands for adding violationSum to populationList
         # print(len(populationList))
         # sys.exit("aaa")
-        file = open('crossVDatas.txt', 'w')
+        # file = open('crossVDatas.txt', 'w')
         # modelGPR, crossVMean, crossVStd = modelo_GPR_log.surGPR_training(populationList, offspringsSize, nSize + 1)  # TODO: TREINAR MODELO ROBSON
-        modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize)
+        modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
         print(crossVMean, crossVStd)
         file.write("{}\t{}\n".format(crossVMean, crossVStd))
         # offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)  # TODO: LINHA CODIGO ROBSON
         # sys.exit("saiu antes ainda")
     elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
-        parents.uniteConstraints(parentsSize, gSize, hSize)
-        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+        # parents.uniteConstraints(parentsSize, gSize, hSize)
+        offsprings.uniteConstraints(offspringsSize, gSize, hSize)
+        # avgObjFuncPar = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFuncPar)
+        avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+        # parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFuncPar)
+        offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+        offsprings.sortPopulation(penaltyMethod)
+        for i in range(parentsSize):
+            parents.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
+        modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
+        print(crossVMean, crossVStd)
     else:
         print("Penalthy method not encountered")
         sys.exit("Penalty method not encountered")
@@ -1361,21 +1418,28 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
     cont = 0
     while functionEvaluations < maxFE:
         if functionEvaluations != 250:  # Not first iteration
+            offsprings.selection(parents, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)  # tournament
+            # parents.printViolationSum(parentsSize)
             if crossVMean > 0.6:  # modelo "bom"
                 cont = cont + 1
                 if cont == 5:  # treina modelo
                     print("Atualizado pela Janela")
-                    modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize)
+                    modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
                     print(crossVMean, crossVStd)
                     file.write("{}\t{}\n".format(crossVMean, crossVStd))
                     cont = 0
             else:  # modelo ruim, atualiza
                 print("Atualizado pela Qualidade")
-                modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize)
+                # print("parents")
+                # parents.printDimensionsAndViolationPopulation(parentsSize, nSize)
+                # parents.printViolationSum(parentsSize)
+                # print("offsprings")
+                # offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)
+                modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
                 print(crossVMean, crossVStd)
                 file.write("{}\t{}\n".format(crossVMean, crossVStd))
                 # cont = 0
-            offsprings.selection(parents, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)
+            # offsprings.selection(parents, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)  # tournament
 
         flags = [-1, -1, -1]
         offspringIdx = 0
@@ -1395,25 +1459,42 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         if strFunction[0] == "2":
             # Modelo Robson. Primeira vez, passar x(n) e violationSum(cSum). Retornará x(n) e e violationSum(csum). Selecionar os melhores e avaliar no simulador.
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
-            functionEvaluations = offsprings.evaluateOnGPRModel(offspringsSize, nSize, modelGPR, bars, grouping, function, functionEvaluations)
-            functionEvaluations = offsprings.evaluateOnlyBestsFromModelGPR(generatedOffspring, offspringsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod, function, functionEvaluations, truss)
+            functionEvaluations = offsprings.evaluateOnGPRModel(offspringsSize, nSize, modelGPR, bars, grouping, function, functionEvaluations, penaltyMethod)
+            # bestIndividuals contains the best individuals(offsprings) evaluated on modelGPR and then they are evaluated on simulator
+            bestsIndividuals = Population(parentsSize, nSize, 2, False, -1, -1)  # last two parameters is lowerBound and upperBound, will be subscribed
+            bestsIndividuals, functionEvaluations = offsprings.evaluateOnlyBestsFromModelGPR(bestsIndividuals, generatedOffspring, offspringsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod, function, functionEvaluations, truss)
+            # print(bestsIndividuals)
+            # sys.exit("Printando bestsIndividuals")
+            # def evaluateOnlyBestsFromModelGPR(self, bestsIndividuals, generatedOffspring, offspringsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod, function, functionEvaluations, truss):
+            # offsprings.evaluateOnlyBestsFromModelGPR(bestINd)
             # sys.exit("acima csums")
             # functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         else:
             offsprings.bounding(nSize, function, offspringsSize)
             functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations)
         if penaltyMethod == 1:  # Not apm
-            offsprings.sumViolations(offspringsSize, gSize, hSize)
+            # offsprings.sumViolations(offspringsSize, gSize, hSize)
+            bestsIndividuals.sumViolations(parentsSize, gSize, hSize)
         elif penaltyMethod == 2:
-            offsprings.uniteConstraints(offspringsSize, gSize, hSize)
-            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-            offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
+            # calculate fitness biased on simulator
+            bestsIndividuals.uniteConstraints(parentsSize, gSize, hSize)
+            avgObjFunc = bestsIndividuals.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+            bestsIndividuals.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+        # parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
+        # print("parents")
+        # parents.printDimensionsAndViolationPopulation(parentsSize, nSize)
+        parents.DESelectionModelGPR(bestsIndividuals, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
+        # print("Best individuals")
+        # bestsIndividuals.printDimensionsAndViolationPopulation(parentsSize, nSize)
+        # print("parents")
+        # parents.printDimensionsAndViolationPopulation(parentsSize, nSize)
         # parents.printBest(nSize, parentsSize, penaltyMethod)
         parents.printBestFO(parentsSize, penaltyMethod)
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
-        # weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
-        # print("Weigth: {:e}".format(weight))
+        weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
+        print("Weight: {:e}".format(weight))
+        parents.printBest(nSize, parentsSize, penaltyMethod)
+    print(crossVMean, crossVStd)
 
 
 def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
@@ -1473,7 +1554,10 @@ def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offs
         GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     elif algorithm == "DE":  # Differential Evolution
         # DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
+        start = timer()
         DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
+        end = timer()
+        print(end - start)
     elif algorithm == "ES":  # Evolution Strategy
         ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     else:
@@ -1516,14 +1600,14 @@ def main():
     # args.globalSigma = 0
     args.maxFE = 15000
     # args.esType = 1
-    # args.penaltyMethod = 2
+    args.penaltyMethod = 2
     args.function = 272
 
     # args.offspringsSize = args.parentsSize
     # 10, 72 - 10 000
     # 942 - 150 000
     # Demais - 15 000
-    # args.seed = 2
+    args.seed = 2
     # readTrussInput()
     algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
     # print(args)

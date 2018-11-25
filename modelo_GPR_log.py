@@ -3,6 +3,7 @@
 #-------------------------------#
 import numpy as np
 import pandas as pd
+import sys
 
 from sklearn import model_selection
 from sklearn.gaussian_process  import  GaussianProcessRegressor 
@@ -41,14 +42,24 @@ def hyperPar (x,y):
         aux.iloc[i,1] = np.random.uniform(1.0, 10.0, 1)
         aux.iloc[i,2] = np.random.uniform(2.0, 10.0, 1)
                 
-        kernel=(C(aux.iloc[i,1], (1e-4, 1e3)))*RBF(aux.iloc[i,2],(1e-4, 1e3))
-        gpr  =  GaussianProcessRegressor( kernel = kernel, n_restarts_optimizer=9, normalize_y = False).fit(x_train,y_train) 
+        kernel=(C(aux.iloc[i,1], (1e-3, 1e3)))*RBF(aux.iloc[i,2],(1e-3, 1e3))
+        gpr  =  GaussianProcessRegressor( kernel = kernel, alpha=1e-4, n_restarts_optimizer=9, normalize_y = False).fit(x_train,y_train)
+        #alpha = 0.01 = 4.9
+        #alpha = 0.001 = Violation	0.000000e+00	ObjectiveFunction	4.009789e+02
+        #alpha = 0.2 = Violation	0.000000e+00	ObjectiveFunction	5.518141e+02
+        #alpha = 0.3 = Violation	0.000000e+00	ObjectiveFunction	4.246125e+02
+
+        #alpha 0.001, 0.2, 0.3
         pred = gpr.predict(x_test)
         pred = pd.DataFrame(pred, columns = ['pred'])
         
         pred[pred < 0.0] = 0.0
-        y_test = pd.DataFrame(y_test, columns = ['csum']).reset_index(drop=True)
-        
+        # print("y test --> {}".format(y_test))
+        # print("pred --> {}".format(pred))
+        y_test = pd.DataFrame(np.array(y_test).reshape(len(y_test),1)).reset_index(drop=True)
+        # print("y test --> {}".format(y_test))
+        #sys.exit("uai")
+        # print("pred --> {}".format(pred))
         aux.iloc[i,0] = ranked(pred, y_test)
 
     # print(aux)
@@ -75,14 +86,23 @@ def surGPR_training (data, n, p):
     # print(type(df))
     x = np.log(df.iloc[:,0:(p-1)])
     csum = df.iloc[:,(p-1)]
-    
-    p0 = 1/ (len(csum[csum == 0])/n)
-    p1 = 1/ (1-(len(csum[csum == 0])/n))
-    x = pesos(x, csum, p0, p1)
+    #if len(csum[csum == 0]) == 0:
+    #   pass
+    #else:
+    # print("imprimindo csum no modelo robson")
+    # print(csum)
+    # print("n: {}".format(n))
+    # print("len(csum[csum == 0]): {}".format(len(csum[csum == 0])))
+    if len(csum[csum == 0]) == 0 or len(csum[csum == 0]) == len(csum):
+        pass
+    else:
+        p0 = 1/ (len(csum[csum == 0])/n)
+        p1 = 1/ (1-(len(csum[csum == 0])/n))
+        x = pesos(x, csum, p0, p1)
         
-    theta = hyperPar(x,csum)  # TODO: comentado, voltar?!
-    kernel = (C(theta[0], (1e-4, 1e3))) * RBF(theta[1], (1e-4, 1e3))
-    gpr  =  GaussianProcessRegressor( kernel=kernel, n_restarts_optimizer=9, normalize_y = False).fit(x,csum)
+    theta = hyperPar(x,csum)
+    kernel = (C(theta[0], (1e-3, 1e3))) * RBF(theta[1], (1e-3, 1e3))
+    gpr  =  GaussianProcessRegressor( kernel=kernel, alpha=1e-4, n_restarts_optimizer=9, normalize_y = False).fit(x,csum)
     
     crossV = model_selection.cross_val_score(gpr, x, csum, cv=5, scoring='explained_variance')
     # print ( "% 0.2f, % 0.2f "  %  ( crossV.mean(),  crossV.std()))
