@@ -43,7 +43,7 @@ def hyperPar (x,y):
         aux.iloc[i,2] = np.random.uniform(2.0, 10.0, 1)
                 
         kernel=(C(aux.iloc[i,1], (1e-3, 1e3)))*RBF(aux.iloc[i,2],(1e-3, 1e3))
-        gpr  =  GaussianProcessRegressor( kernel = kernel, alpha=1e-4, n_restarts_optimizer=9, normalize_y = False).fit(x_train,y_train)
+        gpr  =  GaussianProcessRegressor( kernel = kernel, normalize_y = False).fit(x_train,y_train)
         #alpha = 0.01 = 4.9
         #alpha = 0.001 = Violation	0.000000e+00	ObjectiveFunction	4.009789e+02
         #alpha = 0.2 = Violation	0.000000e+00	ObjectiveFunction	5.518141e+02
@@ -101,15 +101,15 @@ def surGPR_training (data, n, p):
         x = pesos(x, csum, p0, p1)
         
     theta = hyperPar(x,csum)
+    print("theta: {}".format(theta))
     kernel = (C(theta[0], (1e-3, 1e3))) * RBF(theta[1], (1e-3, 1e3))
-    gpr  =  GaussianProcessRegressor( kernel=kernel, alpha=1e-4, n_restarts_optimizer=9, normalize_y = False).fit(x,csum)
+    gpr  =  GaussianProcessRegressor( kernel=kernel, normalize_y = False).fit(x,csum)
     
     crossV = model_selection.cross_val_score(gpr, x, csum, cv=5, scoring='explained_variance')
     # print ( "% 0.2f, % 0.2f "  %  ( crossV.mean(),  crossV.std()))
     #escrever o valor do CV e desvio sempre que rodar a função    
     return gpr, crossV.mean(), crossV.std()
 
-print("Rodou")
 #Como proceder:
     #(A) surGPR_training é a função de ajuste/treino do modelo. Ela retorna
     #   a estrutura do modelo ajustado. Ex.: model_GPR = surGPR_training (lista, 200, 11)

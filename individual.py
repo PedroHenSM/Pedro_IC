@@ -1285,8 +1285,8 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
         parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
         offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
-        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
-        # lol = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # TODO: LINHA CODIGO ROBSON
+        # functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # TODO Verificar
+        functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
     else:  # Solving 'normal' functions
         gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
@@ -1295,8 +1295,11 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations)  # Evaluate parents
     if penaltyMethod == 1:  # Padrao?  (not apm)
-        parents.sumViolations(parentsSize, gSize, hSize)
-        offsprings.sumViolations(offspringsSize, gSize, hSize)  # TODO: LINHA CODIGO ROBSON
+        # parents.sumViolations(parentsSize, gSize, hSize)
+        offsprings.sumViolations(offspringsSize, gSize, hSize)
+        offsprings.sortPopulation(penaltyMethod)
+        for i in range(parentsSize):
+            parents.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
         # offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)
         # sys.exit("saiu antes ainda")
     elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
@@ -1306,17 +1309,12 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
     else:
         print("Penalthy method not encountered")
         sys.exit("Penalty method not encountered")
-    firstIteration = True
     while functionEvaluations < maxFE:
-        if firstIteration:  # gets first set of offsprings
-            # print("wtf")
-            # offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)
-            firstIteration = False
-            # sys.exit("hue")
         flags = [-1, -1, -1]
         offspringIdx = 0
         for i in range(parentsSize):
             for k in range(generatedOffspring):
+                flags = [-1, -1, -1]
                 for l in range(len(flags)):
                     flags[l] = populationPick(i, flags, parentsSize)
                 R = np.random.randint(0, nSize)  # Random index
@@ -1329,7 +1327,6 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
                         offsprings.individuals[offspringIdx].n[j] = parents.individuals[i].n[j]
                 offspringIdx = offspringIdx + 1
         if strFunction[0] == "2":
-            # Modelo Robson. Primeira vez, passar x(n) e violationSum(cSum). Retornará x(n) e e violationSum(csum). Selecionar os melhores e avaliar no simulador.
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
             functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         else:
@@ -1341,12 +1338,13 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
             offsprings.uniteConstraints(offspringsSize, gSize, hSize)
             avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+            parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
         parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
         # parents.printBest(nSize, parentsSize, penaltyMethod)
         # parents.printBestFO(parentsSize, penaltyMethod)
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
         # weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
-        #print("Weigth: {:e}".format(weight))
+        # print("Weigth: {:e}".format(weight))
     parents.printBestFO(parentsSize, penaltyMethod)
 
 
@@ -1370,9 +1368,8 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         file = open('crossVDatas.txt', 'w')
         parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
         offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
-        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
+        # functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
-        # lol = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # TODO: LINHA CODIGO ROBSON
     else:  # Solving 'normal' functions
         gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
@@ -1381,7 +1378,7 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations)  # Evaluate parents
     if penaltyMethod == 1:  # Padrao?  (not apm)
-        parents.sumViolations(parentsSize, gSize, hSize)
+        # parents.sumViolations(parentsSize, gSize, hSize)
         offsprings.sumViolations(offspringsSize, gSize, hSize)  # TODO: LINHA CODIGO ROBSON
         # parents.sort(offsprings, penaltyMethod)
         offsprings.sortPopulation(penaltyMethod)
@@ -1416,33 +1413,22 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
     # sys.exit()
     cont = 0
     while functionEvaluations < maxFE:
-        if functionEvaluations != 250:  # Not first iteration
-            # offsprings.selection(parents, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod)  # tournament
-            # parents.printViolationSum(parentsSize)
+        if functionEvaluations != 200:  # Not first iteration
             if crossVMean > 0.6:  # modelo "bom"
                 cont = cont + 1
-                if cont == 5:  # treina modelo
-                    # print("Atualizado pela Janela")
+                if cont == 5:  # Treina modelo pela janela
                     modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
                     # print(crossVMean, crossVStd)
                     file.write("{}\t{}\n".format(crossVMean, crossVStd))
                     cont = 0
-            else:  # modelo ruim, atualiza
-                # print("Atualizado pela Qualidade")
-                # print("parents")
-                # parents.printDimensionsAndViolationPopulation(parentsSize, nSize)
-                # parents.printViolationSum(parentsSize)
-                # print("offsprings")
-                # offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)
+            else:  # Treina modelo pela qualidade
                 modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
-                # print(crossVMean, crossVStd)
                 file.write("{}\t{}\n".format(crossVMean, crossVStd))
-                # cont = 0
-
         flags = [-1, -1, -1]
         offspringIdx = 0
         for i in range(parentsSize):
             for k in range(generatedOffspring):
+                flags = [-1, -1, -1]
                 for l in range(len(flags)):
                     flags[l] = populationPick(i, flags, parentsSize)
                 R = np.random.randint(0, nSize)  # Random index
@@ -1492,7 +1478,7 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
         # weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
         # print("Weight: {:e}".format(weight))
-        # parents.printBest(nSize, parentsSize, penaltyMethod)
+        parents.printBest(nSize, parentsSize, penaltyMethod)
     print(crossVMean, crossVStd)
     parents.printBestFO(parentsSize, penaltyMethod)
 
@@ -1553,15 +1539,17 @@ def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offs
     if algorithm == "GA":  # Genetic Algorithm
         GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     elif algorithm == "DE":  # Differential Evolution
+
         start = timer()
         DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
         end = timer()
+        print(end - start)
         """
         start = timer()
         DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
         end = timer()
-        """
         print(end - start)
+        """
     elif algorithm == "ES":  # Evolution Strategy
         ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     else:
@@ -1582,7 +1570,7 @@ def main():
     parser.add_argument("--parentsSize", "-u", type=int, default=50, help="µ is the parental population size")  # u from µ (mi) | µ ≈ λ/4
     parser.add_argument("--nSize", "-n", type=int, default=10, help="Search space dimension")
     parser.add_argument("--offspringsSize", "-l", type=int, default=200, help="λ is number of offsprings, offsprings population size")  # l from λ (lambda) | µ ≈ λ/4
-    parser.add_argument("--maxFE", "-m", type=int, default=20000, help="The max number of functions evaluations")
+    parser.add_argument("--maxFE", "-m", type=int, default=15000, help="The max number of functions evaluations")
     parser.add_argument("--crossoverProb", "-c", type=int, default=100, help="The crossover probability [0,100]")
     parser.add_argument("--esType", "-e", type=int, default=0, help="The type of ES. 0 for ES(µ + λ) or 1 for ES(µ , λ)")
     parser.add_argument("--globalSigma", "-g", type=int, default=0, help="If the σ parameter is global or not. 1 for global σ or 0 if not")
