@@ -404,7 +404,7 @@ class Population(object):
         best = bestIndividual(self, parentsSize, penaltyMethod)
         if penaltyMethod == 1:  # not apm
             # print("Violation\t{:e}\tObjectiveFunction\t{:e}\n".format(best.violationSum, best.objectiveFunction[0]))
-            print("{}\t{}".format(best.violationSum, best.objectiveFunction[0]))
+            print("{}\t{}".format(best.violationSum, best.objectiveFunction[0]),end="\t")
         elif penaltyMethod == 2:  # APM
             if best.fitness == best.objectiveFunction[0]:
                 print("Fitness\t{:e}\tObjectiveFunction\t{:e}\n".format(best.fitness, best.objectiveFunction[0]))
@@ -1348,7 +1348,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
     parents.printBestFO(parentsSize, penaltyMethod)
 
 
-def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Differential Evolution
+def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize):  # Differential Evolution
     strFunction = str(function)
     crossoverProb = esType = globalSigma = -1
     np.random.seed(seed)
@@ -1416,7 +1416,7 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         if functionEvaluations != 200:  # Not first iteration
             if crossVMean > 0.6:  # modelo "bom"
                 cont = cont + 1
-                if cont == 5:  # Treina modelo pela janela
+                if cont == windowSize:  # Treina modelo pela janela
                     modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
                     # print(crossVMean, crossVStd)
                     file.write("{}\t{}\n".format(crossVMean, crossVStd))
@@ -1478,8 +1478,8 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
         # weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
         # print("Weight: {:e}".format(weight))
-        parents.printBest(nSize, parentsSize, penaltyMethod)
-    print(crossVMean, crossVStd)
+        # parents.printBest(nSize, parentsSize, penaltyMethod)
+    print("{}\t{}".format(crossVMean, crossVStd), end="\t")
     parents.printBestFO(parentsSize, penaltyMethod)
 
 
@@ -1535,21 +1535,20 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
 
 
 # noinspection PyShadowingNames
-def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):
+def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize):
     if algorithm == "GA":  # Genetic Algorithm
         GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     elif algorithm == "DE":  # Differential Evolution
-
+        """
         start = timer()
         DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
         end = timer()
         print(end - start)
         """
         start = timer()
-        DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
+        DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize)
         end = timer()
-        print(end - start)
-        """
+        print(end - start,end="")
     elif algorithm == "ES":  # Evolution Strategy
         ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     else:
@@ -1574,6 +1573,7 @@ def main():
     parser.add_argument("--crossoverProb", "-c", type=int, default=100, help="The crossover probability [0,100]")
     parser.add_argument("--esType", "-e", type=int, default=0, help="The type of ES. 0 for ES(µ + λ) or 1 for ES(µ , λ)")
     parser.add_argument("--globalSigma", "-g", type=int, default=0, help="If the σ parameter is global or not. 1 for global σ or 0 if not")
+    parser.add_argument("--windowSize", "-w", type=int, default=5, help="Size of the window for updating gaussian model")
     args = parser.parse_args()
     """
     args.algorithm = "DE"
@@ -1601,7 +1601,7 @@ def main():
     # Demais - 15 000
     # args.seed = 2
     # readTrussInput()
-    algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma)
+    algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma, args.windowSize)
     # print(args)
 
 
