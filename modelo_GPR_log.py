@@ -12,6 +12,8 @@ from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 
 import random
 
+thetaGlobal = []
+
 def ranked (pred, y):
     n = len(pred)
     aux = pd.DataFrame(np.arange(0, n), columns = ['posto'])
@@ -44,12 +46,7 @@ def hyperPar (x,y):
                 
         kernel=(C(aux.iloc[i,1], (1e-3, 1e3)))*RBF(aux.iloc[i,2],(1e-3, 1e3))
         gpr  =  GaussianProcessRegressor( kernel = kernel, normalize_y = False).fit(x_train,y_train)
-        #alpha = 0.01 = 4.9
-        #alpha = 0.001 = Violation	0.000000e+00	ObjectiveFunction	4.009789e+02
-        #alpha = 0.2 = Violation	0.000000e+00	ObjectiveFunction	5.518141e+02
-        #alpha = 0.3 = Violation	0.000000e+00	ObjectiveFunction	4.246125e+02
 
-        #alpha 0.001, 0.2, 0.3
         pred = gpr.predict(x_test)
         pred = pd.DataFrame(pred, columns = ['pred'])
         
@@ -76,33 +73,35 @@ def pesos (x, y, p0, p1):
     
     return(x)
 
-def surGPR_training (data, n, p):
+def surGPR_training (data, n, p, functionEvaluations):
     #argumentos:
     #data = dados em formato de lista
     #n = número de indivíduos
     #p = dimensão da estrutura (número de X) + 1 (csum)
     df = pd.DataFrame(np.array(data).reshape(n,p))
-    # df = data
-    # print(type(df))
     x = np.log(df.iloc[:,0:(p-1)])
     csum = df.iloc[:,(p-1)]
-    #if len(csum[csum == 0]) == 0:
-    #   pass
-    #else:
-    # print("imprimindo csum no modelo robson")
-    # print(csum)
-    # print("n: {}".format(n))
-    # print("len(csum[csum == 0]): {}".format(len(csum[csum == 0])))
     if len(csum[csum == 0]) == 0 or len(csum[csum == 0]) == len(csum):
         pass
     else:
         p0 = 1/ (len(csum[csum == 0])/n)
         p1 = 1/ (1-(len(csum[csum == 0])/n))
         x = pesos(x, csum, p0, p1)
-        
-    theta = hyperPar(x,csum)
-    print("theta: {}".format(theta))
-    kernel = (C(theta[0], (1e-3, 1e3))) * RBF(theta[1], (1e-3, 1e3))
+
+    if functionEvaluations == 200 or functionEvaluations == 7500:  # only calculates hyperparameters if on first iteratiion or in the middle of the process
+        print("CALCULOU HYPERPARAMETROS")
+        theta = hyperPar(x, csum)
+        thetaGlobal.clear()
+        thetaGlobal.append(theta[0])
+        thetaGlobal.append(theta[1])
+        # list.append(theta[0])
+        # list.append(theta[1])
+        # theta = theta1
+        # print(type(theta))
+
+    # thetaGlobal = hyperPar(x,csum)  # TODO Descomentar para rodar atualizando parâmetroa cada toda hora, e comentar if acima.
+    # print("thetaGlobal: {}".format(thetaGlobal))
+    kernel = (C(thetaGlobal[0], (1e-3, 1e3))) * RBF(thetaGlobal[1], (1e-3, 1e3))
     gpr  =  GaussianProcessRegressor( kernel=kernel, normalize_y = False).fit(x,csum)
     
     crossV = model_selection.cross_val_score(gpr, x, csum, cv=5, scoring='explained_variance')

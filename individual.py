@@ -1194,11 +1194,11 @@ def readTrussInput(function):
     return bars, grouping
 
 
-def adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod):
+def adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations):
     populationList = offsprings.makePopulationList(offspringsSize, nSize, True, penaltyMethod)  # true stands for adding violationSum to populationList
     # print("offspringsSize {}".format(offspringsSize))
     # print("population list {}".format(len(populationList)))
-    modelGPR, crossVMean, crossVStd = modelo_GPR_log.surGPR_training(populationList, offspringsSize, nSize + 1)  # TODO: TREINAR MODELO ROBSON
+    modelGPR, crossVMean, crossVStd = modelo_GPR_log.surGPR_training(populationList, offspringsSize, nSize + 1, functionEvaluations)  # TODO: TREINAR MODELO ROBSON
     # modelGPR, crossVMean, crossVstd = modelo_GPR_log_corrigido.surGPR_training(populationList, offspringsSize, nSize + 1)
     # print("Modelo atualizado")
     return modelGPR, crossVMean, crossVStd
@@ -1389,7 +1389,7 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         # sys.exit("aaa")
         # file = open('crossVDatas.txt', 'w')
         # modelGPR, crossVMean, crossVStd = modelo_GPR_log.surGPR_training(populationList, offspringsSize, nSize + 1)  # TODO: TREINAR MODELO ROBSON
-        modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
+        modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations)
         # print(crossVMean, crossVStd)
         file.write("{}\t{}\n".format(crossVMean, crossVStd))
         # offsprings.printDimensionsAndViolationPopulation(offspringsSize, nSize)  # TODO: LINHA CODIGO ROBSON
@@ -1404,7 +1404,7 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
         offsprings.sortPopulation(penaltyMethod)
         for i in range(parentsSize):
             parents.copyIndividual(i, i, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
-        modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
+        modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations)
         # print(crossVMean, crossVStd)
     else:
         print("Penalthy method not encountered")
@@ -1417,12 +1417,12 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
             if crossVMean > 0.6:  # modelo "bom"
                 cont = cont + 1
                 if cont == windowSize:  # Treina modelo pela janela
-                    modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
+                    modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations)
                     # print(crossVMean, crossVStd)
                     file.write("{}\t{}\n".format(crossVMean, crossVStd))
                     cont = 0
             else:  # Treina modelo pela qualidade
-                modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod)
+                modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations)
                 file.write("{}\t{}\n".format(crossVMean, crossVStd))
         flags = [-1, -1, -1]
         offspringIdx = 0
@@ -1590,7 +1590,7 @@ def main():
     """
     # args.algorithm = "ES"
     # args.globalSigma = 0
-    # args.maxFE = 15000
+    args.maxFE = 15000
     # args.esType = 1
     # args.penaltyMethod = 2
     # args.function = 272
