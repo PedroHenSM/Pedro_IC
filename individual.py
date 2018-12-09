@@ -1198,7 +1198,9 @@ def adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEva
     populationList = offsprings.makePopulationList(offspringsSize, nSize, True, penaltyMethod)  # true stands for adding violationSum to populationList
     # print("offspringsSize {}".format(offspringsSize))
     # print("population list {}".format(len(populationList)))
+    # print("Imprimindo offspringsSize(popTrainingIdx) {} ".format(offspringsSize))
     modelGPR, crossVMean, crossVStd = modelo_GPR_log.surGPR_training(populationList, offspringsSize, nSize + 1, functionEvaluations)  # TODO: TREINAR MODELO ROBSON
+    # modelGPR, crossVMean, crossVStd = modelo_GPR_log.surGPR_training(populationList, off)
     # modelGPR, crossVMean, crossVstd = modelo_GPR_log_corrigido.surGPR_training(populationList, offspringsSize, nSize + 1)
     # print("Modelo atualizado")
     return modelGPR, crossVMean, crossVStd
@@ -1412,18 +1414,27 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
     # print("funcEvaluation: {}".format(functionEvaluations))
     # sys.exit()
     cont = 0
+    popForTraining = Population(750, nSize, 2, False, -1, -1)
+    popForTrainingIdx = 0
     while functionEvaluations < maxFE:
         if functionEvaluations != 200:  # Not first iteration
             if crossVMean > 0.6:  # modelo "bom"
                 cont = cont + 1
                 if cont == windowSize:  # Treina modelo pela janela
-                    modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations)
+                    # modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations)
+                    modelGPR, crossVMean, crossVStd = adjustGPRModel(popForTraining, popForTrainingIdx, nSize, penaltyMethod, functionEvaluations)
                     # print(crossVMean, crossVStd)
                     file.write("{}\t{}\n".format(crossVMean, crossVStd))
+                    popForTraining = Population(750, nSize, 2, False, -1, -1)
+                    popForTrainingIdx = 0
                     cont = 0
             else:  # Treina modelo pela qualidade
-                modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations)
+                # modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations)
+                # print(crossVMean, crossVStd)
+                modelGPR, crossVMean, crossVStd = adjustGPRModel(popForTraining, popForTrainingIdx, nSize, penaltyMethod, functionEvaluations)
                 file.write("{}\t{}\n".format(crossVMean, crossVStd))
+                popForTraining = Population(750, nSize, 2, False, -1, -1)
+                popForTrainingIdx = 0
         flags = [-1, -1, -1]
         offspringIdx = 0
         for i in range(parentsSize):
@@ -1447,6 +1458,9 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
             # bestIndividuals contains the best individuals(offsprings) evaluated on modelGPR and then they are evaluated on simulator
             bestsIndividuals = Population(parentsSize, nSize, 2, False, -1, -1)  # last two parameters is lowerBound and upperBound, will be subscribed
             bestsIndividuals, functionEvaluations = offsprings.evaluateOnlyBestsFromModelGPR(bestsIndividuals, generatedOffspring, offspringsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod, function, functionEvaluations, truss)
+            for i in range(parentsSize):  # len(bestIndividuals)
+                popForTraining.copyIndividual(popForTrainingIdx, i, bestsIndividuals, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)  # copies bests to training pop
+                popForTrainingIdx = popForTrainingIdx + 1
             # print(bestsIndividuals)
             # sys.exit("Printando bestsIndividuals")
             # def evaluateOnlyBestsFromModelGPR(self, bestsIndividuals, generatedOffspring, offspringsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod, function, functionEvaluations, truss):
@@ -1590,7 +1604,7 @@ def main():
     """
     # args.algorithm = "ES"
     # args.globalSigma = 0
-    args.maxFE = 15000
+    # args.maxFE = 15000
     # args.esType = 1
     # args.penaltyMethod = 2
     # args.function = 272

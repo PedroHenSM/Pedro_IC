@@ -45,7 +45,8 @@ def hyperPar (x,y):
         aux.iloc[i,2] = np.random.uniform(2.0, 10.0, 1)
                 
         kernel=(C(aux.iloc[i,1], (1e-3, 1e3)))*RBF(aux.iloc[i,2],(1e-3, 1e3))
-        gpr  =  GaussianProcessRegressor( kernel = kernel, normalize_y = False).fit(x_train,y_train)
+        gpr  =  GaussianProcessRegressor( kernel = kernel, alpha=1e-12,  normalize_y = False).fit(x_train,y_train)
+        GaussianProcessRegressor()
 
         pred = gpr.predict(x_test)
         pred = pd.DataFrame(pred, columns = ['pred'])
@@ -88,8 +89,9 @@ def surGPR_training (data, n, p, functionEvaluations):
         p1 = 1/ (1-(len(csum[csum == 0])/n))
         x = pesos(x, csum, p0, p1)
 
-    if functionEvaluations == 200 or functionEvaluations == 7500:  # only calculates hyperparameters if on first iteratiion or in the middle of the process
-        print("CALCULOU HYPERPARAMETROS")
+    """
+    if functionEvaluations == 200 or functionEvaluations == 7500:  # only calculates hyperparameters if on first iteration or in the middle of the process
+        # print("CALCULOU HYPERPARAMETROS")
         theta = hyperPar(x, csum)
         thetaGlobal.clear()
         thetaGlobal.append(theta[0])
@@ -98,12 +100,20 @@ def surGPR_training (data, n, p, functionEvaluations):
         # list.append(theta[1])
         # theta = theta1
         # print(type(theta))
+    """
 
-    # thetaGlobal = hyperPar(x,csum)  # TODO Descomentar para rodar atualizando parâmetroa cada toda hora, e comentar if acima.
+    thetaGlobal = hyperPar(x,csum)  # TODO Descomentar para rodar atualizando parâmetro toda hora, e comentar if acima.
+    # print("{}\t{}".format(thetaGlobal[0],thetaGlobal[1]))
     # print("thetaGlobal: {}".format(thetaGlobal))
+
     kernel = (C(thetaGlobal[0], (1e-3, 1e3))) * RBF(thetaGlobal[1], (1e-3, 1e3))
-    gpr  =  GaussianProcessRegressor( kernel=kernel, normalize_y = False).fit(x,csum)
-    
+    # kernel = (C(thetaGlobal[0], (1e-4, 1e4))) * RBF(thetaGlobal[1], (1e-4, 1e4))
+    gpr  =  GaussianProcessRegressor( kernel=kernel, alpha=1e-12, normalize_y = False).fit(x,csum)
+    # aux = gpr.kernel_
+    # print(aux)
+    # thetaGlobal[0] = aux.get_params()['k1__constant_value']
+    # thetaGlobal[1] = aux.get_params()['k2__length_scale']
+    # print("{}\t{}".format(thetaGlobal[0], thetaGlobal[1]))
     crossV = model_selection.cross_val_score(gpr, x, csum, cv=5, scoring='explained_variance')
     # print ( "% 0.2f, % 0.2f "  %  ( crossV.mean(),  crossV.std()))
     #escrever o valor do CV e desvio sempre que rodar a função    
