@@ -11,7 +11,7 @@ import eureka
 import argparse
 import numpy as np
 import operator as op
-import random
+import collections
 from scipy.stats import truncnorm
 from timeit import default_timer as timer
 # import ctypes
@@ -28,7 +28,7 @@ objectiveFunction = Objective function to be minimized
 g = Number of inequalities constraints
 h = Number of equalities constraints
 violations = Array of violations
-violatonSum = Sum of violations
+violationSum = Sum of violations
 fitness = Fitness of each individual (for APM)
 """
 
@@ -68,6 +68,17 @@ class Individual(object):
 
     def __repr__(self):
         return str(self.__dict__)
+
+    def __hash__(self):
+        # return hash((self.n, self.objectiveFunction, self.g, self.h, self.sigma, self.violations, self.violationSum, self.fitness))
+        return hash((self.objectiveFunction[0], self.violationSum))
+
+    def __eq__(self, other):
+        # return (self.n, self.objectiveFunction, self.g, self.h, self.sigma, self.violations, self.violationSum, self.fitness) == (other.n, other.objectiveFunction, other.g, other.h, other.sigma, other.violations, other.violationSum, other.fitness)
+        return self.objectiveFunction[0], self.violationSum == other.objectiveFunction[0], other.violationSum
+
+    # def __iter__(self):
+    #    return (self.n, self.objectiveFunction)
 
 
 class Population(object):
@@ -129,7 +140,13 @@ class Population(object):
                     values.append(-1)
             self.individuals.append(Individual(values))
 
+    def __iter__(self):
+        #  Generator function
+        for individual in self.individuals:
+            yield individual
+
     # self,n = None, objectiveFunction = None, g = None, h =None,violations = None ,sigma = None, violationSum = None, fitness = None
+
     def copyIndividual(self, idxDest, idxToBeCopy, population, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
         for j in range(nSize):  # Copies n
             self.individuals[idxDest].n[j] = population.individuals[idxToBeCopy].n[j]
@@ -158,19 +175,20 @@ class Population(object):
             if strFunction[0] == "1":  # "Normal" problems (functions to be minimized)
                 if function == 11:
                     Functions.C01(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
+                    # noinspection SpellCheckingInspection
                     """
-                    cLib.C01.restype = None  # void
-                    # Seta 4 param( ponteiros para float) e 4 ultimos param (inteiros)
-                    cLib.C01.argtypes = (ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_float),ctypes.POINTER( ctypes.c_float),ctypes.POINTER(ctypes.c_float),  ctypes.c_int,ctypes.c_int, ctypes.c_int,ctypes.c_int)
-                    nParam = (ctypes.c_float * nSize) (*(self.individuals[i].n))
-                    objFuncParam = (ctypes.c_float * nSize)(*(self.individuals[i].objectiveFunction))
-                    gParam = (ctypes.c_float * nSize)(*(self.individuals[i].g))
-                    hParam = (ctypes.c_float * nSize)(*(self.individuals[i].h))
-                    cLib.C01(nParam, objFuncParam, gParam, hParam, nSize, 1, gSize, hSize)
-                    self.individuals[i].n = [x for x in nParam]  # copia array
-                    self.individuals[i].objectiveFunction = [x for x in objFuncParam]
-                    self.individuals[i].g = [x for x in gParam]  # copia array
-                    self.individuals[i].h = [x for x in hParam]  # copia array
+                        cLib.C01.restype = None  # void
+                        # Seta 4 param( ponteiros para float) e 4 ultimos param (inteiros)
+                        cLib.C01.argtypes = (ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_float),ctypes.POINTER( ctypes.c_float),ctypes.POINTER(ctypes.c_float),  ctypes.c_int,ctypes.c_int, ctypes.c_int,ctypes.c_int)
+                        nParam = (ctypes.c_float * nSize) (*(self.individuals[i].n))
+                        objFuncParam = (ctypes.c_float * nSize)(*(self.individuals[i].objectiveFunction))
+                        gParam = (ctypes.c_float * nSize)(*(self.individuals[i].g))
+                        hParam = (ctypes.c_float * nSize)(*(self.individuals[i].h))
+                        cLib.C01(nParam, objFuncParam, gParam, hParam, nSize, 1, gSize, hSize)
+                        self.individuals[i].n = [x for x in nParam]  # copia array
+                        self.individuals[i].objectiveFunction = [x for x in objFuncParam]
+                        self.individuals[i].g = [x for x in gParam]  # copia array
+                        self.individuals[i].h = [x for x in hParam]  # copia array
                     """
                 elif function == 12:
                     Functions.C02(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
@@ -404,7 +422,7 @@ class Population(object):
         best = bestIndividual(self, parentsSize, penaltyMethod)
         if penaltyMethod == 1:  # not apm
             # print("Violation\t{:e}\tObjectiveFunction\t{:e}\n".format(best.violationSum, best.objectiveFunction[0]))
-            print("{}\t{}".format(best.violationSum, best.objectiveFunction[0]),end="\t")
+            print("{}\t{}".format(best.violationSum, best.objectiveFunction[0]), end="\t")
         elif penaltyMethod == 2:  # APM
             if best.fitness == best.objectiveFunction[0]:
                 print("Fitness\t{:e}\tObjectiveFunction\t{:e}\n".format(best.fitness, best.objectiveFunction[0]))
@@ -517,6 +535,7 @@ class Population(object):
                         offsprings.individuals[m].n[k] = self.individuals[i].n[k] + offsprings.individuals[m].sigma[k] * np.random.normal(MEAN, STD)
                 m = m + 1
 
+    # noinspection PyUnboundLocalVariable
     def elitismES(self, offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound):
         if esType == 0:  # Es + | Pick bests individuals among parents and offsprings
             # parents = Population(parentsSize,nSize,function) # Initialize
@@ -1194,6 +1213,10 @@ def readTrussInput(function):
     return bars, grouping
 
 
+def compareLists(s, t):
+    return collections.Counter(s) == collections.Counter(t)
+
+
 def adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations):
     populationList = offsprings.makePopulationList(offspringsSize, nSize, True, penaltyMethod)  # true stands for adding violationSum to populationList
     # print("offspringsSize {}".format(offspringsSize))
@@ -1343,7 +1366,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
             parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
         parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
         # parents.printBest(nSize, parentsSize, penaltyMethod)
-        # parents.printBestFO(parentsSize, penaltyMethod)
+        parents.printBestFO(parentsSize, penaltyMethod)
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
         # weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
         # print("Weigth: {:e}".format(weight))
@@ -1422,9 +1445,12 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
                 cont = cont + 1
                 if cont == windowSize:  # Treina modelo pela janela
                     # modelGPR, crossVMean, crossVStd = adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEvaluations)
+                    # print(setForTraining)
                     modelGPR, crossVMean, crossVStd = adjustGPRModel(popForTraining, popForTrainingIdx, nSize, penaltyMethod, functionEvaluations)
+
                     # print(crossVMean, crossVStd)
                     file.write("{}\t{}\n".format(crossVMean, crossVStd))
+
                     popForTraining = Population(750, nSize, 2, False, -1, -1)
                     popForTrainingIdx = 0
                     cont = 0
@@ -1458,6 +1484,16 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
             # bestIndividuals contains the best individuals(offsprings) evaluated on modelGPR and then they are evaluated on simulator
             bestsIndividuals = Population(parentsSize, nSize, 2, False, -1, -1)  # last two parameters is lowerBound and upperBound, will be subscribed
             bestsIndividuals, functionEvaluations = offsprings.evaluateOnlyBestsFromModelGPR(bestsIndividuals, generatedOffspring, offspringsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod, function, functionEvaluations, truss)
+            """
+            for i in range(parentsSize):  # len(bestIndividuals)
+                adds = 0
+                for j in range(len(popForTraining.individuals)):  # returns true if lists are equal
+                    if not compareLists(popForTraining.individuals[j].n, bestsIndividuals.individuals[i].n):  # and compareLists(popForTraining.individuals[i].objectiveFunction, bestsIndividuals.individuals[i].objectiveFunction) and compareLists()
+                        adds = adds + 1
+                if adds == len(popForTraining.individuals):  # if individuals are different
+                    popForTraining.copyIndividual(popForTrainingIdx, i, bestsIndividuals, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)  # copies bests to training pop
+                    popForTrainingIdx = popForTrainingIdx + 1
+            """
             for i in range(parentsSize):  # len(bestIndividuals)
                 popForTraining.copyIndividual(popForTrainingIdx, i, bestsIndividuals, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)  # copies bests to training pop
                 popForTrainingIdx = popForTrainingIdx + 1
@@ -1559,10 +1595,12 @@ def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offs
         end = timer()
         print(end - start)
         """
+        print("uai")
         start = timer()
-        DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize)
+        DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
+        # DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize)
         end = timer()
-        print(end - start,end="")
+        print(end - start, end="")
     elif algorithm == "ES":  # Evolution Strategy
         ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     else:
@@ -1602,6 +1640,7 @@ def main():
     args.esType = 0  # 0 Es + and 1 Es ,
     args.globalSigma = 1
     """
+    args.function = 225
     # args.algorithm = "ES"
     # args.globalSigma = 0
     # args.maxFE = 15000
