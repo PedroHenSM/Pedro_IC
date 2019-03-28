@@ -1607,37 +1607,40 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
     functionEvaluations = 0
     # User defined parameters
     sigma = 0.5
-    xmean = np.random.randn(nSize,1)
+    xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
+    """
+    λ ≥ 2, population size, sample size, number of offspring, see (5).
+    µ ≤ λ parent number, number of (positively) selected search points in the population, number
+    of strictly positive recombination weights, see (6).
+    """
     # Strategy parameters setting: Selection
-    parentsSize =  4 + np.floor(3 * np.log(nSize)) # parentsSize is biased on nSize
-    mu = parentsSize / 2
-    # weights = [1] *  mu # initialize list of weights
-    # weights = np.log((parentsSize + 1)/2) - np.log(1:mu) # TODO: Verificar se comeca do 1 e se é necessário transpor
-    weights = [np.log(mu + 0.5) - np.log(i + 1) if i < mu else 0 for i in range(parentsSize)]
-    w_sum = np.sum(weights[:mu])
-    weights = [w / w_sum for w in weights]  # sum is one now
-
-    # mu = np.floor(mu)
-    # weights = weights/np.sum(weights)
+    parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
+    mu = parentsSize / 2  # mu is NOT offspringsSize.
+    muList = [i + 1 for i in range(mu)]
+    weights = np.log(mu+1/2)-np.log(muList)  # muXone recombination weights
+    mu = np.floor(mu)
+    weights = weights/np.sum(weights)
     mueff = np.power(sum(weights),2) / np.sum(np.power(weights,2))
 
     # Strategy parameter setting: Adaptation
     cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
     cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
     c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
-    cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2)) # TODO: DIFERENTE DO PSEUDOCODIGO do wikipedia # and for rank mu update
-    damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs # damping for sigma
+    cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
+    damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
+
     # Initiliaze dynamic (internal) strategy parameters  and constants
     pc = [0] * nSize  # evolutions paths for C
     ps = [0] * nSize  # evolutions paths for sigma
     B = np.eye(nSize) # B defines de coordinate system
     D = np.eye(nSize) # diagonal matrix D defines the scaling
     AUX = (B * D)  # auxiliar tranpose matrix
-    AUX = AUX.tranpose()
+    AUX = AUX.transpose()
     C = B * D * AUX  # covariance matrix
     eigenval = 0  # B and D update at counteval == 0
     chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
 
+    # CODIGO ANTIGO
 
     generatedOffspring = int(offspringsSize / parentsSize)
     lowerBound = upperBound = truss = 0
@@ -1670,18 +1673,22 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
         sys.exit("Penalty method not encountered")
     parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
 
+    # FIM CODIGO ANTIGO
+
     while functionEvaluations < maxFE:
         # Generate and evaluate lambda offspring
-        candidate_solutions  = []
-        arz = []
-        for k in range(offspringsSize):
-            arz.append(np.random.normal(nSize,1))  # standard normally distributed vector  (38)
-            ary.append(B*D*arz[k])  # N (0,C)  (39)
-            arx.append(xmean + sigma*ary[k])  # add mutation N(m,sigma²C) (40)
-            parents.individuals[k].n = arx[k]  # new x is generated TODO Verificar isso aqui
-             # avalia funcao aqui com o individuo k
+        for k in range(parentsSize):
+            arz = np.random.randn(nSize)  # standard normally distributed vector  (38)
+            # np.dot(a,b) If a is an N-D array and b is a 1-D array, it is a sum product over the last axis of a and b.
+            arx = xmean + sigma * (np.dot(B*D, arz))  # add mutation N(m,sigma²C) (40)
+            # arx é  individuals[i].n
+            for i in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
+                offsprings.individuals[k].n[i] = arx[i]
+            # TODO evaluates individuals (objective function call)
+            # avalia funcao aqui com o individuo k
 
-        # sort by fitness (TODO)
+        # TODO sort by fitness (TODO)
+        ###  Até aqui está funcionando corretamente.
         xold = mean
         xmean = np.dot(arx[0:mu], weights[:mu], transpose=True)  # eq 42 TODO VERIFICAR TRANPOSE
         y = np.subtract(xmean, xold)

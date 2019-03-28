@@ -8,9 +8,10 @@ function xmin=purecmaes
     % Computational efficiency is sometimes disregarded.
     
     % -------------------- Initialization --------------------------------
-    teste = "Rodou aqui";
-    disp(teste);
     % User defined input parameters (need to be edited)
+    % Next 2 lines fix the seed, just for personal tests
+    rand('state', 1); % just for personal tests
+    randn('state',1);  
     strfitnessfct = 'felli'; % name of objective/fitness function
     N = 10; % number of objective variables/problem dimension
     xmean = rand(N,1); % objective variables initial point
@@ -21,6 +22,12 @@ function xmin=purecmaes
     % Strategy parameter setting: Selection
     lambda = 4+floor(3*log(N)); % population size, offspring number
     mu = lambda/2; % lambda=12; mu=3; weights = ones(mu,1); would be (3_I,12)-ES
+    duvida1 = (1:mu);
+    duvida2 = (1:mu)';  % Python code: muList = [i+1 for i in range(mu)]
+    peso1 = log(mu+1/2);
+    peso2 = log(1:mu)';
+    pesos = peso1 - peso2;
+    % PythonCode: weights = np.log(mu+1/2)-np.log(muList)
     weights = log(mu+1/2)-log(1:mu)'; % muXone recombination weights
     mu = floor(mu); % number of parents/points for recombination
     weights = weights/sum(weights); % normalize recombination weights array
@@ -46,13 +53,13 @@ function xmin=purecmaes
     
     counteval = 0; % the next 40 lines contain the 20 lines of interesting code
     while counteval < stopeval
-
+    % randn: Normally distributed random numbers
         % Generate and evaluate lambda offspring
         for k=1:lambda,
-        arz(:,k) = randn(N,1); % standard normally distributed vector
-        arx(:,k) = xmean + sigma * (B*D * arz(:,k)); % add mutation % Eq. 40
-        arfitness(k) = feval(strfitnessfct, arx(:,k)); % objective function call
-        counteval = counteval+1;
+          arz(:,k) = randn(N,1); % standard normally distributed vector
+          arx(:,k) = xmean + sigma * (B*D * arz(:,k)); % add mutation % Eq. 40
+          arfitness(k) = feval(strfitnessfct, arx(:,k)); % objective function call
+          counteval = counteval+1;
         end
 
         % Sort by fitness and compute weighted mean into xmean
