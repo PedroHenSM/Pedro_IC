@@ -82,7 +82,7 @@ class Individual(object):
 
 
 class Population(object):
-    def __init__(self, popSize, nSize, function, initalizeValues=True, lowerBound=None, upperBound=None):
+    def __init__(self, popSize, nSize, function, initalizeValues=False, lowerBound=None, upperBound=None):
         if lowerBound is not None and upperBound is not None:
             mu = (lowerBound + upperBound) / 2  # midpoint of interval
             sigma = (upperBound - lowerBound) / 4  # std which is 1/4 of the diameter
@@ -1583,6 +1583,128 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
         parents.printBest(nSize, parentsSize, penaltyMethod)
 
+"""
+lambda = parentsSize
+mi = offspringsSize
+w = weights
+sigma = steo size
+B ∈ R n, an orthogonal matrix. Columns of B are eigenvectors of C with unit length and correspond to the diagonal elements of D.
+C(g) ∈ R n×n, covariance matrix at generation g. cii, diagonal elements of C.
+cc ≤ 1, learning rate for cumulation for the rank-one update of the covariance matrix, see (24) and (45), and Table 1.
+c1 ≤ 1 − cµ, learning rate for the rank-one update of the covariance matrix update, see (28), (30), and (47), and Table 1.
+cµ ≤ 1 − c1, learning rate for the rank-µ update of the covariance matrix update, see (16), (30), and (47), and Table 1.
+cσ < 1, learning rate for the cumulation for the step-size control, see (31) and (43), and  Table 1
+D ∈ Rn, a diagonal matrix. The diagonal elements of D are square roots of eigenvalues ofC and correspond to the respective columns of B.
+di > 0, diagonal elements of diagonal matrix D, d²i are eigenvalues of C.
+dσ ≈ 1, damping parameter for step-size update, see (32), (37), and (44).
+"""
+
+
+def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
+    strFunction = str(function)
+    crossoverProb = -1
+    np.random.seed(seed)
+    functionEvaluations = 0
+    # User defined parameters
+    sigma = 0.5
+    xmean = np.random.randn(nSize,1)
+    # Strategy parameters setting: Selection
+    parentsSize =  4 + np.floor(3 * np.log(nSize)) # parentsSize is biased on nSize
+    mu = parentsSize / 2
+    # weights = [1] *  mu # initialize list of weights
+    # weights = np.log((parentsSize + 1)/2) - np.log(1:mu) # TODO: Verificar se comeca do 1 e se é necessário transpor
+    weights = [np.log(mu + 0.5) - np.log(i + 1) if i < mu else 0 for i in range(parentsSize)]
+    w_sum = np.sum(weights[:mu])
+    weights = [w / w_sum for w in weights]  # sum is one now
+
+    # mu = np.floor(mu)
+    # weights = weights/np.sum(weights)
+    mueff = np.power(sum(weights),2) / np.sum(np.power(weights,2))
+
+    # Strategy parameter setting: Adaptation
+    cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
+    cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
+    c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
+    cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2)) # TODO: DIFERENTE DO PSEUDOCODIGO do wikipedia # and for rank mu update
+    damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs # damping for sigma
+    # Initiliaze dynamic (internal) strategy parameters  and constants
+    pc = [0] * nSize  # evolutions paths for C
+    ps = [0] * nSize  # evolutions paths for sigma
+    B = np.eye(nSize) # B defines de coordinate system
+    D = np.eye(nSize) # diagonal matrix D defines the scaling
+    AUX = (B * D)  # auxiliar tranpose matrix
+    AUX = AUX.tranpose()
+    C = B * D * AUX  # covariance matrix
+    eigenval = 0  # B and D update at counteval == 0
+    chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
+
+
+    generatedOffspring = int(offspringsSize / parentsSize)
+    lowerBound = upperBound = truss = 0
+    if strFunction[0] == "2":  # solving trusses
+        truss, lowerBound, upperBound = initializeTruss(function)
+        nSize = truss.getDimension()
+        gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
+        penaltyCoefficients = [-1 for i in range(constraintsSize)]
+        avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
+        parents = Population(parentsSize, nSize, function, lowerBound, upperBound)
+        offsprings = Population(offspringsSize, nSize, function, lowerBound, upperBound)
+        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
+    else:
+        gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
+        penaltyCoefficients = [-1 for i in range(constraintsSize)]
+        avgObjFunc = 0  # will be subscribed on 'calculatePenaltyCoefficients'
+        parents = Population(parentsSize, nSize, function)  # Initialize parents population
+        offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
+        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize,
+                                               functionEvaluations)  # Evaluate parents
+
+    if penaltyMethod == 1:  # Padrao?  (not apm)
+        parents.sumViolations(parentsSize, gSize, hSize)
+    elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
+        parents.uniteConstraints(parentsSize, gSize, hSize)
+        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+        parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+    else:
+        print("Penalthy method not encountered")
+        sys.exit("Penalty method not encountered")
+    parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
+
+    while functionEvaluations < maxFE:
+        # Generate and evaluate lambda offspring
+        candidate_solutions  = []
+        arz = []
+        for k in range(offspringsSize):
+            arz.append(np.random.normal(nSize,1))  # standard normally distributed vector  (38)
+            ary.append(B*D*arz[k])  # N (0,C)  (39)
+            arx.append(xmean + sigma*ary[k])  # add mutation N(m,sigma²C) (40)
+            parents.individuals[k].n = arx[k]  # new x is generated TODO Verificar isso aqui
+             # avalia funcao aqui com o individuo k
+
+        # sort by fitness (TODO)
+        xold = mean
+        xmean = np.dot(arx[0:mu], weights[:mu], transpose=True)  # eq 42 TODO VERIFICAR TRANPOSE
+        y = np.subtract(xmean, xold)
+        ps = (1-cs) * ps + (np.sqrt(cs*(2-cs)*mueff)) * (B *zmean)
+
+        if strFunction[0] == "2":
+            offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
+            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize,
+                                                      functionEvaluations, truss)
+        else:
+            offsprings.bounding(nSize, function, offspringsSize)
+            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize,
+                                                      functionEvaluations)
+        if penaltyMethod == 1:
+            offsprings.sumViolations(offspringsSize, gSize, hSize)
+        else:
+            offsprings.uniteConstraints(offspringsSize, gSize, hSize)
+            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients,
+                                                                 avgObjFunc)
+            offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma,
+                          esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
+        parents.printBest(nSize, parentsSize, penaltyMethod)
 
 # noinspection PyShadowingNames
 def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize):
