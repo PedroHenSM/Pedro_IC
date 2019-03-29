@@ -22,11 +22,11 @@ function xmin=purecmaes
     % Strategy parameter setting: Selection
     lambda = 4+floor(3*log(N)); % population size, offspring number
     mu = lambda/2; % lambda=12; mu=3; weights = ones(mu,1); would be (3_I,12)-ES
-    duvida1 = (1:mu);
-    duvida2 = (1:mu)';  % Python code: muList = [i+1 for i in range(mu)]
-    peso1 = log(mu+1/2);
-    peso2 = log(1:mu)';
-    pesos = peso1 - peso2;
+    % duvida1 = (1:mu);
+    % duvida2 = (1:mu)';  % Python code: muList = [i+1 for i in range(mu)]
+    % peso1 = log(mu+1/2);
+    % peso2 = log(1:mu)';
+    % pesos = peso1 - peso2;
     % PythonCode: weights = np.log(mu+1/2)-np.log(muList)
     weights = log(mu+1/2)-log(1:mu)'; % muXone recombination weights
     mu = floor(mu); % number of parents/points for recombination
@@ -56,6 +56,7 @@ function xmin=purecmaes
     % randn: Normally distributed random numbers
         % Generate and evaluate lambda offspring
         for k=1:lambda,
+          % pythonCode: provavelmente vou ter que criar um arz dentro de individual
           arz(:,k) = randn(N,1); % standard normally distributed vector
           arx(:,k) = xmean + sigma * (B*D * arz(:,k)); % add mutation % Eq. 40
           arfitness(k) = feval(strfitnessfct, arx(:,k)); % objective function call
@@ -64,6 +65,12 @@ function xmin=purecmaes
 
         % Sort by fitness and compute weighted mean into xmean
         [arfitness, arindex] = sort(arfitness); % minimization
+        % arindex(1:mu) pega os melhores mu indices (após ordenados)
+        % arx(:,arindex(1:mu)) seleciona os mu melhores individuos (ordenados)
+        % arz(:,arxindex(1:mu)) seleciona os mu melhores distribuicoes (dos individuos) NAO TEM NO MEU CODIGO
+        % xmean se torna um vetor 10x1
+        % pythonCode: xmean = np.dot(muBestIndividuals, weights)
+        % pythonCode: zmean = np.dot(muBestIndividuals, weights)
         xmean = arx(:,arindex(1:mu))*weights; % recombination % Eq. 42
         zmean = arz(:,arindex(1:mu))*weights; % == Dˆ-1*B’*(xmean-xold)/sigma
 

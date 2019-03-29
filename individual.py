@@ -35,7 +35,7 @@ fitness = Fitness of each individual (for APM)
 
 class Individual(object):
     # noinspection PyUnusedLocal
-    def __init__(self, n=None, objectiveFunction=None, g=None, h=None, violations=None, sigma=None, violationSum=None, fitness=None):
+    def __init__(self, n=None, objectiveFunction=None, g=None, h=None, violations=None, sigma=None, violationSum=None, fitness=None, arz=None):
         self.n = [-1 for i in range(1000)] if n is None else n
         self.objectiveFunction = [-1 for i in range(1)] if objectiveFunction is None else objectiveFunction
         self.g = [-1 for i in range(1000)] if g is None else g
@@ -44,6 +44,7 @@ class Individual(object):
         self.violations = [-1 for i in range(1000)] if violations is None else violations
         self.violationSum = -1 if violationSum is None else violationSum
         self.fitness = -1 if fitness is None else fitness
+        self.arz = [-1 for i in range(1000) if arz is None else arz
 
     def copyIndividual(self, individual, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
         for j in range(nSize):  # Copies n
@@ -567,7 +568,7 @@ class Population(object):
                 # best = offsprings.individuals[j]
                 while j < generatedOffspring * (i + 1):  # Goes through each offspring of each parent
                     # get the best individual among the offsprings
-                    if penaltyMethod == 1:  # Not apm
+                    if penaltyMethod == 1:  # Deb
                         if offsprings.individuals[j].violationSum < offsprings.individuals[bestIdx].violationSum:
                             bestIdx = j
                         elif offsprings.individuals[j].violationSum == offsprings.individuals[bestIdx].violationSum:
@@ -1607,7 +1608,8 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
     functionEvaluations = 0
     # User defined parameters
     sigma = 0.5
-    xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
+    # xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
+    xmean = [0.134364, 0.847434, 0.763775, 0.255069, 0.495435, 0.449491, 0.651593, 0.788723, 0.093860, 0.028347] ## just for tests
     """
     λ ≥ 2, population size, sample size, number of offspring, see (5).
     µ ≤ λ parent number, number of (positively) selected search points in the population, number
@@ -1683,34 +1685,34 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
             arx = xmean + sigma * (np.dot(B*D, arz))  # add mutation N(m,sigma²C) (40)
             # arx é  individuals[i].n
             for i in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
+                offsprings.individuals[k].arz[i] =  arz[i]
                 offsprings.individuals[k].n[i] = arx[i]
-            # TODO evaluates individuals (objective function call)
+            # TODO evaluates individuals (objective function call), can be done after the loop
             # avalia funcao aqui com o individuo k
 
-        # TODO sort by fitness (TODO)
-        ###  Até aqui está funcionando corretamente.
-        xold = mean
-        xmean = np.dot(arx[0:mu], weights[:mu], transpose=True)  # eq 42 TODO VERIFICAR TRANPOSE
-        y = np.subtract(xmean, xold)
-        ps = (1-cs) * ps + (np.sqrt(cs*(2-cs)*mueff)) * (B *zmean)
-
+        # Evaluate function
         if strFunction[0] == "2":
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
-            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize,
-                                                      functionEvaluations, truss)
+            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         else:
             offsprings.bounding(nSize, function, offspringsSize)
-            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize,
-                                                      functionEvaluations)
-        if penaltyMethod == 1:
+            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations)
+        # Choose method of penalization
+        if penaltyMethod == 1:  # Deb penalization
             offsprings.sumViolations(offspringsSize, gSize, hSize)
-        else:
+        else:  # APM penalization
             offsprings.uniteConstraints(offspringsSize, gSize, hSize)
-            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients,
-                                                                 avgObjFunc)
+            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
             offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma,
-                          esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
+        # TODO Meu esType == 1, (Es ,) os filhos são gerados independentemente dos pais a cada gerção
+        # Elitismo apenas ordena os filhos. esType == 1(pai não é levado em conta (ES ,))
+        # Sort individuals
+        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
+
+        # TODO sort by fitness (TODO)
+        ###  Até aqui está funcionando corretamente.(provavelmente)
+
+
         parents.printBest(nSize, parentsSize, penaltyMethod)
 
 # noinspection PyShadowingNames
