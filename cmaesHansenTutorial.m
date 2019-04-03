@@ -67,7 +67,7 @@ function xmin=purecmaes
         [arfitness, arindex] = sort(arfitness); % minimization
         % arindex(1:mu) pega os melhores mu indices (após ordenados)
         % arx(:,arindex(1:mu)) seleciona os mu melhores individuos (ordenados)
-        % arz(:,arxindex(1:mu)) seleciona os mu melhores distribuicoes (dos individuos) NAO TEM NO MEU CODIGO
+        % arz(:,arindex(1:mu)) seleciona os mu melhores distribuicoes (dos individuos) NAO TEM NO MEU CODIGO
         % xmean se torna um vetor 10x1
         % pythonCode: xmean = np.dot(muBestIndividuals, weights)
         % pythonCode: zmean = np.dot(muBestIndividuals, weights)

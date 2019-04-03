@@ -44,7 +44,7 @@ class Individual(object):
         self.violations = [-1 for i in range(1000)] if violations is None else violations
         self.violationSum = -1 if violationSum is None else violationSum
         self.fitness = -1 if fitness is None else fitness
-        self.arz = [-1 for i in range(1000) if arz is None else arz
+        self.arz = [-1 for i in range(1000)] if arz is None else arz
 
     def copyIndividual(self, individual, nSize, objectiveFunctionSize, gSize, hSize, constraintsSize, globalSigma, penaltyMethod):
         for j in range(nSize):  # Copies n
@@ -83,8 +83,12 @@ class Individual(object):
 
 
 class Population(object):
-    def __init__(self, popSize, nSize, function, initalizeValues=False, lowerBound=None, upperBound=None):
+    def __init__(self, popSize, nSize, function, initalizeValues=True, lowerBound=None, upperBound=None):
+        initalizeValues = False  # TODO initalizeValues=False nos parametros não tá funcionando?
+        mu = False
+        sigma = False
         if lowerBound is not None and upperBound is not None:
+            # print("IF lower bound")
             mu = (lowerBound + upperBound) / 2  # midpoint of interval
             sigma = (upperBound - lowerBound) / 4  # std which is 1/4 of the diameter
         strFunction = str(function)
@@ -128,10 +132,11 @@ class Population(object):
                             flag = False
                     """
                     # print(values)
-                    # values.append(np.random.uniform(lowerBound, upperBound))
+                    values.append(np.random.uniform(lowerBound, upperBound))
                 else:
                     print("Function not encountered")  # sys.exit("Function not encountered")
             if initalizeValues:  # intialize values(n) with gaussian distribution
+                print("Entrou aqui")
                 s = get_truncated_normal(mu, sigma, lowerBound, upperBound).rvs(nSize)
                 s = s.tolist()
                 for it in range(nSize):
@@ -423,7 +428,7 @@ class Population(object):
         best = bestIndividual(self, parentsSize, penaltyMethod)
         if penaltyMethod == 1:  # not apm
             # print("Violation\t{:e}\tObjectiveFunction\t{:e}\n".format(best.violationSum, best.objectiveFunction[0]))
-            print("{}\t{}".format(best.violationSum, best.objectiveFunction[0]), end="\t")
+            print("{}\t{}".format(best.violationSum, best.objectiveFunction[0]), end="\n")
         elif penaltyMethod == 2:  # APM
             if best.fitness == best.objectiveFunction[0]:
                 print("Fitness\t{:e}\tObjectiveFunction\t{:e}\n".format(best.fitness, best.objectiveFunction[0]))
@@ -541,8 +546,9 @@ class Population(object):
         if esType == 0:  # Es + | Pick bests individuals among parents and offsprings
             # parents = Population(parentsSize,nSize,function) # Initialize
             # parents population
+            print("LB{} and UP{}".format(lowerBound, upperBound))
             if strFunction[0] == "2":  # truss
-                aux = Population(parentsSize + offspringsSize, nSize, 2, lowerBound, upperBound)
+                aux = Population(parentsSize + offspringsSize, nSize, 2, True, lowerBound, upperBound)
             elif strFunction[0] == "1":
                 aux = Population(parentsSize + offspringsSize, nSize, 11)
 
@@ -1368,6 +1374,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod)
         # parents.printBest(nSize, parentsSize, penaltyMethod)
         parents.printBestFO(parentsSize, penaltyMethod)
+        print("Ta rodando o dE")
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
         # weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
         # print("Weigth: {:e}".format(weight))
@@ -1547,8 +1554,8 @@ def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function, lowerBound, upperBound)
-        offsprings = Population(offspringsSize, nSize, function, lowerBound, upperBound)
+        parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
+        offsprings = Population(offspringsSize, nSize, function,True, lowerBound, upperBound)
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
     else:
         gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
@@ -1617,12 +1624,13 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
     """
     # Strategy parameters setting: Selection
     parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
+    parentsSize = int(parentsSize)
     mu = parentsSize / 2  # mu is NOT offspringsSize.
-    muList = [i + 1 for i in range(mu)]
+    muList = [i + 1 for i in range(int(mu))]
     weights = np.log(mu+1/2)-np.log(muList)  # muXone recombination weights
     mu = np.floor(mu)
     weights = weights/np.sum(weights)
-    mueff = np.power(sum(weights),2) / np.sum(np.power(weights,2))
+    mueff = np.power(sum(weights), 2) / np.sum(np.power(weights,2))
 
     # Strategy parameter setting: Adaptation
     cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
@@ -1634,8 +1642,8 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
     # Initiliaze dynamic (internal) strategy parameters  and constants
     pc = [0] * nSize  # evolutions paths for C
     ps = [0] * nSize  # evolutions paths for sigma
-    B = np.eye(nSize) # B defines de coordinate system
-    D = np.eye(nSize) # diagonal matrix D defines the scaling
+    B = np.eye(nSize)  # B defines de coordinate system
+    D = np.eye(nSize)  # diagonal matrix D defines the scaling
     AUX = (B * D)  # auxiliar tranpose matrix
     AUX = AUX.transpose()
     C = B * D * AUX  # covariance matrix
@@ -1644,7 +1652,8 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
 
     # CODIGO ANTIGO
 
-    generatedOffspring = int(offspringsSize / parentsSize)
+    generatedOffspring = int(offspringsSize / parentsSize)  # TODO Verifiar isso depois
+    offspringsSize = parentsSize
     lowerBound = upperBound = truss = 0
     if strFunction[0] == "2":  # solving trusses
         truss, lowerBound, upperBound = initializeTruss(function)
@@ -1652,8 +1661,8 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function, lowerBound, upperBound)
-        offsprings = Population(offspringsSize, nSize, function, lowerBound, upperBound)
+        parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
+        offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
     else:
         gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
@@ -1673,7 +1682,7 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
     else:
         print("Penalthy method not encountered")
         sys.exit("Penalty method not encountered")
-    parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
+    # parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
 
     # FIM CODIGO ANTIGO
 
@@ -1685,11 +1694,11 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
             arx = xmean + sigma * (np.dot(B*D, arz))  # add mutation N(m,sigma²C) (40)
             # arx é  individuals[i].n
             for i in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
-                offsprings.individuals[k].arz[i] =  arz[i]
+                offsprings.individuals[k].arz[i] = arz[i]
                 offsprings.individuals[k].n[i] = arx[i]
             # TODO evaluates individuals (objective function call), can be done after the loop
             # avalia funcao aqui com o individuo k
-
+        # TODO Verificar np.stack ( no arquivo cmaestests.py)
         # Evaluate function
         if strFunction[0] == "2":
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
@@ -1707,13 +1716,78 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
         # TODO Meu esType == 1, (Es ,) os filhos são gerados independentemente dos pais a cada gerção
         # Elitismo apenas ordena os filhos. esType == 1(pai não é levado em conta (ES ,))
         # Sort individuals
-        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
+        print(" CHWGOU AQUI NAISSU")
+        print("LB{} and UP{}".format(lowerBound, upperBound))
+        """ ORIGINAL
+        arx
+      -1.1988966   0.4783477   1.5177266   0.5560404   0.2701045   0.0967695   0.4393806   1.0615760   0.9395308   0.2170117
+       0.1435945   0.2653321   1.3561643  -0.3547997   0.5490903   0.1590957   1.0661255   0.7472055   0.7005519  -0.0591285
+       0.2657193   1.0148725  -0.4411025   0.0435862   0.2913427   0.1490518   0.6289034   1.2168827   0.1966676  -0.1020378
+       0.1918297   1.3101121   0.5979328   0.4117982   0.3583002   0.0831734   0.1818460   0.7941236  -0.2353835   0.7558454
+       0.1863209   1.5295500  -0.5251148   0.9851442   0.0728884   0.4430372   1.0169612  -0.0101029  -0.3992216   0.2596442
+      -0.2176538  -0.1160909   0.5462393  -0.4394412   0.0792915   1.3681657  -0.0357643   1.3416918  -0.7387198  -0.2536270
+      -0.3372198   0.2792752   0.9526800  -0.1632072  -0.3613348   0.4960967   0.1662101   1.3961222   0.6934805   1.0837483
+       0.7114285   0.4793197   0.7094737  -0.2383446   1.0766484   0.7158207  -0.3392018   0.5225840   0.0086550   0.5027183
+       0.0085193   0.8207119   0.1277391   0.5907389   0.2890430   0.3981118   0.9322524   0.2855838  -0.6971837  -0.3907246
+      -0.3827326   0.4684674  -0.1658703   0.5106490   0.4367535   0.5981618   0.1744202   1.2102082   0.3099745   1.2017602
+        """
+        # ORDENADO
+        arx = [[0.2657193,1.0148725,-0.4411025,0.0435862,0.2913427,0.1490518,0.6289034,1.2168827,0.1966676,-0.1020378],
+            [0.1863209,1.5295500,-0.5251148,0.9851442,0.0728884,0.4430372,1.0169612,-0.0101029,-0.3992216,0.2596442],
+            [0.1435945,0.2653321,1.3561643,-0.3547997,0.5490903,0.1590957,1.0661255,0.7472055,0.7005519,-0.0591285],
+            [0.7114285,0.4793197,0.7094737,-0.2383446,1.0766484,0.7158207,-0.3392018,0.5225840,0.0086550,0.5027183],
+            [-0.2176538,-0.1160909,0.5462393,-0.4394412,0.0792915,1.3681657,-0.0357643,1.3416918,-0.7387198,-0.2536270],
+            [0.0085193,0.8207119,0.1277391,0.5907389,0.2890430,0.3981118,0.9322524,0.2855838,-0.6971837,-0.3907246],
+            [-1.1988966,0.4783477,1.5177266,0.5560404,0.2701045,0.0967695,0.4393806,1.0615760,0.9395308,0.2170117],
+            [0.1918297,1.3101121,0.5979328,0.4117982,0.3583002,0.0831734,0.1818460,0.7941236,-0.2353835,0.7558454],
+            [-0.3372198,0.2792752,0.9526800,-0.1632072,-0.3613348,0.4960967,0.1662101,1.3961222,0.6934805,1.0837483],
+            [-0.3827326,0.4684674,-0.1658703,0.5106490,0.4367535,0.5981618,0.1744202,1.2102082,0.3099745,1.2017602]]
+        """ Original
+        arz = -2.666522  -0.738172   1.507904   0.601943  -0.450661  -0.705443  -0.424425   0.545705   1.691342   0.377328
+        0.018461  -1.164203   1.184779  -1.219738   0.107310  -0.580791   0.829065  -0.083036   1.213385  -0.174952
+        0.262710   0.334877  -2.409754  -0.422966  -0.408185  -0.600879  -0.045379   0.856319   0.205616  -0.260771
+        0.114931   0.925357  -0.331684   0.313458  -0.274270  -0.732635  -0.939494   0.010801  -0.658486   1.454996
+        0.103913   1.364233  -2.577779   1.460150  -0.845093  -0.012908   0.730737  -1.597652  -0.986162   0.462593
+        -0.704036  -1.927049  -0.435071  -1.389020  -0.832287   1.837349  -1.374715   1.105937  -1.665159  -0.563949
+        -0.943168  -1.136317   0.377811  -0.836552  -1.713540   0.093211  -0.970766   1.214798   1.199242   2.110802
+        1.154129  -0.736228  -0.108602  -0.986827   1.162427   0.532659  -1.981590  -0.532279  -0.170409   0.948742
+        -0.251690  -0.053444  -1.272071   0.671340  -0.412784  -0.102758   0.561319  -1.006279  -1.582087  -0.838144
+        -1.034194  -0.757933  -1.859290   0.511160  -0.117363   0.297341  -0.954346   0.842970   0.432230   2.346825
 
+        """
+        # ORDENADO
+        arz = [[0.262710,0.334877,-2.409754,-0.422966,-0.408185,-0.600879,-0.045379,0.856319,0.205616,-0.260771],
+               [0.103913,1.364233,-2.577779,1.460150,-0.845093,-0.012908,0.730737,-1.597652,-0.986162,0.462593],
+               [0.018461,-1.164203,1.184779,-1.219738,0.107310,-0.580791,0.829065,-0.083036,1.213385,-0.174952],
+               [1.154129,-0.736228,-0.108602,-0.986827,1.162427,0.532659,-1.981590,-0.532279,-0.170409,0.948742],
+               [-0.704036,-1.927049,-0.435071,-1.389020,-0.832287,1.837349,-1.374715,1.105937,-1.665159,-0.563949],
+               [-0.251690,-0.053444,-1.272071,0.671340,-0.412784,-0.102758,0.561319,-1.006279,-1.582087,-0.838144],
+               [-2.666522,-0.738172,1.507904,0.601943,-0.450661,-0.705443,-0.424425,0.545705,1.691342,0.377328],
+               [0.114931,0.925357,-0.331684,0.313458,-0.274270,-0.732635,-0.939494,0.010801,-0.658486,1.454996],
+               [-0.943168,-1.136317,0.377811,-0.836552,-1.713540,0.093211,-0.970766,1.214798,1.199242,2.110802],
+               [-1.034194,-0.757933,-1.859290,0.511160,-0.117363,0.297341,-0.954346,0.842970,0.432230,2.346825]]
+        print(arx[0][8])
+        print(arz[5][3])
+        print(weights)
+        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
+        for i in range(parentsSize):
+            for j in range(nSize):
+                offsprings.individuals[i].n[j] = arx[i][j]
+                offsprings.individuals[i].arz[j] = arz[i][j]
+        arx = np.asarray(arx)
+        arz = np.asarray(arz)
+        muBestIndividualsX = np.delete(arx, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
+        muBestIndividualsZ = np.delete(arz, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
+        xmean = np.dot(muBestIndividualsX.transpose(), weights)  # xmean is one array with nSize positions
+        zmean = np.dot(muBestIndividualsZ.transpose(), weights)  # zmeanis one array with nSize positions
+        print("{}  {}".format(xmean, zmean))
+        sys.exit()
         # TODO sort by fitness (TODO)
         ###  Até aqui está funcionando corretamente.(provavelmente)
 
 
         parents.printBest(nSize, parentsSize, penaltyMethod)
+
 
 # noinspection PyShadowingNames
 def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize):
@@ -1731,9 +1805,11 @@ def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offs
         DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
         # DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize)
         end = timer()
-        print(end - start, end="")
+        print("{} seconds".format(end - start), end="")
     elif algorithm == "ES":  # Evolution Strategy
         ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
+    elif algorithm == "ESCMA":
+        ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma )
     else:
         print("Algorithm not encountered")
         sys.exit("Algorithm not encountered")
@@ -1743,7 +1819,7 @@ def main():
     # function,seed,penaltyMethod,parentsSize,nSize,offspringsSize,maxFE,crossoverProb,esType,globalSigma
     # ES µ ≈ λ/4
     parser = argparse.ArgumentParser(description="Evolutionary Algorithms")
-    parser.add_argument("--algorithm", "-a", type=str, default="DE", help="Algorithm to be used (GA, ES or DE)")
+    parser.add_argument("--algorithm", "-a", type=str, default="ESCMA", help="Algorithm to be used (GA, ES or DE)")
     parser.add_argument("--function", "-f", type=int, default=210, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
                         "For the truss problem, the first digit must be 2, followed by the number of the bars in the problem. "
                         "Example: 225, is for the truss of 25 bars")
@@ -1771,7 +1847,7 @@ def main():
     args.esType = 0  # 0 Es + and 1 Es ,
     args.globalSigma = 1
     """
-    args.function = 225
+    # args.function = 225
     # args.algorithm = "ES"
     # args.globalSigma = 0
     # args.maxFE = 15000
