@@ -1812,6 +1812,7 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
         hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs),(2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
         pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.dot(np.dot(B, D), zmean)  # Eq. 45
         C = (1 - c1 - cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose())))
+        # Linha acima,  TODO verificar multiplicacoes de matrizes feita com * e com np.matmul() (no codigo inteiro)
         # Linha acima está "funcionando"(igual ao octave), TODO (PROVALMENTE SIM)não sei se deveria transpor isso (octave guarda cada individuo em uma coluna, já eu guardo em uma linha)
         sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Eq. 44
         print(pc)
