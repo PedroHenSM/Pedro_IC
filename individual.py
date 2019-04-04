@@ -1640,8 +1640,8 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
     damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
 
     # Initiliaze dynamic (internal) strategy parameters  and constants
-    pc = [0] * nSize  # evolutions paths for C
-    ps = [0] * nSize  # evolutions paths for sigma
+    pc = np.zeros(nSize) # evolutions paths for C
+    ps = np.zeros(nSize)  # evolutions paths for sigma
     B = np.eye(nSize)  # B defines de coordinate system
     D = np.eye(nSize)  # diagonal matrix D defines the scaling
     AUX = (B * D)  # auxiliar tranpose matrix
@@ -1685,7 +1685,7 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
     # parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
 
     # FIM CODIGO ANTIGO
-
+    counteval = 0
     while functionEvaluations < maxFE:
         # Generate and evaluate lambda offspring
         for k in range(parentsSize):
@@ -1696,6 +1696,7 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
             for i in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
                 offsprings.individuals[k].arz[i] = arz[i]
                 offsprings.individuals[k].n[i] = arx[i]
+            counteval = counteval + 1
             # TODO evaluates individuals (objective function call), can be done after the loop
             # avalia funcao aqui com o individuo k
         # TODO Verificar np.stack ( no arquivo cmaestests.py)
@@ -1774,18 +1775,52 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
             for j in range(nSize):
                 offsprings.individuals[i].n[j] = arx[i][j]
                 offsprings.individuals[i].arz[j] = arz[i][j]
+            del offsprings.individuals[i].n[nSize:]
+        xmeans = []
+        # weights = list(weights)
+        zmeans = []
+        print(offsprings.individuals[0].n)
+        # del offsprings.individuals[0].n[nSize:]  # delete the unused part of an list TODO seria bom fazer isso para todos os atributos de individuos, após a inicialização da população ser feita
+        print(offsprings.individuals[0].n)
+        ### INICIO Primeiro jeito de fazer, manualmente
+        for j in range(nSize):
+            somaX = 0
+            somaZ = 0
+            for i in range(int(mu)):
+                # print(np.dot(np.asarray(offsprings.individuals[i].n), weights)
+                somaX = offsprings.individuals[i].n[j] * weights[i] + somaX
+                somaZ = offsprings.individuals[i].arz[j] * weights[i] + somaZ
+                # xmeans = np.dot(np.asarray(offsprings.individuals[i].n), weights, xmeans)
+            xmeans.append(somaX)
+            zmeans.append(somaZ)
+        ### FIM Primeiro jeito de fazer, manualmente
+        print(offsprings.individuals[0].n)
+        print("Xmean x zmean por individuos\n")
+        print("{}\n{}".format(xmeans, zmeans))
+
+        ### INICIO Segundo jeito de fazer, com numpy
         arx = np.asarray(arx)
         arz = np.asarray(arz)
-        muBestIndividualsX = np.delete(arx, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
-        muBestIndividualsZ = np.delete(arz, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
-        xmean = np.dot(muBestIndividualsX.transpose(), weights)  # xmean is one array with nSize positions
-        zmean = np.dot(muBestIndividualsZ.transpose(), weights)  # zmeanis one array with nSize positions
-        print("{}  {}".format(xmean, zmean))
-        sys.exit()
-        # TODO sort by fitness (TODO)
+        muBestX = np.delete(arx, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
+        muBestZ = np.delete(arz, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
+        xmean = np.dot(muBestX.transpose(), weights)  # xmean is one array with nSize positions
+        zmean = np.dot(muBestZ.transpose(), weights)  # zmeanis one array with nSize positions
+        ### FIM Segundo jeito de fazer, com numpy
+        print("{}\n{}".format(xmean, zmean))
+
+        ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.dot(B, zmean)  # Eq. 43
+        hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs),(2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
+        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.dot(np.dot(B, D), zmean)  # Eq. 45
+        C = (1 - c1 - cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose())))
+        # Linha acima está "funcionando"(igual ao octave), TODO (PROVALMENTE SIM)não sei se deveria transpor isso (octave guarda cada individuo em uma coluna, já eu guardo em uma linha)
+        sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Eq. 44
+        print(pc)
+        print("ta indo")
+        print(C, sep ='\n')
+        print("sigma: {}".format(sigma))
         ###  Até aqui está funcionando corretamente.(provavelmente)
 
-
+        sys.exit()
         parents.printBest(nSize, parentsSize, penaltyMethod)
 
 
