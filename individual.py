@@ -1884,7 +1884,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     # User defined parameters
     sigma = 0.5
     xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
-    maxFE = 30
+    # maxFE = 30
     """
     λ ≥ 2, population size, sample size, number of offspring, see (5).
     µ ≤ λ parent number, number of (positively) selected search points in the population, number
@@ -1913,9 +1913,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     ps = np.zeros(nSize)  # evolutions paths for sigma
     B = np.eye(nSize)  # B defines de coordinate system
     D = np.eye(nSize)  # diagonal matrix D defines the scaling
-    AUX = (B * D)  # auxiliar tranpose matrix
-    AUX = AUX.transpose()
-    C = B * D * AUX  # covariance matrix
+    C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
     eigenval = 0  # B and D update at counteval == 0
     chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
 
@@ -2072,16 +2070,18 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         xmean = np.dot(muBestX, weights)  # xmean is one array with nSize positions
         zmean = np.dot(muBestZ, weights)  # zmeanis one array with nSize positions
         # xmeanTest = np.dot(arx[0:mu].transpose(), weights)  # works too, without needing to slice the arx vec
+        """
         print("zmean")
         print(zmean)
         print("xmean")
         print(xmean)
+        """
         ### FIM Segundo jeito de fazer, com numpy
         # print("{}\n{}".format(xmean, zmean))
 
         ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.dot(B, zmean)  # Eq. 43
         hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
-        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.dot(np.dot(B, D), zmean)  # Eq. 45
+        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.dot(np.matmul(B, D), zmean)  # Eq. 45
 
         # C = (1 - c1 - cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose())))
         """
@@ -2093,14 +2093,34 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
              * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose()))))
         """
         # print(np.transpose(muBestZ))
+        BD = np.matmul(B, D)
+        BDARGZ = np.matmul(BD, muBestZ)
+        aux1 = np.matmul(BDARGZ, np.diag(weights))
+        BDARGZT = BDARGZ.transpose()
+        aux2 = np.matmul(aux1, BDARGZT)
+        # print(aux1)
+        # print(aux2)
         # Individuals already stored in columns, no need to tranpose
-        C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
+        """
+        C = (np.matmul((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
              + c1 * (np.outer(pc, pc)  # plus rank one update
              + (1-hsig) * cc*(2-cc) * C)  # minor correction
-             + cmu  # plus rank mu update
-             * np.matmul(np.matmul(np.matmul(B*D, muBestZ), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ))))
-        print("C")
-        print(C)
+             + cmu # plus rank mu update
+             , aux2))
+             # * np.matmul(np.matmul(np.matmul(np.matmul(B, D), muBestZ), np.diag(weights)), np.transpose(np.matmul(np.matmul(B, D), muBestZ))))  # TODO Linha correta, não funciona
+             # * np.matmul(np.matmul(np.matmul(B*D, muBestZ), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ))))
+         """
+        # TODO Testar essa conta, com os mesmos valores do octave.
+        Caux1 = (1-c1-cmu) * C  # escalar matriz
+        Caux2 = (np.outer(pc, pc) + (1-hsig))  # matriz escalar
+        Caux3 = cc*(2-cc) * C  # escalar matriz
+        Caux4 = Caux1 + c1 * np.matmul(Caux2, Caux3) + cmu
+        Caux5 = np.matmul(Caux4, BDARGZ)
+        Caux6 = np.matmul(Caux5, np.diag(weights))
+        C = np.matmul(Caux6, BDARGZT)
+        # C = np.matmul(Caux1, Caux2)
+        # print("C")
+        # print(C)
         # Linha acima,  TODO verificar multiplicacoes de matrizes feita com * e com np.matmul() (no codigo inteiro)
         # Linha acima está "funcionando"(igual ao octave), TODO (PROVALMENTE SIM)não sei se deveria transpor isso (octave guarda cada individuo em uma coluna, já eu guardo em uma linha)
         sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
@@ -2113,17 +2133,22 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
             eigenval = counteval
             C = np.triu(C) + np.triu(C, 1).transpose()  # enforce symmetry
+            """
             print("C DENTRO DE UPDATE B AND D")
             print("Printando C")
             print(C)
+            """
             D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
             D = np.sqrt(D)
             D = np.diag(D)
+            print("a")
             # print(D)
+        """
         print("B")
         print(B)
         print("D")
         print(D)
+        """
         # TODO can implement flatfitness if later
         #  Até aqui está funcionando corretamente.(provavelmente)
         parents.printBest(nSize, parentsSize, penaltyMethod)
@@ -2138,7 +2163,270 @@ def ESCMALinha(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize
     # User defined parameters
     sigma = 0.5
     xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
-    maxFE = 30
+    # maxFE = 30
+    """
+    λ ≥ 2, population size, sample size, number of offspring, see (5).
+    µ ≤ λ parent number, number of (positively) selected search points in the population, number
+    of strictly positive recombination weights, see (6).
+    """
+    # Strategy parameters setting: Selection
+    parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
+    parentsSize = int(parentsSize)
+    mu = parentsSize / 2  # mu is NOT offspringsSize.
+    muList = [i + 1 for i in range(int(mu))]
+    weights = np.log(mu+1/2)-np.log(muList)  # muXone recombination weights
+    mu = np.floor(mu)
+    # mu = int(mu)
+    weights = weights/np.sum(weights)
+    mueff = np.power(sum(weights), 2) / np.sum(np.power(weights, 2))
+
+    # Strategy parameter setting: Adaptation
+    cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
+    cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
+    c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
+    cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
+    damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
+
+    # Initiliaze dynamic (internal) strategy parameters  and constants
+    pc = np.zeros(nSize) # evolutions paths for C
+    ps = np.zeros(nSize)  # evolutions paths for sigma
+    B = np.eye(nSize)  # B defines de coordinate system
+    D = np.eye(nSize)  # diagonal matrix D defines the scaling
+    C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
+    eigenval = 0  # B and D update at counteval == 0
+    chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
+
+    # CODIGO ANTIGO
+
+    # generatedOffspring = int(offspringsSize / parentsSize)  # TODO Verifiar isso depois
+    generatedOffspring = 1
+    offspringsSize = parentsSize
+    lowerBound = upperBound = truss = 0
+    if strFunction[0] == "2":  # solving trusses
+        truss, lowerBound, upperBound = initializeTruss(function)
+        nSize = truss.getDimension()
+        gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
+        penaltyCoefficients = [-1 for i in range(constraintsSize)]
+        avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
+        parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
+        offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
+        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
+    else:
+        gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
+        penaltyCoefficients = [-1 for i in range(constraintsSize)]
+        avgObjFunc = 0  # will be subscribed on 'calculatePenaltyCoefficients'
+        parents = Population(parentsSize, nSize, function)  # Initialize parents population
+        offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
+        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize,
+                                               functionEvaluations)  # Evaluate parents
+
+    if penaltyMethod == 1:  # Padrao?  (not apm)
+        parents.sumViolations(parentsSize, gSize, hSize)
+    elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
+        parents.uniteConstraints(parentsSize, gSize, hSize)
+        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+        parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+    else:
+        print("Penalthy method not encountered")
+        sys.exit("Penalty method not encountered")
+    # parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
+    # FIM CODIGO ANTIGO
+
+    counteval = 0
+    while functionEvaluations < maxFE:
+        # Generate and evaluate lambda offspring
+        arzAuxList = []
+        arxAuxList = []
+        """
+        print("B")
+        print(B)
+        print("D")
+        print(D)
+        """
+        for i in range(parentsSize):
+            arz = np.random.randn(nSize)  # standard normally distributed vector  (38)
+            arx = xmean + sigma * (np.dot(np.matmul(B, D), arz))  # add mutation N(m,sigma²C) (40)
+            arx = xmean + sigma * (np.dot(B*D, arz))  # add mutation N(m,sigma²C) (40)
+            if functionEvaluations > 10:
+                """
+                print("Conta (np.dot(B*D, arz))")
+                print((np.dot(B*D, arz)))
+                print("ArzLoop")
+                print(arz)
+                print("ArxLoop")
+                print(arx)
+                """
+            # arx = xmean + sigma * (np.dot(np.matmul(B,D), arz))
+            arzAuxList.append(arz)
+            arxAuxList.append(arx)
+            # arx é  individuals[i].n
+            for j in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
+                offsprings.individuals[i].arz[j] = arz[j]
+                offsprings.individuals[i].n[j] = arx[j]
+            counteval = counteval + 1
+        # TODO Verificar np.stack ( no arquivo cmaestests.py)
+        arz = np.vstack(arzAuxList)  # matrix nd.array with all values calculated above
+        arx = np.vstack(arxAuxList)  # matrix nd.array with all values calculated above
+        if functionEvaluations > 10:
+            """
+            print("sigma")
+            print(sigma)
+            print("xmean")
+            print(xmean)
+            print("arz")
+            print(arz)
+            print("arx")
+            print(arx)
+            """
+        # Evaluate function
+        if strFunction[0] == "2":
+            offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
+            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
+        else:
+            offsprings.bounding(nSize, function, offspringsSize)
+            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations)
+        # Choose method of penalization
+        if penaltyMethod == 1:  # Deb penalization
+            offsprings.sumViolations(offspringsSize, gSize, hSize)
+        else:  # APM penalization
+            offsprings.uniteConstraints(offspringsSize, gSize, hSize)
+            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+            offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+        # Elitismo apenas ordena os filhos. esType == 1(pai não é levado em conta (ES ,))
+        # Sort individuals
+        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
+        # Individuals are sorted
+        # print(arx)
+
+        for i in range(parentsSize):  # TODO Individuos armazenados em LINHA, não em COLUNAS, como no octave !! ATENCAO
+            for j in range(nSize):
+                arx[i][j] = parents.individuals[i].n[j]
+                arz[i][j] = parents.individuals[i].arz[j]  #
+        """
+
+        arxB4 = np.copy(arx)
+        for j in range(parentsSize):  # TODO Individuos armazenados em COLUNA, não em LINHAS, como no octave !! ATENCAO
+            for i in range(nSize):
+                arx[i][j] = parents.individuals[j].n[i]
+                arz[i][j] = parents.individuals[j].arz[i]  #
+            # del offsprings.individuals[i].n[nSize:]
+        """
+        # print(arx)
+        # print(arz)
+        # xmeans = []
+        # zmeans = []
+        # weights = list(weights)
+        # del offsprings.individuals[0].n[nSize:]  # delete the unused part of an list TODO seria bom fazer isso para todos os atributos de individuos, após a inicialização da população ser feita
+        """
+        ### INICIO Primeiro jeito de fazer, manualmente
+        for j in range(nSize):
+            somaX = 0
+            somaZ = 0
+            for i in range(int(mu)):
+                # print(np.dot(np.asarray(offsprings.individuals[i].n), weights)
+                somaX = offsprings.individuals[i].n[j] * weights[i] + somaX
+                somaZ = offsprings.individuals[i].arz[j] * weights[i] + somaZ
+                # xmeans = np.dot(np.asarray(offsprings.individuals[i].n), weights, xmeans)
+            xmeans.append(somaX)
+            zmeans.append(somaZ)
+        ### FIM Primeiro jeito de fazer, manualmente
+        """
+        # print("Xmean x zmean por individuos\n")
+        #print("{}\n{}".format(xmeans, zmeans))
+
+        ### INICIO Segundo jeito de fazer, com numpy
+        # arx = np.asarray(arx)
+        # arz = np.asarray(arz)
+
+        # If individuals are stored in lines, muBestX and Z has to be tranposed
+        muBestX = np.delete(arx, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
+        muBestZ = np.delete(arz, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
+        xmean = np.dot(muBestX.transpose(), weights)  # xmean is one array with nSize positions
+        zmean = np.dot(muBestZ.transpose(), weights)  # zmeanis one array with nSize positions
+        """
+        print("zmean")
+        print(zmean)
+        print("xmean")
+        print(xmean)
+        """
+
+        """
+        # Individuals already stored in columns, no need to tranpose
+        muBestX = np.delete(arx, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
+        muBestZ = np.delete(arz, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
+        xmean = np.dot(muBestX, weights)  # xmean is one array with nSize positions
+        zmean = np.dot(muBestZ, weights)  # zmeanis one array with nSize positions
+        # xmeanTest = np.dot(arx[0:mu].transpose(), weights)  # works too, without needing to slice the arx vec
+        """
+        ### FIM Segundo jeito de fazer, com numpy
+        # print("{}\n{}".format(xmean, zmean))
+
+        ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.dot(B, zmean)  # Eq. 43
+        hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
+        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.dot(np.matmul(B, D), zmean)  # Eq. 45
+        # C = (1 - c1 - cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose())))
+        # print(muBestZ)
+        # If individuals are stored in lines, muBestX and Z has to be tranposed
+        C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
+             + c1 * (np.outer(pc, pc)  # plus rank one update
+             + (1-hsig) * cc*(2-cc) * C)  # minor correction
+             + cmu  # plus rank mu update
+             # * np.matmul(np.matmul(np.matmul(np.matmul(B, D), muBestZ.transpose()), np.diag(weights)), np.matmul(np.matmul(B, D), muBestZ.transpose()).conj().T))  TODO Essa seria a linha correta(DANDOERRO)
+             * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose()))))
+
+        # print("C")
+        # print(C)
+        """
+        # Individuals already stored in columns, no need to tranpose
+        C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
+             + c1 * (np.outer(pc, pc)  # plus rank one update
+                     + (1-hsig) * cc*(2-cc) * C)  # minor correction
+             + cmu  # plus rank mu update
+             * np.matmul(np.matmul(np.matmul(B*D, muBestZ), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ))))
+        """
+        # Linha acima,  TODO verificar multiplicacoes de matrizes feita com * e com np.matmul() (no codigo inteiro)
+        # Linha acima está "funcionando"(igual ao octave), TODO (PROVALMENTE SIM)não sei se deveria transpor isso (octave guarda cada individuo em uma coluna, já eu guardo em uma linha)
+        sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
+        # print(pc)
+        # print("ta indo")
+        # print(C, sep ='\n')
+        # print("sigma: {}".format(sigma))
+
+        # Update B and D from C
+        np.set_printoptions(suppress=True)
+        if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
+            eigenval = counteval
+            C = np.triu(C) + np.triu(C, 1).transpose()  # enforce symmetry
+            """
+            print("C DENTRO DE UPDATE B AND D")
+            print("Printando C")
+            print(C)
+            """
+            D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
+            D = np.sqrt(D)
+            D = np.diag(D)
+            # print(D)
+        """
+        print("B")
+        print(B)
+        print("D")
+        print(D)
+        """
+        # TODO can implement flatfitness if later
+        #  Até aqui está funcionando corretamente.(provavelmente)
+        parents.printBest(nSize, parentsSize, penaltyMethod)
+
+
+def ESCMALinha1(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
+    strFunction = str(function)
+    esType = 1
+    crossoverProb = -1
+    np.random.seed(seed)
+    functionEvaluations = 0
+    # User defined parameters
+    sigma = 0.5
+    xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
+    # maxFE = 30
     """
     λ ≥ 2, population size, sample size, number of offspring, see (5).
     µ ≤ λ parent number, number of (positively) selected search points in the population, number
@@ -2319,10 +2607,13 @@ def ESCMALinha(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize
         muBestZ = np.delete(arz, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
         xmean = np.dot(muBestX.transpose(), weights)  # xmean is one array with nSize positions
         zmean = np.dot(muBestZ.transpose(), weights)  # zmeanis one array with nSize positions
+        """
         print("zmean")
         print(zmean)
         print("xmean")
         print(xmean)
+        """
+
         """
         # Individuals already stored in columns, no need to tranpose
         muBestX = np.delete(arx, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
@@ -2343,11 +2634,11 @@ def ESCMALinha(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize
         # If individuals are stored in lines, muBestX and Z has to be tranposed
         C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
              + c1 * (np.outer(pc, pc)  # plus rank one update
-             + (1-hsig) * cc*(2-cc) * C)  # minor correction
+                     + (1-hsig) * cc*(2-cc) * C)  # minor correction
              + cmu  # plus rank mu update
              * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose()))))
-        print("C")
-        print(C)
+        # print("C")
+        # print(C)
         """
         # Individuals already stored in columns, no need to tranpose
         C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
@@ -2369,17 +2660,21 @@ def ESCMALinha(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize
         if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
             eigenval = counteval
             C = np.triu(C) + np.triu(C, 1).transpose()  # enforce symmetry
+            """
             print("C DENTRO DE UPDATE B AND D")
             print("Printando C")
             print(C)
+            """
             D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
             D = np.sqrt(D)
             D = np.diag(D)
             # print(D)
+        """
         print("B")
         print(B)
         print("D")
         print(D)
+        """
         # TODO can implement flatfitness if later
         #  Até aqui está funcionando corretamente.(provavelmente)
         parents.printBest(nSize, parentsSize, penaltyMethod)
