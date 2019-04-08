@@ -1966,7 +1966,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         """
         for i in range(parentsSize):
             arz = np.random.randn(nSize)  # standard normally distributed vector  (38)
-            arx = xmean + sigma * (np.dot(B*D, arz))  # add mutation N(m,sigma²C) (40)
+            arx = xmean + sigma * (np.dot(np.matmul(B, D), arz))  # add mutation N(m,sigma²C) (40)
             if functionEvaluations > 10:
                 """
                 print("Conta (np.dot(B*D, arz))")
@@ -1984,7 +1984,6 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
                 offsprings.individuals[i].arz[j] = arz[j]
                 offsprings.individuals[i].n[j] = arx[j]
             counteval = counteval + 1
-        # TODO Verificar np.stack ( no arquivo cmaestests.py)
         arz = np.vstack(arzAuxList)  # matrix nd.array with all values calculated above
         arx = np.vstack(arxAuxList)  # matrix nd.array with all values calculated above
         if functionEvaluations > 10:
@@ -2067,8 +2066,8 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         # Individuals already stored in columns, no need to tranpose
         muBestX = np.delete(arx, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
         muBestZ = np.delete(arz, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
-        xmean = np.dot(muBestX, weights)  # xmean is one array with nSize positions
-        zmean = np.dot(muBestZ, weights)  # zmeanis one array with nSize positions
+        xmean = np.matmul(muBestX, weights)  # xmean is one array with nSize positions
+        zmean = np.matmul(muBestZ, weights)  # zmeanis one array with nSize positions
         # xmeanTest = np.dot(arx[0:mu].transpose(), weights)  # works too, without needing to slice the arx vec
         """
         print("zmean")
@@ -2078,57 +2077,31 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         """
         ### FIM Segundo jeito de fazer, com numpy
         # print("{}\n{}".format(xmean, zmean))
-
-        ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.dot(B, zmean)  # Eq. 43
+        # TODO Testar essa conta, com os mesmos valores do octave. TESTADO, CALCUCLO ABAIXO FUNCIONANDO PARA OS VALORES DA 1 ITERACAO DO OCTAVE
+        ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.matmul(B, zmean)  # Eq. 43
         hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
-        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.dot(np.matmul(B, D), zmean)  # Eq. 45
+        # TODO Testar essa conta, com os mesmos valores do octave. TESTADO, CALCUCLO ABAIXO FUNCIONANDO PARA OS VALORES DA 1 ITERACAO DO OCTAVE
+        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.matmul(np.matmul(B, D), zmean)  # Eq. 45
 
-        # C = (1 - c1 - cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose())))
-        """
-        # If individuals are stored in lines, muBestX and Z has to be tranposed
-        C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
-             + c1 * (np.outer(pc, pc)  # plus rank one update
-             + (1-hsig) * cc*(2-cc) * C)  # minor correction
-             + cmu  # plus rank mu update
-             * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose()))))
-        """
-        # print(np.transpose(muBestZ))
-        BD = np.matmul(B, D)
-        BDARGZ = np.matmul(BD, muBestZ)
-        aux1 = np.matmul(BDARGZ, np.diag(weights))
-        BDARGZT = BDARGZ.transpose()
-        aux2 = np.matmul(aux1, BDARGZT)
-        # print(aux1)
-        # print(aux2)
+
         # Individuals already stored in columns, no need to tranpose
-        """
-        C = (np.matmul((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
-             + c1 * (np.outer(pc, pc)  # plus rank one update
-             + (1-hsig) * cc*(2-cc) * C)  # minor correction
-             + cmu # plus rank mu update
-             , aux2))
-             # * np.matmul(np.matmul(np.matmul(np.matmul(B, D), muBestZ), np.diag(weights)), np.transpose(np.matmul(np.matmul(B, D), muBestZ))))  # TODO Linha correta, não funciona
-             # * np.matmul(np.matmul(np.matmul(B*D, muBestZ), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ))))
-         """
-        # TODO Testar essa conta, com os mesmos valores do octave.
-        Caux1 = (1-c1-cmu) * C  # escalar matriz
-        Caux2 = (np.outer(pc, pc) + (1-hsig))  # matriz escalar
-        Caux3 = cc*(2-cc) * C  # escalar matriz
-        Caux4 = Caux1 + c1 * np.matmul(Caux2, Caux3) + cmu
-        Caux5 = np.matmul(Caux4, BDARGZ)
-        Caux6 = np.matmul(Caux5, np.diag(weights))
-        C = np.matmul(Caux6, BDARGZT)
-        # C = np.matmul(Caux1, Caux2)
-        # print("C")
-        # print(C)
-        # Linha acima,  TODO verificar multiplicacoes de matrizes feita com * e com np.matmul() (no codigo inteiro)
-        # Linha acima está "funcionando"(igual ao octave), TODO (PROVALMENTE SIM)não sei se deveria transpor isso (octave guarda cada individuo em uma coluna, já eu guardo em uma linha)
+
+
+        # TODO Testar essa conta, com os mesmos valores do octave. TESTADO, CALCUCLO ABAIXO FUNCIONANDO PARA OS VALORES DA 1 ITERACAO DO OCTAVE
+        Caux1 = (1-c1-cmu) * C
+        Caux2 = np.outer(pc, pc) + ((1-hsig) * cc * (2-cc) * C)
+        BDARGZ = np.matmul(np.matmul(B, D), muBestZ)
+        Caux3 = c1*Caux2
+        Caux4 = (cmu * BDARGZ)
+        Caux5 = np.matmul(np.diag(weights), BDARGZ.transpose())
+        Caux6 = np.matmul(Caux4, Caux5)
+        C = Caux1 + Caux3 + Caux6
+
+        #  Adapt step-size sigma
         sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
-        # print(pc)
-        # print("ta indo")
-        # print(C, sep ='\n')
-        # print("sigma: {}".format(sigma))
-        np.set_printoptions(suppress=True)
+
+        # np.set_printoptions(suppress=True)
+
         # Update B and D from C
         if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
             eigenval = counteval
@@ -2141,7 +2114,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
             D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
             D = np.sqrt(D)
             D = np.diag(D)
-            print("a")
+            # print("a")
             # print(D)
         """
         print("B")
@@ -2150,7 +2123,6 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         print(D)
         """
         # TODO can implement flatfitness if later
-        #  Até aqui está funcionando corretamente.(provavelmente)
         parents.printBest(nSize, parentsSize, penaltyMethod)
 
 
@@ -2349,47 +2321,34 @@ def ESCMALinha(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize
         print("xmean")
         print(xmean)
         """
-
-        """
-        # Individuals already stored in columns, no need to tranpose
-        muBestX = np.delete(arx, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
-        muBestZ = np.delete(arz, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
-        xmean = np.dot(muBestX, weights)  # xmean is one array with nSize positions
-        zmean = np.dot(muBestZ, weights)  # zmeanis one array with nSize positions
-        # xmeanTest = np.dot(arx[0:mu].transpose(), weights)  # works too, without needing to slice the arx vec
-        """
         ### FIM Segundo jeito de fazer, com numpy
         # print("{}\n{}".format(xmean, zmean))
 
         ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.dot(B, zmean)  # Eq. 43
         hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
         pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.dot(np.matmul(B, D), zmean)  # Eq. 45
-        # C = (1 - c1 - cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose())))
-        # print(muBestZ)
-        # If individuals are stored in lines, muBestX and Z has to be tranposed
-        C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
-             + c1 * (np.outer(pc, pc)  # plus rank one update
-             + (1-hsig) * cc*(2-cc) * C)  # minor correction
-             + cmu  # plus rank mu update
-             # * np.matmul(np.matmul(np.matmul(np.matmul(B, D), muBestZ.transpose()), np.diag(weights)), np.matmul(np.matmul(B, D), muBestZ.transpose()).conj().T))  TODO Essa seria a linha correta(DANDOERRO)
-             * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose()))))
 
-        # print("C")
-        # print(C)
-        """
-        # Individuals already stored in columns, no need to tranpose
-        C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
-             + c1 * (np.outer(pc, pc)  # plus rank one update
-                     + (1-hsig) * cc*(2-cc) * C)  # minor correction
-             + cmu  # plus rank mu update
-             * np.matmul(np.matmul(np.matmul(B*D, muBestZ), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ))))
-        """
+        # print(muBestZ)
+
+        # Individuo nas LINHAS. CONTA FUNCIONANDO.
+        Caux1 = (1-c1-cmu) * C
+        Caux2 = np.outer(pc, pc) + ((1-hsig) * cc * (2-cc) * C)
+        BDARGZ = np.matmul(np.matmul(B, D), muBestZ.T)
+        Caux3 = c1*Caux2
+        Caux4 = (cmu * BDARGZ)
+        Caux5 = np.matmul(np.diag(weights), BDARGZ.transpose())
+        Caux6 = np.matmul(Caux4, Caux5)
+        C = Caux1 + Caux3 + Caux6
+
+
+
+
         # Linha acima,  TODO verificar multiplicacoes de matrizes feita com * e com np.matmul() (no codigo inteiro)
         # Linha acima está "funcionando"(igual ao octave), TODO (PROVALMENTE SIM)não sei se deveria transpor isso (octave guarda cada individuo em uma coluna, já eu guardo em uma linha)
+        # Adapt step-size sigma
+
         sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
-        # print(pc)
-        # print("ta indo")
-        # print(C, sep ='\n')
+
         # print("sigma: {}".format(sigma))
 
         # Update B and D from C
@@ -2614,14 +2573,6 @@ def ESCMALinha1(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         print(xmean)
         """
 
-        """
-        # Individuals already stored in columns, no need to tranpose
-        muBestX = np.delete(arx, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
-        muBestZ = np.delete(arz, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
-        xmean = np.dot(muBestX, weights)  # xmean is one array with nSize positions
-        zmean = np.dot(muBestZ, weights)  # zmeanis one array with nSize positions
-        # xmeanTest = np.dot(arx[0:mu].transpose(), weights)  # works too, without needing to slice the arx vec
-        """
         ### FIM Segundo jeito de fazer, com numpy
         # print("{}\n{}".format(xmean, zmean))
 
@@ -2676,7 +2627,6 @@ def ESCMALinha1(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         print(D)
         """
         # TODO can implement flatfitness if later
-        #  Até aqui está funcionando corretamente.(provavelmente)
         parents.printBest(nSize, parentsSize, penaltyMethod)
 
 

@@ -141,10 +141,48 @@ def ESCMA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, max
 
         # TODO sort by fitness (TODO)
         ###  Até aqui está funcionando corretamente.
+        # linha abaixo arz ordenado
+        arz = [[0.262710,0.334877,-2.409754,-0.422966,-0.408185,-0.600879,-0.045379,0.856319,0.205616,-0.260771],
+               [0.103913,1.364233,-2.577779,1.460150,-0.845093,-0.012908,0.730737,-1.597652,-0.986162,0.462593],
+               [0.018461,-1.164203,1.184779,-1.219738,0.107310,-0.580791,0.829065,-0.083036,1.213385,-0.174952],
+               [1.154129,-0.736228,-0.108602,-0.986827,1.162427,0.532659,-1.981590,-0.532279,-0.170409,0.948742],
+               [-0.704036,-1.927049,-0.435071,-1.389020,-0.832287,1.837349,-1.374715,1.105937,-1.665159,-0.563949],
+               [-0.251690,-0.053444,-1.272071,0.671340,-0.412784,-0.102758,0.561319,-1.006279,-1.582087,-0.838144],
+               [-2.666522,-0.738172,1.507904,0.601943,-0.450661,-0.705443,-0.424425,0.545705,1.691342,0.377328],
+               [0.114931,0.925357,-0.331684,0.313458,-0.274270,-0.732635,-0.939494,0.010801,-0.658486,1.454996],
+               [-0.943168,-1.136317,0.377811,-0.836552,-1.713540,0.093211,-0.970766,1.214798,1.199242,2.110802],
+               [-1.034194,-0.757933,-1.859290,0.511160,-0.117363,0.297341,-0.954346,0.842970,0.432230,2.346825]]
 
-        xmean = np.dot(arx[0:mu], weights[:mu], transpose=True)  # eq 42 TODO VERIFICAR TRANPOSE
+        zmean = [0.231408, 0.221386, -1.625593, -0.115071, -0.319800, -0.279611, 0.107678, -0.072482, -0.033343, 0.044362]
+
         y = np.subtract(xmean, xold)
-        ps = (1-cs) * ps + (np.sqrt(cs*(2-cs)*mueff)) * (B *zmean)
+        ps = (1-cs) * ps + (np.sqrt(cs*(2-cs)*mueff)) * np.dot(B, zmean)
+        pc = np.array([0.292072, 0.279423, -2.051747, -0.145237, -0.403636, -0.352912, 0.135906, -0.091483, -0.042084, 0.055992])
+        hsig = True
+
+
+        ### Individuo em COLUNAS, CONTA FUNCIONANDO
+        Caux1 = (1-c1-cmu) * C
+        Caux2 = np.outer(pc, pc) + ((1-hsig) * cc * (2-cc) * C)
+        BDARGZ = np.matmul(np.matmul(B,D), muBestZ)
+        Caux3 = c1*Caux2
+        Caux4 = (cmu * BDARGZ)
+        Caux5 = np.matmul(np.diag(weights), BDARGZ.transpose())
+        Caux6 = np.matmul(Caux4, Caux5)
+        C = Caux1 + Caux3 + Caux6
+
+
+        ###########################################
+        # Individuo em LINHAS, CONTA FUNCIONANDO
+        Caux1 = (1-c1-cmu) * C
+        Caux2 = np.outer(pc, pc) + ((1-hsig) * cc * (2-cc) * C)
+        BDARGZ = np.matmul(np.matmul(B,D), muBestZ.T)
+        Caux3 = c1*Caux2
+        Caux4 = (cmu * BDARGZ)
+        Caux5 = np.matmul(np.diag(weights), BDARGZ.transpose())
+        Caux6 = np.matmul(Caux4, Caux5)
+        CLinha = Caux1 + Caux3 + Caux6
+
 
         if strFunction[0] == "2":
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
