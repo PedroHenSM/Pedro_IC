@@ -1742,7 +1742,7 @@ def ESCMATest(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize,
        0.0085193   0.8207119   0.1277391   0.5907389   0.2890430   0.3981118   0.9322524   0.2855838  -0.6971837  -0.3907246
       -0.3827326   0.4684674  -0.1658703   0.5106490   0.4367535   0.5981618   0.1744202   1.2102082   0.3099745   1.2017602
         """
-        # ORDENADO
+        # ORDENADO Individuos sao linhas 1 iteracao
         arx = [[0.2657193,1.0148725,-0.4411025,0.0435862,0.2913427,0.1490518,0.6289034,1.2168827,0.1966676,-0.1020378],
             [0.1863209,1.5295500,-0.5251148,0.9851442,0.0728884,0.4430372,1.0169612,-0.0101029,-0.3992216,0.2596442],
             [0.1435945,0.2653321,1.3561643,-0.3547997,0.5490903,0.1590957,1.0661255,0.7472055,0.7005519,-0.0591285],
@@ -1766,7 +1766,7 @@ def ESCMATest(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize,
         -1.034194  -0.757933  -1.859290   0.511160  -0.117363   0.297341  -0.954346   0.842970   0.432230   2.346825
 
         """
-        # ORDENADO
+        # ORDENADO Individuos sao linhas 1 iteracao
         arz = [[0.262710,0.334877,-2.409754,-0.422966,-0.408185,-0.600879,-0.045379,0.856319,0.205616,-0.260771],
                [0.103913,1.364233,-2.577779,1.460150,-0.845093,-0.012908,0.730737,-1.597652,-0.986162,0.462593],
                [0.018461,-1.164203,1.184779,-1.219738,0.107310,-0.580791,0.829065,-0.083036,1.213385,-0.174952],
@@ -1777,6 +1777,91 @@ def ESCMATest(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize,
                [0.114931,0.925357,-0.331684,0.313458,-0.274270,-0.732635,-0.939494,0.010801,-0.658486,1.454996],
                [-0.943168,-1.136317,0.377811,-0.836552,-1.713540,0.093211,-0.970766,1.214798,1.199242,2.110802],
                [-1.034194,-0.757933,-1.859290,0.511160,-0.117363,0.297341,-0.954346,0.842970,0.432230,2.346825]]
+
+        """
+        # ORDENADO Individuos sao linhas 2 iteracao
+        arx =  [[0.4753504,   0.3652869,   0.4976022,  -0.2802307,   0.2420256,  -0.2586963,   0.0724561,   0.1762695,  -0.1650253,   1.2999415],
+               [0.5064939,   0.8687324,   0.7258406,   1.7781003,   0.5933533,   1.3447411,   1.3154407,   0.9096953,   0.8792926,   0.2889378],
+               [-0.0758614 , -0.6424619 , -0.3441204 , -0.5285140 , -0.5275032 ,  0.3913651 ,  0.0142676 , -0.0796597 ,  0.2159775 , -0.5932227],
+               [0.8490680,  -0.0017884,  -0.2677793,   1.1165132,   0.2209316,  -0.0287709,  -0.1764800,   1.0960656,  -0.4482863,  -0.6191502],
+               [0.6556861,   1.0303679,   0.2727969,  -0.1431585,   0.8264853,   0.8196987,  -0.1518232,   1.3151580,   0.7514716,  -0.5318383],
+               [0.2709909,   0.4398215,  -0.0879819,   0.2757626,   1.0009356,   0.6266862,   0.1887067,  -0.2438591,   0.2196920,   0.0300984],
+               [0.3472043,   1.0261308,   0.6007644,   1.6952765,   0.0819751,   1.0346999,   0.3733972,   0.4573776,   1.4069915,   0.5520637],
+               [0.1222506,   0.7672137,   0.7922791,   0.3608854,   1.6855970,   0.7166775,   0.3500484,   0.5676805,   0.5152052,   0.6805600],
+               [0.2598733,   0.0921102,  -0.0186505,   0.7275874,  -0.1632317,   0.2369386,  -0.4697692,   0.6129067,  -0.2195904,   0.1679323],
+               [0.0564597,  -0.0770235,   0.3196534,   0.0407368,   0.2731413,   0.4329973,  -0.4341772,  -0.5613340,   0.7885043,   1.5650999]]
+        # ORDENADO Individuos sao linhas 2 iteracao   
+        arz = [[-0.1066550,   0.9341528,  -0.4054851,   0.6417253,   0.2725445,   1.4563001,   0.1622419,   1.0467151,   1.0734668,  -2.6274149],
+              [-1.4359626,  -0.2926949,  -0.1750750,   0.4004655,  -0.5643249,   0.8078145,   0.8705956,  -2.1006614,   0.2120537,   0.5351647],
+              [ 0.1819874,  -1.5622180,   0.2917216,   0.0441995,  -1.2109376,  -0.6444980,   1.3970209,  -0.1106454,  -0.8212872,   0.6270347],
+              [-1.0226577,  -0.3093766,   0.6061658,  -0.0123303,   0.5142807,   1.0502797,  -0.7017592,  -1.7975366,   2.0485328,   2.4258239],
+              [-0.7592927,   0.2336188,   0.6087660,  -1.4651402,  -0.9080306,  -0.1374646,   1.4160194,  -0.2985064,   0.9762168,  -0.5455614],
+              [ 0.3403585,   0.1113247,  -0.1689328,   0.5548433,   0.0083889,   0.3769178,  -0.8150853,   2.0675054,  -0.6767822,  -0.9131623],
+              [-1.0797677,  -0.5340664,  -0.8178847,   0.2872129,   1.3932289,  -0.0854648,   0.4332822,  -0.1551731,  -1.1601128,  -2.6713151],
+              [ 0.7078255,   0.1538027,   0.3331305,  -2.7562691,   2.2102975,  -0.3384352,   0.2985607,  -0.4194847,  -0.4825735,   1.1389788],
+              [ 0.8834070,  -0.6068776,  -1.0107908,   1.9322732,  -1.2720136,   0.5511035,   0.4223117,   0.2851748,   0.2549377,  -1.4792845],
+              [-0.1333207,   0.7337005,   0.4959750,   1.6689685,   0.1597713,  -0.9751545,   0.2862119,  -0.2216380,  -0.6376580,   1.1234320]]
+              
+        # B da segunda iteracao, antes de ser calculado novamente ( utilizado para calcualr ps)
+        B =   [[-0.72718,   0.17242,  -0.31273,  -0.27214,   0.10685,   0.26866,  -0.35019,   0.21399,  -0.10109,   0.08593],
+              [ 0.17281,   0.62453,   0.08878,   0.04641,   0.19643,   0.55325,   0.23564,  -0.09095,   0.30960,   0.25641],
+              [-0.18405,   0.13093,   0.12107,   0.03900,   0.13285,   0.09143,   0.05074,  -0.12633,   0.23132,  -0.91365],
+              [-0.22408,  -0.51201,  -0.05023,  -0.15262,  -0.37105,   0.28749,   0.29538,  -0.07776,   0.58021,   0.10746],
+              [ 0.51624,  -0.28968,  -0.53142,  -0.06404,   0.18136,   0.43713,  -0.18610,   0.24291,  -0.05423,  -0.20620],
+              [ 0.11429,   0.43677,  -0.43646,  -0.13089,  -0.48047,  -0.35394,   0.19342,   0.37530,   0.19949,  -0.11979],
+              [-0.03829,   0.06324,  -0.57153,   0.17280,   0.10644,  -0.21469,  -0.11950,  -0.73127,   0.15994,   0.07738],
+              [-0.21446,  -0.04404,  -0.24470,   0.28927,  -0.07578,   0.20765,   0.66967,  -0.04251,  -0.55179,  -0.07006],
+              [ 0.13630,   0.14251,   0.13308,  -0.17458,  -0.67471,   0.33211,  -0.30546,  -0.36873,  -0.32556,  -0.11013],
+              [-0.10795,  -0.00000,   0.00000,   0.85658,  -0.24211,   0.12191,  -0.32236,   0.22704,   0.15810,   0.02604]]
+              
+        # D da segunda iteracao, antes de ser calculado novamente (utilizado para calcular pc)
+        D =  [[0.98212,         0,         0,         0,         0,         0,         0,         0,         0,         0],
+             [0,   0.98212,         0,         0,         0,         0,         0,         0,         0,         0],
+             [0,         0,   0.98212,         0,         0,         0,         0,         0,         0,         0],
+             [0,         0,         0,   0.98212,         0,         0,         0,         0,         0,         0],
+             [0,         0,         0,         0,   0.98212,         0,         0,         0,         0,         0],
+             [0,         0,         0,         0,         0,   0.98487,         0,         0,         0,         0],
+             [0,         0,         0,         0,         0,         0,   0.98775,         0,         0,         0],
+             [0,         0,         0,         0,         0,         0,         0,   0.99191,         0,         0],
+             [0,         0,         0,         0,         0,         0,         0,         0,   1.00816,         0],
+             [0,         0,         0,         0,         0,         0,         0,         0,         0,   1.07280]]
+        
+        # C da segunda iteracao, antes de ser calculado novamente (utilizado para calcular novo C) 
+        C =   [[ 9.6910e-01,   1.9975e-03,  -1.6429e-02,  -2.3695e-03,  -6.5479e-04,  -2.6784e-03,  -2.4696e-03,  -7.0619e-04,   8.7800e-05,   1.9568e-03],
+              [ 1.9975e-03,   9.8421e-01,  -3.9315e-02,   1.6214e-02,  -1.0326e-02,  -3.7369e-03,   6.5928e-03,  -9.7537e-03,  -9.6414e-03,   2.9046e-03],
+              [-1.6429e-02,  -3.9315e-02,   1.1233e+00,  -1.0842e-02,   3.3975e-02,   2.1803e-02,  -9.6463e-03,   5.8966e-03,   1.5740e-02,  -3.2129e-03],
+              [-2.3695e-03,   1.6214e-02,  -1.0842e-02,   9.8569e-01,  -6.0540e-03,   3.1189e-03,   6.7317e-03,  -1.5414e-02,  -1.1925e-02,   4.0680e-03],
+              [-6.5479e-04,  -1.0326e-02,   3.3975e-02,  -6.0540e-03,   9.7520e-01,   4.5658e-03,  -7.1157e-03,   3.1525e-03,   4.8335e-03,   5.7456e-04],
+              [-2.6784e-03,  -3.7369e-03,   2.1803e-02,   3.1189e-03,   4.5658e-03,   9.7311e-01,  -5.2199e-03,  -3.4103e-03,  -4.8728e-03,   1.7739e-03],
+              [-2.4696e-03,   6.5928e-03,  -9.6463e-03,   6.7317e-03,  -7.1157e-03,  -5.2199e-03,   9.7774e-01,  -6.1129e-03,   9.4061e-04,  -1.2355e-03],
+              [-7.0619e-04,  -9.7537e-03,   5.8966e-03,  -1.5414e-02,   3.1525e-03,  -3.4103e-03,  -6.1129e-03,   9.8650e-01,   9.1551e-03,  -7.3053e-03],
+              [ 8.7800e-05,  -9.6414e-03,   1.5740e-02,  -1.1925e-02,   4.8335e-03,  -4.8728e-03,   9.4061e-04,   9.1551e-03,   9.7657e-01,  -3.5075e-03],
+              [ 1.9568e-03,   2.9046e-03,  -3.2129e-03,   4.0680e-03,   5.7456e-04,   1.7739e-03,  -1.2355e-03,  -7.3053e-03,  -3.5075e-03,   9.6821e-01]]\
+              
+        C = da segunda iteracao, após de ser calculado novamente (antes de  fazer C = triu(c) + triu(c,1))  do Octave  
+9.4505e-01  -9.9696e-03  -3.5399e-02   2.5384e-03   1.0519e-02  -6.7639e-03  -9.1306e-03  -1.1958e-02   1.3152e-03   3.3264e-03
+-9.9696e-03   9.6656e-01  -2.5601e-02   8.0841e-03  -2.3755e-02  -7.2366e-04   1.9593e-02   3.7433e-03  -9.7243e-03   1.3135e-03
+-3.5399e-02  -2.5601e-02   1.1690e+00  -2.8531e-02   6.4375e-03   3.1471e-02  -1.7161e-02   3.4471e-02   3.0476e-03  -5.4416e-03
+2.5384e-03   8.0841e-03  -2.8531e-02   9.8440e-01   9.2539e-04   9.6666e-04   3.1563e-03  -4.2537e-02   1.3650e-03   3.5166e-03
+1.0519e-02  -2.3755e-02   6.4375e-03   9.2539e-04   9.6350e-01   4.8037e-03  -1.0257e-02  -9.2854e-03   7.0877e-03  -8.7575e-04
+-6.7639e-03  -7.2366e-04   3.1471e-02   9.6666e-04   4.8037e-03   9.4434e-01  -4.2065e-03   3.4790e-03  -6.4711e-03  -3.8572e-04
+-9.1306e-03   1.9593e-02  -1.7161e-02   3.1563e-03  -1.0257e-02  -4.2065e-03   9.5987e-01  -1.1069e-03   3.9672e-03  -3.0932e-03
+-1.1958e-02   3.7433e-03   3.4471e-02  -4.2537e-02  -9.2854e-03   3.4790e-03  -1.1069e-03   9.8232e-01  -2.4226e-03  -7.6549e-03
+1.3152e-03  -9.7243e-03   3.0476e-03   1.3650e-03   7.0877e-03  -6.4711e-03   3.9672e-03  -2.4226e-03   9.4834e-01  -3.5632e-03
+3.3264e-03   1.3135e-03  -5.4416e-03   3.5166e-03  -8.7575e-04  -3.8572e-04  -3.0932e-03  -7.6549e-03  -3.5632e-03   9.3562e-01
+           
+C do python
+9.4505e-01   -9.9695e-03   -3.5399e-02   2.5383e-03   1.0519e-02   -6.7639e-03   -9.1307e-03   -1.1958e-02   1.3149e-03   3.3264e-03
+-9.9695e-03   9.6656e-01   -2.5602e-02   8.0838e-03   -2.3755e-02   -7.2377e-04   1.9593e-02   3.7431e-03   -9.7241e-03   1.3135e-03
+-3.5399e-02   -2.5602e-02   1.1690e+00   -2.8530e-02   6.4376e-03   3.1471e-02   -1.7161e-02   3.4470e-02   3.0481e-03   -5.4415e-03
+2.5383e-03   8.0838e-03   -2.8530e-02   9.8440e-01   9.2536e-04   9.6656e-04   3.1562e-03   -4.2538e-02   1.3649e-03   3.5164e-03
+1.0519e-02   -2.3755e-02   6.4376e-03   9.2536e-04   9.6351e-01   4.8037e-03   -1.0257e-02   -9.2852e-03   7.0874e-03   -8.7579e-04
+-6.7639e-03   -7.2377e-04   3.1471e-02   9.6656e-04   4.8037e-03   9.4434e-01   -4.2066e-03   3.4792e-03   -6.4712e-03   -3.8570e-04
+-9.1307e-03   1.9593e-02   -1.7161e-02   3.1562e-03   -1.0257e-02   -4.2066e-03   9.5987e-01   -1.1069e-03   3.9673e-03   -3.0933e-03
+-1.1958e-02   3.7431e-03   3.4470e-02   -4.2538e-02   -9.2852e-03   3.4792e-03   -1.1069e-03   9.8232e-01   -2.4224e-03   -7.6547e-03
+1.3149e-03   -9.7241e-03   3.0481e-03   1.3649e-03   7.0874e-03   -6.4712e-03   3.9673e-03   -2.4224e-03   9.4833e-01   -3.5633e-03
+3.3264e-03   1.3135e-03   -5.4415e-03   3.5164e-03   -8.7579e-04   -3.8570e-04   -3.0933e-03   -7.6547e-03   -3.5633e-03   9.3562e-01
+        """
         print(arx[0][8])
         print(arz[5][3])
         print(weights)
@@ -1881,6 +1966,79 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     crossoverProb = -1
     np.random.seed(seed)
     functionEvaluations = 0
+    # User defined parameters\
+
+    """
+    λ ≥ 2, population size, sample size, number of offspring, see (5).
+    µ ≤ λ parent number, number of (positively) selected search points in the population, number
+    of strictly positive recombination weights, see (6).
+    sigma = 0.5
+    xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
+    # maxFE = 30
+
+    # Strategy parameters setting: Selection
+    parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
+    parentsSize = int(parentsSize)
+    mu = parentsSize / 2  # mu is NOT offspringsSize.
+    muList = [i + 1 for i in range(int(mu))]
+    weights = np.log(mu+1/2)-np.log(muList)  # muXone recombination weights
+    mu = np.floor(mu)
+    # mu = int(mu)
+    weights = weights/np.sum(weights)
+    mueff = np.power(sum(weights), 2) / np.sum(np.power(weights, 2))
+
+    # Strategy parameter setting: Adaptation
+    cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
+    cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
+    c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
+    cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
+    damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
+
+    # Initiliaze dynamic (internal) strategy parameters  and constants
+    pc = np.zeros(nSize) # evolutions paths for C
+    ps = np.zeros(nSize)  # evolutions paths for sigma
+    B = np.eye(nSize)  # B defines de coordinate system
+    D = np.eye(nSize)  # diagonal matrix D defines the scaling
+    C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
+    eigenval = 0  # B and D update at counteval == 0
+    chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
+    """
+
+    # CODIGO ANTIGO
+
+    # generatedOffspring = int(offspringsSize / parentsSize)  # TODO Verifiar isso depois
+    generatedOffspring = 1
+    offspringsSize = parentsSize
+    lowerBound = upperBound = truss = 0
+    if strFunction[0] == "2":  # solving trusses
+        truss, lowerBound, upperBound = initializeTruss(function)
+        nSize = truss.getDimension()
+        print("nSize{}".format(nSize))
+        gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
+        penaltyCoefficients = [-1 for i in range(constraintsSize)]
+        avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
+        parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
+        offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
+        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
+    else:
+        gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
+        penaltyCoefficients = [-1 for i in range(constraintsSize)]
+        avgObjFunc = 0  # will be subscribed on 'calculatePenaltyCoefficients'
+        parents = Population(parentsSize, nSize, function)  # Initialize parents population
+        offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
+        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations)  # Evaluate parents
+
+    if penaltyMethod == 1:  # Padrao?  (not apm)
+        parents.sumViolations(parentsSize, gSize, hSize)
+    elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
+        parents.uniteConstraints(parentsSize, gSize, hSize)
+        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+        parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+    else:
+        print("Penalthy method not encountered")
+        sys.exit("Penalty method not encountered")
+
+
     # User defined parameters
     sigma = 0.5
     xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
@@ -1917,39 +2075,8 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     eigenval = 0  # B and D update at counteval == 0
     chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
 
-    # CODIGO ANTIGO
 
-    # generatedOffspring = int(offspringsSize / parentsSize)  # TODO Verifiar isso depois
-    generatedOffspring = 1
-    offspringsSize = parentsSize
-    lowerBound = upperBound = truss = 0
-    if strFunction[0] == "2":  # solving trusses
-        truss, lowerBound, upperBound = initializeTruss(function)
-        nSize = truss.getDimension()
-        gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
-        penaltyCoefficients = [-1 for i in range(constraintsSize)]
-        avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
-        offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
-        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
-    else:
-        gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
-        penaltyCoefficients = [-1 for i in range(constraintsSize)]
-        avgObjFunc = 0  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function)  # Initialize parents population
-        offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
-        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize,
-                                               functionEvaluations)  # Evaluate parents
 
-    if penaltyMethod == 1:  # Padrao?  (not apm)
-        parents.sumViolations(parentsSize, gSize, hSize)
-    elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
-        parents.uniteConstraints(parentsSize, gSize, hSize)
-        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-    else:
-        print("Penalthy method not encountered")
-        sys.exit("Penalty method not encountered")
     # parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
     # FIM CODIGO ANTIGO
 
@@ -2023,7 +2150,9 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
                 arz[i][j] = parents.individuals[i].arz[j]  #
         """
 
-        arxB4 = np.copy(arx)
+        # arxB4 = np.copy(arx)
+        arz = arz.T
+        arx = arx.T
         for j in range(parentsSize):  # TODO Individuos armazenados em COLUNA, não em LINHAS, como no octave !! ATENCAO
             for i in range(nSize):
                 arx[i][j] = parents.individuals[j].n[i]
@@ -2112,8 +2241,8 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
             print(C)
             """
             D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
-            D = np.sqrt(D)
-            D = np.diag(D)
+            # D = np.diag(D) # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
+            D = np.diag(np.sqrt(D))
             # print("a")
             # print(D)
         """
@@ -2630,7 +2759,6 @@ def ESCMALinha1(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         parents.printBest(nSize, parentsSize, penaltyMethod)
 
 
-
 # noinspection PyShadowingNames
 def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize):
     if algorithm == "GA":  # Genetic Algorithm
@@ -2651,7 +2779,7 @@ def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offs
     elif algorithm == "ES":  # Evolution Strategy
         ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     elif algorithm == "ESCMA":
-        ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma )
+        ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     elif algorithm == "ESCMATest":
         ESCMATest(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma )
     else:
