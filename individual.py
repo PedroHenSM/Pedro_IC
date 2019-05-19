@@ -137,6 +137,9 @@ class Population(object):
                     """
                     # print(values)
                     values.append(np.random.uniform(lowerBound, upperBound))
+                elif strFunction[0] == "8":  # cec17NoConstraints
+                    print("Initializing cec2017 no constraints functions")
+                    values.append(np.random.uniform(-100,100))  # search range is [-100,100] for all functions
                 elif strFunction[0] == "9": # Functions with no constraints
                     if function == 91:  # Rosenbrock Function
                         print("Initializing Rosenbrock Function")
@@ -187,7 +190,7 @@ class Population(object):
         strFunction = str(function)
         for i in range(popSize):
             fe = fe + 1
-            if strFunction[0] == "1":  # "Normal" problems (functions to be minimized)
+            if strFunction[0] == "1":  # "Normal constrained" problems (functions to be minimized)
                 if function == 11:
                     Functions.C01(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
                     # noinspection SpellCheckingInspection
@@ -247,22 +250,40 @@ class Population(object):
                 valuesArraySize = truss.getNumberObjectives() + truss.getNumberConstraints()  # the length will be objFunction (1) + gSize
                 dimensionArray = eureka.new_doubleArray(truss.getDimension())  # creates an array
                 valuesArray = eureka.new_doubleArray(valuesArraySize)  # the length will be objFunct(1) + gSize
-                build_array(dimensionArray, self.individuals[i].n, truss.getDimension())  # transfers values to C++ array
+                build_array(dimensionArray, self.individuals[i].n, truss.getDimension(), strFunction)  # transfers values to C++ array
                 valuesList = self.individuals[i].objectiveFunction + self.individuals[i].g  # concatenates the two lists
-                build_array(valuesArray, valuesList, valuesArraySize)
+                build_array(valuesArray, valuesList, valuesArraySize, strFunction)
                 truss.evaluation(dimensionArray, valuesArray)
                 # truss.evaluate(dimensionArray, valuesArray)
-                build_list(self.individuals[i].n, dimensionArray, 0, truss.getDimension())  # transfers values to python list
+                build_list(self.individuals[i].n, dimensionArray, 0, truss.getDimension(), strFunction)  # transfers values to python list
                 self.individuals[i].objectiveFunction[0] = eureka.doubleArray_getitem(valuesArray, 0)
-                build_list(self.individuals[i].g, valuesArray, 1, valuesArraySize)
+                build_list(self.individuals[i].g, valuesArray, 1, valuesArraySize, strFunction)
                 eureka.delete_doubleArray(dimensionArray)
                 eureka.delete_doubleArray(valuesArray)
 
             elif strFunction[0] == "8":  # no constraints cec2017 competition functions
+                funcNum = int(strFunction[1:])  #  gets all numer exepect the first, in this case , the 8 is ignored
+                fe = fe + 49  # evaluates all population candidates
+                #  creates C++ arrays
+                xArray = cec17NoConstraints.new_doubleArray(nSize)  # creates an array with nSize dimension
+                objFuncArray = cec17NoConstraints.new_doubleArray(1) ## creates an array with 1 dimension (for objective function)
+                # tranfers values from individuals to C++ array for functions be evaluated
+                build_array(xArray, self.individuals[i].n, nSize, strFunction)  # transfers values from list to C++ array
+                build_array(objFuncArray, self.individuals[i].objectiveFunction, 1, strFunction)
+                # EVALUATE FUNCTION
+                # parameters of cec17_test_func(x, objFunc, dimension, population_size, number of function)
+                cec17NoConstraints.cec17_test_func(xArray, objFuncArray, nSize, popSize, funcNum)
+                # transfers values back to individuals
+                build_list(self.individuals[i].n, xArray, 0, nSize, strFunction)  # transfers project variables
+                self.individuals[i].objectiveFunction[0] = cec17NoConstraints.doubleArray_getitem(objFuncArray, 0)  # transfers objective function
+                # clean mess
+                cec17NoConstraints.delete_doubleArray(xArray)
+                cec17NoConstraints.delete_doubleArray(objFuncArray)
+                break  # the cec17evaluate already evaluates all individuals from population TODO VERIFY THIS
+
+
                 print("Executing 2017 cec competitions functions (noConstraints)")
-                a = cec17NoConstraints.new_doubleArray(5)
-                for j in range(5):
-                    cec17NoConstraints.doubleArray_setitem(a, j, j+1)
+
 
 
             elif strFunction[0] == "9":  # functions without constraints
@@ -406,6 +427,9 @@ class Population(object):
         elif strFunction[0] == "2":  # Truss problems
             nMin = lowerBound
             nMax = upperBound
+        elif strFunction[0] == "8":  # cec2017NoConstraints problems
+            nMin = -100
+            nMax = 100
         elif strFunction[0] == "9":
             if function == 91:  # Rosenbrock Function
                 nMin = -5
@@ -525,7 +549,7 @@ class Population(object):
                     elif offsprings.individuals[bestIdx].fitness == self.individuals[i].fitness:
                         if offsprings.individuals[bestIdx].objectiveFunction[0] < self.individuals[i].objectiveFunction[0]:
                             self.copyIndividual(i, bestIdx, offsprings, nSize, 1, gSize, hSize, constraintsSize, -1, penaltyMethod)
-        else:
+        else:  # no constraints
             j = 0
             for i in range(parentsSize):
                 bestIdx = j
@@ -1057,17 +1081,26 @@ def populationPick(solution, flags, parentsSize):
 
 
 # Python function to pass values of a list to a C++ array
-def build_array(a, l, size):
-    for i in range(size):
-        eureka.doubleArray_setitem(a, i, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
+def build_array(a, l, size, strFunction):
+    if strFunction[0] == "2":  # truss problems, utilizes eureka
+        for i in range(size):
+            eureka.doubleArray_setitem(a, i, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
+    elif strFunction[0] == "8":  # cec2017NoConstraints problems, utilizes cec17NoConstraints
+        for i in range(size):
+            cec17NoConstraints.doubleArray_setitem(a, i, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
 
 
 # Python function to pass values of a C++ array to a list
 # startIdx is from where (on array) the values will be copied
-def build_list(l, a, startIdx, size):
-    for i in range(size):
-        l[i] = eureka.doubleArray_getitem(a, startIdx)  # Gets item of array "a" at idx "idxStart"
-        startIdx = startIdx + 1
+def build_list(l, a, startIdx, size, strFunction):
+    if strFunction[0] == "2":  # truss problems, utilizes eureka
+        for i in range(size):
+            l[i] = eureka.doubleArray_getitem(a, startIdx)  # Gets item of array "a" at idx "idxStart"
+            startIdx = startIdx + 1
+    elif strFunction[0] == "8":  # cec2017NoConstraints problems, utilizes cec17NoConstraints
+        for i in range(size):
+            l[i] = eureka.doubleArray_getitem(a, startIdx)
+            startIdx = startIdx + 1
 
 
 '''
@@ -1332,10 +1365,13 @@ def adjustGPRModel(offsprings, offspringsSize, nSize, penaltyMethod, functionEva
     return modelGPR, crossVMean, crossVStd
 
 
-def GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, hasConstraints):  # Genetic Algorithm
+def GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Genetic Algorithm
     strFunction = str(function)
     esType = globalSigma = -1
     np.random.seed(seed)
+    hasConstraints = False
+    if strFunction[0] == "1" or strFunction[0] == "2":
+        hasConstraints = True
     crossoverType = 1
     functionEvaluations = 0
     generatedOffspring = int(offspringsSize / parentsSize)
@@ -1412,10 +1448,13 @@ def GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
 
 
-def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, hasConstraints):  # Differential Evolution
+def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Differential Evolution
     strFunction = str(function)
     crossoverProb = esType = globalSigma = -1
     np.random.seed(seed)
+    hasConstraints = False
+    if strFunction[0] == "1" or strFunction[0] == "2":
+        hasConstraints = True
     CR = 0.9
     F = 0.5
     functionEvaluations = 0
@@ -1670,10 +1709,13 @@ def DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, 
     parents.printBestFO(parentsSize, penaltyMethod)
 
 
-def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, hasConstraints):  # Evolution Strategy
+def ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
     strFunction = str(function)
     crossoverProb = -1
     np.random.seed(seed)
+    hasConstraints = False
+    if strFunction[0] == "1" or strFunction[0] == "2":
+        hasConstraints = True
     functionEvaluations = 0
     generatedOffspring = int(offspringsSize / parentsSize)
     lowerBound = upperBound = truss = 0
@@ -2097,11 +2139,14 @@ C do python
         parents.printBest(nSize, parentsSize, penaltyMethod)
 
 
-def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, hasConstraints):  # Evolution Strategy
+def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
     strFunction = str(function)
     esType = 1
     crossoverProb = -1
     np.random.seed(seed)
+    hasConstraints = False
+    if strFunction[0] == "1" or strFunction[0] == "2":
+        hasConstraints = True
     functionEvaluations = 0
     # User defined parameters\
 
@@ -2168,7 +2213,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         else:  # Functions with no constraints
             parents = Population(parentsSize, nSize, function)  # Initialize parents population
             offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
-            functionEvaluations = parents.evaluate(parentsSize, 91, nSize, -1, -1, functionEvaluations)
+            functionEvaluations = parents.evaluate(parentsSize, function, nSize, -1, -1, functionEvaluations)
     # Choose method of penalization
     if hasConstraints:
         if penaltyMethod == 1:  # Padrao?  (not apm)
@@ -2194,6 +2239,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     # Strategy parameters setting: Selection
     parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
     parentsSize = int(parentsSize)
+    offspringsSize = parentsSize  # temporay?
     mu = parentsSize / 2  # mu is NOT offspringsSize.
     muList = [i + 1 for i in range(int(mu))]
     weights = np.log(mu+1/2)-np.log(muList)  # muXone recombination weights
@@ -2370,8 +2416,8 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 
 
         # Individuals already stored in columns, no need to tranpose
-
-
+        print("C before recalculing it")
+        print(C)
         # TODO Testar essa conta, com os mesmos valores do octave. TESTADO, CALCUCLO ABAIXO FUNCIONANDO PARA OS VALORES DA 1 ITERACAO DO OCTAVE
         Caux1 = (1-c1-cmu) * C
         Caux2 = np.outer(pc, pc) + ((1-hsig) * cc * (2-cc) * C)
@@ -2381,7 +2427,20 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         Caux5 = np.matmul(np.diag(weights), BDARGZ.transpose())
         Caux6 = np.matmul(Caux4, Caux5)
         C = Caux1 + Caux3 + Caux6
+        # **************************************** NEW CALCULUS OF C (IM GONNA CRY)
+        # TODO: CONTA TESTADA E "FUNCIONANDO" PARA A SEGUNDA ITERACAO COM AS MATRIZES DO OCTAVE
+        # C = (1-c1-cmu) * C + c1 * (np.outer(pc,pc) + (1-hsig) * cc*(2-cc) * C) + cmu * (B@D@muBestZ) @ np.diag(weights) @ (B@D@muBestZ).T
 
+        C = ((1-c1-cmu) * C #
+             + c1 * (np.outer(pc, pc)
+            + (1-hsig) * cc * (2 - cc) * C)  # THIS LAST MULTIPLICATION SHOULD BE @, MATLAB IS CRAP
+             + cmu
+             * (B@D@muBestZ)
+             @ np.diag(weights) @ (B@D@muBestZ).T
+            )
+
+        print("C after recalculing it")
+        print(C)
         #  Adapt step-size sigma
         sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
 
@@ -2390,12 +2449,16 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         # Update B and D from C
         if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
             eigenval = counteval
+            print("C before enforce symmetry")
+            print(C)
             C = np.triu(C) + np.triu(C, 1).transpose()  # enforce symmetry
             """
             print("C DENTRO DE UPDATE B AND D")
             print("Printando C")
             print(C)
             """
+            print("C after enforce symmetry")
+            print(C)
             D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
             # D = np.diag(D) # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
             D = np.diag(np.sqrt(D))
@@ -2917,7 +2980,7 @@ def ESCMALinha1(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 # noinspection PyShadowingNames
 def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize):
     if algorithm == "GA":  # Genetic Algorithm
-        GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, False)
+        GA(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     elif algorithm == "DE":  # Differential Evolution
         """
         start = timer()
@@ -2927,14 +2990,14 @@ def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offs
         """
         print("uai")
         start = timer()
-        DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, False)
+        DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
         # DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize)
         end = timer()
         print("{} seconds".format(end - start), end="")
     elif algorithm == "ES":  # Evolution Strategy
-        ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, False)
+        ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     elif algorithm == "ESCMA":
-        ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, False)
+        ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     elif algorithm == "ESCMATest":
         ESCMATest(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma )
     else:
@@ -2946,12 +3009,12 @@ def main():
     # function,seed,penaltyMethod,parentsSize,nSize,offspringsSize,maxFE,crossoverProb,esType,globalSigma
     # ES µ ≈ λ/4
     parser = argparse.ArgumentParser(description="Evolutionary Algorithms")
-    parser.add_argument("--algorithm", "-a", type=str, default="DE", help="Algorithm to be used (GA, ES or DE)")
-    parser.add_argument("--function", "-f", type=int, default=81, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
+    parser.add_argument("--algorithm", "-a", type=str, default="ESCMA", help="Algorithm to be used (GA, ES or DE)")
+    parser.add_argument("--function", "-f", type=int, default=210, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
                         "For the truss problem, the first digit must be 2, followed by the number of the bars in the problem. "
                         "Example: 225, is for the truss of 25 bars")
     parser.add_argument("--seed", "-s", type=int, default=1, help="Seed to be used")
-    parser.add_argument("--penaltyMethod", "-p", type=int, default=1, help="Penalty method to be used. 1 for Deb Penalty or 2 for APM")
+    parser.add_argument("--penaltyMethod", "-p", type=int, default=2, help="Penalty method to be used. 1 for Deb Penalty or 2 for APM")
     parser.add_argument("--parentsSize", "-u", type=int, default=50, help="µ is the parental population size")  # u from µ (mi) | µ ≈ λ/4
     parser.add_argument("--nSize", "-n", type=int, default=10, help="Search space dimension")
     parser.add_argument("--offspringsSize", "-l", type=int, default=50, help="λ is number of offsprings, offsprings population size")  # l from λ (lambda) | µ ≈ λ/4
