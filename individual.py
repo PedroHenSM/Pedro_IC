@@ -8,8 +8,10 @@ Created on Sun May 20 17:53:50 2018
 from scipy.linalg import eig
 import sys
 # sys.path.insert(0, "eureka")
-sys.path.append("..")
+# sys.path.insert(0, "cec17NoConstraints")
+# sys.path.append("..")
 import eureka
+import cec17NoConstraints
 import argparse
 import numpy as np
 import operator as op
@@ -255,6 +257,14 @@ class Population(object):
                 build_list(self.individuals[i].g, valuesArray, 1, valuesArraySize)
                 eureka.delete_doubleArray(dimensionArray)
                 eureka.delete_doubleArray(valuesArray)
+
+            elif strFunction[0] == "8":  # no constraints cec2017 competition functions
+                print("Executing 2017 cec competitions functions (noConstraints)")
+                a = cec17NoConstraints.new_doubleArray(5)
+                for j in range(5):
+                    cec17NoConstraints.doubleArray_setitem(a, j, j+1)
+
+
             elif strFunction[0] == "9":  # functions without constraints
                 if function == 91:  # RosenbrockFunction
                     sumRosen = 0
@@ -2917,7 +2927,7 @@ def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offs
         """
         print("uai")
         start = timer()
-        DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, True)
+        DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, False)
         # DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize)
         end = timer()
         print("{} seconds".format(end - start), end="")
@@ -2937,7 +2947,7 @@ def main():
     # ES µ ≈ λ/4
     parser = argparse.ArgumentParser(description="Evolutionary Algorithms")
     parser.add_argument("--algorithm", "-a", type=str, default="DE", help="Algorithm to be used (GA, ES or DE)")
-    parser.add_argument("--function", "-f", type=int, default=210, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
+    parser.add_argument("--function", "-f", type=int, default=81, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
                         "For the truss problem, the first digit must be 2, followed by the number of the bars in the problem. "
                         "Example: 225, is for the truss of 25 bars")
     parser.add_argument("--seed", "-s", type=int, default=1, help="Seed to be used")
