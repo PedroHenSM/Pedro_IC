@@ -1469,7 +1469,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
         parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
         offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
-        # functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # TODO Verificar
+        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)  # TODO Verificar
         functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
     else:  # Solving 'normal' functions
         if hasConstraints:
@@ -1540,9 +1540,10 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
             parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod, hasConstraints)
         else:
             parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, -1, -1, -1, penaltyMethod, hasConstraints)
+
         parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
         # parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
-        print("Ta rodando o dE")
+        # print("Ta rodando o dE")
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
         # weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
         # print("Weigth: {:e}".format(weight))
@@ -1793,20 +1794,25 @@ dσ ≈ 1, damping parameter for step-size update, see (32), (37), and (44).
 """
 
 
-def ESCMATest(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
+def ESCMAColunaTests(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
     strFunction = str(function)
+    esType = 1
     crossoverProb = -1
     np.random.seed(seed)
+    hasConstraints = False
+    if strFunction[0] == "1" or strFunction[0] == "2":
+        hasConstraints = True
     functionEvaluations = 0
-    # User defined parameters
-    sigma = 0.5
-    # xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
-    xmean = [0.134364, 0.847434, 0.763775, 0.255069, 0.495435, 0.449491, 0.651593, 0.788723, 0.093860, 0.028347] ## just for tests
+    # User defined parameters\
+
     """
     λ ≥ 2, population size, sample size, number of offspring, see (5).
     µ ≤ λ parent number, number of (positively) selected search points in the population, number
     of strictly positive recombination weights, see (6).
-    """
+    sigma = 0.5
+    xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
+    # maxFE = 30
+
     # Strategy parameters setting: Selection
     parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
     parentsSize = int(parentsSize)
@@ -1814,8 +1820,9 @@ def ESCMATest(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize,
     muList = [i + 1 for i in range(int(mu))]
     weights = np.log(mu+1/2)-np.log(muList)  # muXone recombination weights
     mu = np.floor(mu)
+    # mu = int(mu)
     weights = weights/np.sum(weights)
-    mueff = np.power(sum(weights), 2) / np.sum(np.power(weights,2))
+    mueff = np.power(sum(weights), 2) / np.sum(np.power(weights, 2))
 
     # Strategy parameter setting: Adaptation
     cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
@@ -1829,20 +1836,21 @@ def ESCMATest(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize,
     ps = np.zeros(nSize)  # evolutions paths for sigma
     B = np.eye(nSize)  # B defines de coordinate system
     D = np.eye(nSize)  # diagonal matrix D defines the scaling
-    AUX = (B * D)  # auxiliar tranpose matrix
-    AUX = AUX.transpose()
-    C = B * D * AUX  # covariance matrix
+    C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
     eigenval = 0  # B and D update at counteval == 0
     chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
+    """
 
     # CODIGO ANTIGO
 
-    generatedOffspring = int(offspringsSize / parentsSize)  # TODO Verifiar isso depois
+    # generatedOffspring = int(offspringsSize / parentsSize)  # TODO Verifiar isso depois
+    generatedOffspring = 1
     offspringsSize = parentsSize
     lowerBound = upperBound = truss = 0
     if strFunction[0] == "2":  # solving trusses
         truss, lowerBound, upperBound = initializeTruss(function)
         nSize = truss.getDimension()
+        print("nSize{}".format(nSize))
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
@@ -1850,225 +1858,175 @@ def ESCMATest(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize,
         offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
         functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
     else:
-        gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
-        penaltyCoefficients = [-1 for i in range(constraintsSize)]
-        avgObjFunc = 0  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function)  # Initialize parents population
-        offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
-        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize,
-                                               functionEvaluations)  # Evaluate parents
+        if hasConstraints:
+            gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
+            penaltyCoefficients = [-1 for i in range(constraintsSize)]
+            avgObjFunc = 0  # will be subscribed on 'calculatePenaltyCoefficients'
+            parents = Population(parentsSize, nSize, function)  # Initialize parents population
+            offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
+            functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations)  # Evaluate parents
+        else:  # Functions with no constraints
+            parents = Population(parentsSize, nSize, function)  # Initialize parents population
+            offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
+            functionEvaluations = parents.evaluate(parentsSize, function, nSize, -1, -1, functionEvaluations)
+    # Choose method of penalization
+    if hasConstraints:
+        if penaltyMethod == 1:  # Padrao?  (not apm)
+            parents.sumViolations(parentsSize, gSize, hSize)
+        elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
+            parents.uniteConstraints(parentsSize, gSize, hSize)
+            avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+            parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+        else:
+            print("Penalthy method not encountered")
+            sys.exit("Penalty method not encountered")
 
-    if penaltyMethod == 1:  # Padrao?  (not apm)
-        parents.sumViolations(parentsSize, gSize, hSize)
-    elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
-        parents.uniteConstraints(parentsSize, gSize, hSize)
-        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-    else:
-        print("Penalthy method not encountered")
-        sys.exit("Penalty method not encountered")
+
+    # User defined parameters
+    sigma = 0.5
+    xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
+    # maxFE = 30
+    """
+    λ ≥ 2, population size, sample size, number of offspring, see (5).
+    µ ≤ λ parent number, number of (positively) selected search points in the population, number
+    of strictly positive recombination weights, see (6).
+    """
+    # Strategy parameters setting: Selection
+    parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
+    parentsSize = int(parentsSize)
+    offspringsSize = parentsSize  # temporay?
+    mu = parentsSize / 2  # mu is NOT offspringsSize.
+    muList = [i + 1 for i in range(int(mu))]
+    weights = np.log(mu+1/2)-np.log(muList).conj().T  # muXone recombination weights
+    mu = np.floor(mu)
+    # mu = int(mu)
+    weights = weights/np.sum(weights)
+    mueff = np.power(sum(weights), 2) / np.sum(np.power(weights, 2))
+
+    # Strategy parameter setting: Adaptation
+    cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
+    cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
+    c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
+    cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
+    damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
+
+    # Initiliaze dynamic (internal) strategy parameters  and constants
+    pc = np.zeros(nSize) # evolutions paths for C
+    ps = np.zeros(nSize)  # evolutions paths for sigma
+    B = np.eye(nSize)  # B defines de coordinate system
+    D = np.eye(nSize)  # diagonal matrix D defines the scaling
+    C = B @ D @ (B@D).conj().T
+    # C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
+    # print(C)
+    # exit("sai viado")
+    eigenval = 0  # B and D update at counteval == 0
+    chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
+
+
+
     # parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
-
     # FIM CODIGO ANTIGO
+
     counteval = 0
     while functionEvaluations < maxFE:
         # Generate and evaluate lambda offspring
         arzAuxList = []
         arxAuxList = []
-        for k in range(parentsSize):
+        """
+        print("B")
+        print(B)
+        print("D")
+        print(D)
+        """
+        for i in range(parentsSize):
             arz = np.random.randn(nSize)  # standard normally distributed vector  (38)
+            # arx = xmean + sigma * (np.dot(np.matmul(B, D), arz))  # add mutation N(m,sigma²C) (40)
+            arx = xmean + sigma * (B @ D @ arz)  # add mutation N(m,sigma²C) (40)
+            if functionEvaluations > 10:
+                """
+                print("Conta (np.dot(B*D, arz))")
+                print((np.dot(B*D, arz)))
+                print("ArzLoop")
+                print(arz)
+                print("ArxLoop")
+                print(arx)
+                """
+            # arx = xmean + sigma * (np.dot(np.matmul(B, D), arz))
             arzAuxList.append(arz)
-            # np.dot(a,b) If a is an N-D array and b is a 1-D array, it is a sum product over the last axis of a and b.
-            arx = xmean + sigma * (np.dot(B*D, arz))  # add mutation N(m,sigma²C) (40)
             arxAuxList.append(arx)
             # arx é  individuals[i].n
-            for i in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
-                offsprings.individuals[k].arz[i] = arz[i]
-                offsprings.individuals[k].n[i] = arx[i]
+            for j in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
+                offsprings.individuals[i].arz[j] = arz[j]
+                offsprings.individuals[i].n[j] = arx[j]
             counteval = counteval + 1
-            # TODO evaluates individuals (objective function call), can be done after the loop
-            # avalia funcao aqui com o individuo k
-        # TODO Verificar np.stack ( no arquivo cmaestests.py)
+        arz = np.vstack(arzAuxList)  # matrix nd.array with all values calculated above
+        arx = np.vstack(arxAuxList)  # matrix nd.array with all values calculated above
+        if functionEvaluations > 10:
+            """
+            print("sigma")
+            print(sigma)
+            print("xmean")
+            print(xmean)
+            print("arz")
+            print(arz)
+            print("arx")
+            print(arx)
+            """
         # Evaluate function
         if strFunction[0] == "2":
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
             functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
         else:
-            offsprings.bounding(nSize, function, offspringsSize)
-            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations)
-        # Choose method of penalization
-        if penaltyMethod == 1:  # Deb penalization
-            offsprings.sumViolations(offspringsSize, gSize, hSize)
-        else:  # APM penalization
-            offsprings.uniteConstraints(offspringsSize, gSize, hSize)
-            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-            offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        # TODO Meu esType == 1, (Es ,) os filhos são gerados independentemente dos pais a cada gerção
+            if hasConstraints:
+                offsprings.bounding(nSize, function, offspringsSize) # Commented for rosenbrock
+                functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations)
+            else:
+                offsprings.bounding(nSize, function, offspringsSize) # Commented for rosenbrock
+                functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, -1, -1, functionEvaluations)
+
+        if hasConstraints:
+            # Choose method of penalization
+            if penaltyMethod == 1:  # Deb penalization
+                offsprings.sumViolations(offspringsSize, gSize, hSize)
+            else:  # APM penalization
+                offsprings.uniteConstraints(offspringsSize, gSize, hSize)
+                avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+                offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
+
         # Elitismo apenas ordena os filhos. esType == 1(pai não é levado em conta (ES ,))
         # Sort individuals
-        print(" CHWGOU AQUI NAISSU")
-        print("LB{} and UP{}".format(lowerBound, upperBound))
-        """ ORIGINAL
-        arx
-      -1.1988966   0.4783477   1.5177266   0.5560404   0.2701045   0.0967695   0.4393806   1.0615760   0.9395308   0.2170117
-       0.1435945   0.2653321   1.3561643  -0.3547997   0.5490903   0.1590957   1.0661255   0.7472055   0.7005519  -0.0591285
-       0.2657193   1.0148725  -0.4411025   0.0435862   0.2913427   0.1490518   0.6289034   1.2168827   0.1966676  -0.1020378
-       0.1918297   1.3101121   0.5979328   0.4117982   0.3583002   0.0831734   0.1818460   0.7941236  -0.2353835   0.7558454
-       0.1863209   1.5295500  -0.5251148   0.9851442   0.0728884   0.4430372   1.0169612  -0.0101029  -0.3992216   0.2596442
-      -0.2176538  -0.1160909   0.5462393  -0.4394412   0.0792915   1.3681657  -0.0357643   1.3416918  -0.7387198  -0.2536270
-      -0.3372198   0.2792752   0.9526800  -0.1632072  -0.3613348   0.4960967   0.1662101   1.3961222   0.6934805   1.0837483
-       0.7114285   0.4793197   0.7094737  -0.2383446   1.0766484   0.7158207  -0.3392018   0.5225840   0.0086550   0.5027183
-       0.0085193   0.8207119   0.1277391   0.5907389   0.2890430   0.3981118   0.9322524   0.2855838  -0.6971837  -0.3907246
-      -0.3827326   0.4684674  -0.1658703   0.5106490   0.4367535   0.5981618   0.1744202   1.2102082   0.3099745   1.2017602
-        """
-        # ORDENADO Individuos sao linhas 1 iteracao
-        arx = [[0.2657193,1.0148725,-0.4411025,0.0435862,0.2913427,0.1490518,0.6289034,1.2168827,0.1966676,-0.1020378],
-            [0.1863209,1.5295500,-0.5251148,0.9851442,0.0728884,0.4430372,1.0169612,-0.0101029,-0.3992216,0.2596442],
-            [0.1435945,0.2653321,1.3561643,-0.3547997,0.5490903,0.1590957,1.0661255,0.7472055,0.7005519,-0.0591285],
-            [0.7114285,0.4793197,0.7094737,-0.2383446,1.0766484,0.7158207,-0.3392018,0.5225840,0.0086550,0.5027183],
-            [-0.2176538,-0.1160909,0.5462393,-0.4394412,0.0792915,1.3681657,-0.0357643,1.3416918,-0.7387198,-0.2536270],
-            [0.0085193,0.8207119,0.1277391,0.5907389,0.2890430,0.3981118,0.9322524,0.2855838,-0.6971837,-0.3907246],
-            [-1.1988966,0.4783477,1.5177266,0.5560404,0.2701045,0.0967695,0.4393806,1.0615760,0.9395308,0.2170117],
-            [0.1918297,1.3101121,0.5979328,0.4117982,0.3583002,0.0831734,0.1818460,0.7941236,-0.2353835,0.7558454],
-            [-0.3372198,0.2792752,0.9526800,-0.1632072,-0.3613348,0.4960967,0.1662101,1.3961222,0.6934805,1.0837483],
-            [-0.3827326,0.4684674,-0.1658703,0.5106490,0.4367535,0.5981618,0.1744202,1.2102082,0.3099745,1.2017602]]
-        """ Original
-        arz = -2.666522  -0.738172   1.507904   0.601943  -0.450661  -0.705443  -0.424425   0.545705   1.691342   0.377328
-        0.018461  -1.164203   1.184779  -1.219738   0.107310  -0.580791   0.829065  -0.083036   1.213385  -0.174952
-        0.262710   0.334877  -2.409754  -0.422966  -0.408185  -0.600879  -0.045379   0.856319   0.205616  -0.260771
-        0.114931   0.925357  -0.331684   0.313458  -0.274270  -0.732635  -0.939494   0.010801  -0.658486   1.454996
-        0.103913   1.364233  -2.577779   1.460150  -0.845093  -0.012908   0.730737  -1.597652  -0.986162   0.462593
-        -0.704036  -1.927049  -0.435071  -1.389020  -0.832287   1.837349  -1.374715   1.105937  -1.665159  -0.563949
-        -0.943168  -1.136317   0.377811  -0.836552  -1.713540   0.093211  -0.970766   1.214798   1.199242   2.110802
-        1.154129  -0.736228  -0.108602  -0.986827   1.162427   0.532659  -1.981590  -0.532279  -0.170409   0.948742
-        -0.251690  -0.053444  -1.272071   0.671340  -0.412784  -0.102758   0.561319  -1.006279  -1.582087  -0.838144
-        -1.034194  -0.757933  -1.859290   0.511160  -0.117363   0.297341  -0.954346   0.842970   0.432230   2.346825
+        if hasConstraints:
+            parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound, hasConstraints)
+        else:
+            parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, -1, -1, -1, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound, hasConstraints)
 
-        """
-        # ORDENADO Individuos sao linhas 1 iteracao
-        arz = [[0.262710,0.334877,-2.409754,-0.422966,-0.408185,-0.600879,-0.045379,0.856319,0.205616,-0.260771],
-               [0.103913,1.364233,-2.577779,1.460150,-0.845093,-0.012908,0.730737,-1.597652,-0.986162,0.462593],
-               [0.018461,-1.164203,1.184779,-1.219738,0.107310,-0.580791,0.829065,-0.083036,1.213385,-0.174952],
-               [1.154129,-0.736228,-0.108602,-0.986827,1.162427,0.532659,-1.981590,-0.532279,-0.170409,0.948742],
-               [-0.704036,-1.927049,-0.435071,-1.389020,-0.832287,1.837349,-1.374715,1.105937,-1.665159,-0.563949],
-               [-0.251690,-0.053444,-1.272071,0.671340,-0.412784,-0.102758,0.561319,-1.006279,-1.582087,-0.838144],
-               [-2.666522,-0.738172,1.507904,0.601943,-0.450661,-0.705443,-0.424425,0.545705,1.691342,0.377328],
-               [0.114931,0.925357,-0.331684,0.313458,-0.274270,-0.732635,-0.939494,0.010801,-0.658486,1.454996],
-               [-0.943168,-1.136317,0.377811,-0.836552,-1.713540,0.093211,-0.970766,1.214798,1.199242,2.110802],
-               [-1.034194,-0.757933,-1.859290,0.511160,-0.117363,0.297341,-0.954346,0.842970,0.432230,2.346825]]
+        # parents.elitismForRosenbrockCMAES(offsprings, parentsSize, offspringsSize, nSize)
 
-        """
-        # ORDENADO Individuos sao linhas 2 iteracao
-        arx =  [[0.4753504,   0.3652869,   0.4976022,  -0.2802307,   0.2420256,  -0.2586963,   0.0724561,   0.1762695,  -0.1650253,   1.2999415],
-               [0.5064939,   0.8687324,   0.7258406,   1.7781003,   0.5933533,   1.3447411,   1.3154407,   0.9096953,   0.8792926,   0.2889378],
-               [-0.0758614 , -0.6424619 , -0.3441204 , -0.5285140 , -0.5275032 ,  0.3913651 ,  0.0142676 , -0.0796597 ,  0.2159775 , -0.5932227],
-               [0.8490680,  -0.0017884,  -0.2677793,   1.1165132,   0.2209316,  -0.0287709,  -0.1764800,   1.0960656,  -0.4482863,  -0.6191502],
-               [0.6556861,   1.0303679,   0.2727969,  -0.1431585,   0.8264853,   0.8196987,  -0.1518232,   1.3151580,   0.7514716,  -0.5318383],
-               [0.2709909,   0.4398215,  -0.0879819,   0.2757626,   1.0009356,   0.6266862,   0.1887067,  -0.2438591,   0.2196920,   0.0300984],
-               [0.3472043,   1.0261308,   0.6007644,   1.6952765,   0.0819751,   1.0346999,   0.3733972,   0.4573776,   1.4069915,   0.5520637],
-               [0.1222506,   0.7672137,   0.7922791,   0.3608854,   1.6855970,   0.7166775,   0.3500484,   0.5676805,   0.5152052,   0.6805600],
-               [0.2598733,   0.0921102,  -0.0186505,   0.7275874,  -0.1632317,   0.2369386,  -0.4697692,   0.6129067,  -0.2195904,   0.1679323],
-               [0.0564597,  -0.0770235,   0.3196534,   0.0407368,   0.2731413,   0.4329973,  -0.4341772,  -0.5613340,   0.7885043,   1.5650999]]
-        # ORDENADO Individuos sao linhas 2 iteracao   
-        arz = [[-0.1066550,   0.9341528,  -0.4054851,   0.6417253,   0.2725445,   1.4563001,   0.1622419,   1.0467151,   1.0734668,  -2.6274149],
-              [-1.4359626,  -0.2926949,  -0.1750750,   0.4004655,  -0.5643249,   0.8078145,   0.8705956,  -2.1006614,   0.2120537,   0.5351647],
-              [ 0.1819874,  -1.5622180,   0.2917216,   0.0441995,  -1.2109376,  -0.6444980,   1.3970209,  -0.1106454,  -0.8212872,   0.6270347],
-              [-1.0226577,  -0.3093766,   0.6061658,  -0.0123303,   0.5142807,   1.0502797,  -0.7017592,  -1.7975366,   2.0485328,   2.4258239],
-              [-0.7592927,   0.2336188,   0.6087660,  -1.4651402,  -0.9080306,  -0.1374646,   1.4160194,  -0.2985064,   0.9762168,  -0.5455614],
-              [ 0.3403585,   0.1113247,  -0.1689328,   0.5548433,   0.0083889,   0.3769178,  -0.8150853,   2.0675054,  -0.6767822,  -0.9131623],
-              [-1.0797677,  -0.5340664,  -0.8178847,   0.2872129,   1.3932289,  -0.0854648,   0.4332822,  -0.1551731,  -1.1601128,  -2.6713151],
-              [ 0.7078255,   0.1538027,   0.3331305,  -2.7562691,   2.2102975,  -0.3384352,   0.2985607,  -0.4194847,  -0.4825735,   1.1389788],
-              [ 0.8834070,  -0.6068776,  -1.0107908,   1.9322732,  -1.2720136,   0.5511035,   0.4223117,   0.2851748,   0.2549377,  -1.4792845],
-              [-0.1333207,   0.7337005,   0.4959750,   1.6689685,   0.1597713,  -0.9751545,   0.2862119,  -0.2216380,  -0.6376580,   1.1234320]]
-              
-        # B da segunda iteracao, antes de ser calculado novamente ( utilizado para calcualr ps)
-        B =   [[-0.72718,   0.17242,  -0.31273,  -0.27214,   0.10685,   0.26866,  -0.35019,   0.21399,  -0.10109,   0.08593],
-              [ 0.17281,   0.62453,   0.08878,   0.04641,   0.19643,   0.55325,   0.23564,  -0.09095,   0.30960,   0.25641],
-              [-0.18405,   0.13093,   0.12107,   0.03900,   0.13285,   0.09143,   0.05074,  -0.12633,   0.23132,  -0.91365],
-              [-0.22408,  -0.51201,  -0.05023,  -0.15262,  -0.37105,   0.28749,   0.29538,  -0.07776,   0.58021,   0.10746],
-              [ 0.51624,  -0.28968,  -0.53142,  -0.06404,   0.18136,   0.43713,  -0.18610,   0.24291,  -0.05423,  -0.20620],
-              [ 0.11429,   0.43677,  -0.43646,  -0.13089,  -0.48047,  -0.35394,   0.19342,   0.37530,   0.19949,  -0.11979],
-              [-0.03829,   0.06324,  -0.57153,   0.17280,   0.10644,  -0.21469,  -0.11950,  -0.73127,   0.15994,   0.07738],
-              [-0.21446,  -0.04404,  -0.24470,   0.28927,  -0.07578,   0.20765,   0.66967,  -0.04251,  -0.55179,  -0.07006],
-              [ 0.13630,   0.14251,   0.13308,  -0.17458,  -0.67471,   0.33211,  -0.30546,  -0.36873,  -0.32556,  -0.11013],
-              [-0.10795,  -0.00000,   0.00000,   0.85658,  -0.24211,   0.12191,  -0.32236,   0.22704,   0.15810,   0.02604]]
-              
-        # D da segunda iteracao, antes de ser calculado novamente (utilizado para calcular pc)
-        D =  [[0.98212,         0,         0,         0,         0,         0,         0,         0,         0,         0],
-             [0,   0.98212,         0,         0,         0,         0,         0,         0,         0,         0],
-             [0,         0,   0.98212,         0,         0,         0,         0,         0,         0,         0],
-             [0,         0,         0,   0.98212,         0,         0,         0,         0,         0,         0],
-             [0,         0,         0,         0,   0.98212,         0,         0,         0,         0,         0],
-             [0,         0,         0,         0,         0,   0.98487,         0,         0,         0,         0],
-             [0,         0,         0,         0,         0,         0,   0.98775,         0,         0,         0],
-             [0,         0,         0,         0,         0,         0,         0,   0.99191,         0,         0],
-             [0,         0,         0,         0,         0,         0,         0,         0,   1.00816,         0],
-             [0,         0,         0,         0,         0,         0,         0,         0,         0,   1.07280]]
-        
-        # C da segunda iteracao, antes de ser calculado novamente (utilizado para calcular novo C) 
-        C =   [[ 9.6910e-01,   1.9975e-03,  -1.6429e-02,  -2.3695e-03,  -6.5479e-04,  -2.6784e-03,  -2.4696e-03,  -7.0619e-04,   8.7800e-05,   1.9568e-03],
-              [ 1.9975e-03,   9.8421e-01,  -3.9315e-02,   1.6214e-02,  -1.0326e-02,  -3.7369e-03,   6.5928e-03,  -9.7537e-03,  -9.6414e-03,   2.9046e-03],
-              [-1.6429e-02,  -3.9315e-02,   1.1233e+00,  -1.0842e-02,   3.3975e-02,   2.1803e-02,  -9.6463e-03,   5.8966e-03,   1.5740e-02,  -3.2129e-03],
-              [-2.3695e-03,   1.6214e-02,  -1.0842e-02,   9.8569e-01,  -6.0540e-03,   3.1189e-03,   6.7317e-03,  -1.5414e-02,  -1.1925e-02,   4.0680e-03],
-              [-6.5479e-04,  -1.0326e-02,   3.3975e-02,  -6.0540e-03,   9.7520e-01,   4.5658e-03,  -7.1157e-03,   3.1525e-03,   4.8335e-03,   5.7456e-04],
-              [-2.6784e-03,  -3.7369e-03,   2.1803e-02,   3.1189e-03,   4.5658e-03,   9.7311e-01,  -5.2199e-03,  -3.4103e-03,  -4.8728e-03,   1.7739e-03],
-              [-2.4696e-03,   6.5928e-03,  -9.6463e-03,   6.7317e-03,  -7.1157e-03,  -5.2199e-03,   9.7774e-01,  -6.1129e-03,   9.4061e-04,  -1.2355e-03],
-              [-7.0619e-04,  -9.7537e-03,   5.8966e-03,  -1.5414e-02,   3.1525e-03,  -3.4103e-03,  -6.1129e-03,   9.8650e-01,   9.1551e-03,  -7.3053e-03],
-              [ 8.7800e-05,  -9.6414e-03,   1.5740e-02,  -1.1925e-02,   4.8335e-03,  -4.8728e-03,   9.4061e-04,   9.1551e-03,   9.7657e-01,  -3.5075e-03],
-              [ 1.9568e-03,   2.9046e-03,  -3.2129e-03,   4.0680e-03,   5.7456e-04,   1.7739e-03,  -1.2355e-03,  -7.3053e-03,  -3.5075e-03,   9.6821e-01]]\
-              
-        C = da segunda iteracao, após de ser calculado novamente (antes de  fazer C = triu(c) + triu(c,1))  do Octave  
-9.4505e-01  -9.9696e-03  -3.5399e-02   2.5384e-03   1.0519e-02  -6.7639e-03  -9.1306e-03  -1.1958e-02   1.3152e-03   3.3264e-03
--9.9696e-03   9.6656e-01  -2.5601e-02   8.0841e-03  -2.3755e-02  -7.2366e-04   1.9593e-02   3.7433e-03  -9.7243e-03   1.3135e-03
--3.5399e-02  -2.5601e-02   1.1690e+00  -2.8531e-02   6.4375e-03   3.1471e-02  -1.7161e-02   3.4471e-02   3.0476e-03  -5.4416e-03
-2.5384e-03   8.0841e-03  -2.8531e-02   9.8440e-01   9.2539e-04   9.6666e-04   3.1563e-03  -4.2537e-02   1.3650e-03   3.5166e-03
-1.0519e-02  -2.3755e-02   6.4375e-03   9.2539e-04   9.6350e-01   4.8037e-03  -1.0257e-02  -9.2854e-03   7.0877e-03  -8.7575e-04
--6.7639e-03  -7.2366e-04   3.1471e-02   9.6666e-04   4.8037e-03   9.4434e-01  -4.2065e-03   3.4790e-03  -6.4711e-03  -3.8572e-04
--9.1306e-03   1.9593e-02  -1.7161e-02   3.1563e-03  -1.0257e-02  -4.2065e-03   9.5987e-01  -1.1069e-03   3.9672e-03  -3.0932e-03
--1.1958e-02   3.7433e-03   3.4471e-02  -4.2537e-02  -9.2854e-03   3.4790e-03  -1.1069e-03   9.8232e-01  -2.4226e-03  -7.6549e-03
-1.3152e-03  -9.7243e-03   3.0476e-03   1.3650e-03   7.0877e-03  -6.4711e-03   3.9672e-03  -2.4226e-03   9.4834e-01  -3.5632e-03
-3.3264e-03   1.3135e-03  -5.4416e-03   3.5166e-03  -8.7575e-04  -3.8572e-04  -3.0932e-03  -7.6549e-03  -3.5632e-03   9.3562e-01
-           
-C do python
-9.4505e-01   -9.9695e-03   -3.5399e-02   2.5383e-03   1.0519e-02   -6.7639e-03   -9.1307e-03   -1.1958e-02   1.3149e-03   3.3264e-03
--9.9695e-03   9.6656e-01   -2.5602e-02   8.0838e-03   -2.3755e-02   -7.2377e-04   1.9593e-02   3.7431e-03   -9.7241e-03   1.3135e-03
--3.5399e-02   -2.5602e-02   1.1690e+00   -2.8530e-02   6.4376e-03   3.1471e-02   -1.7161e-02   3.4470e-02   3.0481e-03   -5.4415e-03
-2.5383e-03   8.0838e-03   -2.8530e-02   9.8440e-01   9.2536e-04   9.6656e-04   3.1562e-03   -4.2538e-02   1.3649e-03   3.5164e-03
-1.0519e-02   -2.3755e-02   6.4376e-03   9.2536e-04   9.6351e-01   4.8037e-03   -1.0257e-02   -9.2852e-03   7.0874e-03   -8.7579e-04
--6.7639e-03   -7.2377e-04   3.1471e-02   9.6656e-04   4.8037e-03   9.4434e-01   -4.2066e-03   3.4792e-03   -6.4712e-03   -3.8570e-04
--9.1307e-03   1.9593e-02   -1.7161e-02   3.1562e-03   -1.0257e-02   -4.2066e-03   9.5987e-01   -1.1069e-03   3.9673e-03   -3.0933e-03
--1.1958e-02   3.7431e-03   3.4470e-02   -4.2538e-02   -9.2852e-03   3.4792e-03   -1.1069e-03   9.8232e-01   -2.4224e-03   -7.6547e-03
-1.3149e-03   -9.7241e-03   3.0481e-03   1.3649e-03   7.0874e-03   -6.4712e-03   3.9673e-03   -2.4224e-03   9.4833e-01   -3.5633e-03
-3.3264e-03   1.3135e-03   -5.4415e-03   3.5164e-03   -8.7579e-04   -3.8570e-04   -3.0933e-03   -7.6547e-03   -3.5633e-03   9.3562e-01
-        """
-        print(arx[0][8])
-        print(arz[5][3])
-        print(weights)
-        arz = np.asarray(arz)
-        arx = np.asarray(arx)
-        arz = arz.transpose()
-        arx = arx.transpose()
-        # Individuals already stored in columns, no need to tranpose
-        muBestX = np.delete(arx, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
-        muBestZ = np.delete(arz, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
-        # xmean = np.dot(muBestX, weights)  # xmean is one array with nSize positions
-        # zmean = np.dot(muBestZ, weights)  # zmeanis one array with nSize positions
-        a = np.dot(muBestX, weights)
-        print("a")
-        sys.exit()
         # Individuals are sorted
-        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
-        for i in range(parentsSize):
+        # print(arx)
+        """
+        for i in range(parentsSize):  # TODO Individuos armazenados em LINHA, não em COLUNAS, como no octave !! ATENCAO
             for j in range(nSize):
-                offsprings.individuals[i].n[j] = arx[i][j]
-                offsprings.individuals[i].arz[j] = arz[i][j]
-            del offsprings.individuals[i].n[nSize:]
-        xmeans = []
+                arx[i][j] = parents.individuals[i].n[j]
+                arz[i][j] = parents.individuals[i].arz[j]  #
+        """
+
+        # arxB4 = np.copy(arx)
+        arz = arz.T
+        arx = arx.T
+        for j in range(parentsSize):  # TODO Individuos armazenados em COLUNA, não em LINHAS, como no octave !! ATENCAO
+            for i in range(nSize):
+                arx[i][j] = parents.individuals[j].n[i]
+                arz[i][j] = parents.individuals[j].arz[i]  #
+            # del offsprings.individuals[i].n[nSize:]
+
+        # print(arx)
+        # print(arz)
+        # xmeans = []
+        # zmeans = []
         # weights = list(weights)
-        zmeans = []
-        print(offsprings.individuals[0].n)
         # del offsprings.individuals[0].n[nSize:]  # delete the unused part of an list TODO seria bom fazer isso para todos os atributos de individuos, após a inicialização da população ser feita
-        print(offsprings.individuals[0].n)
+        """
         ### INICIO Primeiro jeito de fazer, manualmente
         for j in range(nSize):
             somaX = 0
@@ -2081,62 +2039,103 @@ C do python
             xmeans.append(somaX)
             zmeans.append(somaZ)
         ### FIM Primeiro jeito de fazer, manualmente
-        print(offsprings.individuals[0].n)
-        print("Xmean x zmean por individuos\n")
-        print("{}\n{}".format(xmeans, zmeans))
+        """
+        # print("Xmean x zmean por individuos\n")
+        #print("{}\n{}".format(xmeans, zmeans))
 
         ### INICIO Segundo jeito de fazer, com numpy
-        arx = np.asarray(arx)
-        arz = np.asarray(arz)
+        # arx = np.asarray(arx)
+        # arz = np.asarray(arz)
+        """
+        # If individuals are stored in lines, muBestX and Z has to be tranposed
         muBestX = np.delete(arx, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
         muBestZ = np.delete(arz, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
         xmean = np.dot(muBestX.transpose(), weights)  # xmean is one array with nSize positions
         zmean = np.dot(muBestZ.transpose(), weights)  # zmeanis one array with nSize positions
+        """
+        # Individuals already stored in columns, no need to tranpose
+        muBestX = np.delete(arx, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
+        muBestZ = np.delete(arz, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
+        xmean = np.matmul(muBestX, weights)  # xmean is one array with nSize positions
+        zmean = np.matmul(muBestZ, weights)  # zmeanis one array with nSize positions
+        # xmeanTest = np.dot(arx[0:mu].transpose(), weights)  # works too, without needing to slice the arx vec
+        """
+        print("zmean")
+        print(zmean)
+        print("xmean")
+        print(xmean)
+        """
         ### FIM Segundo jeito de fazer, com numpy
-        print("{}\n{}".format(xmean, zmean))
+        # print("{}\n{}".format(xmean, zmean))
+        # TODO Testar essa conta, com os mesmos valores do octave. TESTADO, CALCUCLO ABAIXO FUNCIONANDO PARA OS VALORES DA 1 ITERACAO DO OCTAVE
+        ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.matmul(B, zmean)  # Eq. 43
+        hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
+        # TODO Testar essa conta, com os mesmos valores do octave. TESTADO, CALCUCLO ABAIXO FUNCIONANDO PARA OS VALORES DA 1 ITERACAO DO OCTAVE
+        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.matmul(np.matmul(B, D), zmean)  # Eq. 45
 
-        ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.dot(B, zmean)  # Eq. 43
-        hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs),(2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
-        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.dot(np.dot(B, D), zmean)  # Eq. 45
-        # C = (1 - c1 - cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose())))
-        C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
-            + c1 * (np.outer(pc, pc)  # plus rank one update
-            + (1-hsig) * cc*(2-cc) * C)  # minor correction
-            + cmu  # plus rank mu update
-            * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose()))))
-        # Linha acima,  TODO verificar multiplicacoes de matrizes feita com * e com np.matmul() (no codigo inteiro)
-        # Linha acima está "funcionando"(igual ao octave), TODO (PROVALMENTE SIM)não sei se deveria transpor isso (octave guarda cada individuo em uma coluna, já eu guardo em uma linha)
+
+
+        # Individuals already stored in columns, no need to tranpose
+        # print("C before recalculing it")
+        # print(C)
+        # TODO Testar essa conta, com os mesmos valores do octave. TESTADO, CALCUCLO ABAIXO FUNCIONANDO PARA OS VALORES DA 1 ITERACAO DO OCTAVE
+        """
+        Caux1 = (1-c1-cmu) * C
+        Caux2 = np.outer(pc, pc) + ((1-hsig) * cc * (2-cc) * C)
+        BDARGZ = np.matmul(np.matmul(B, D), muBestZ)
+        Caux3 = c1*Caux2
+        Caux4 = (cmu * BDARGZ)
+        Caux5 = np.matmul(np.diag(weights), BDARGZ.transpose())
+        Caux6 = np.matmul(Caux4, Caux5)
+        C = Caux1 + Caux3 + Caux6
+        """
+        # **************************************** NEW CALCULUS OF C (IM GONNA CRY)
+        # TODO: CONTA TESTADA E "FUNCIONANDO" PARA A SEGUNDA ITERACAO COM AS MATRIZES DO OCTAVE
+        C = (1-c1-cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * (B@D@muBestZ) @ np.diag(weights) @ (B@D@muBestZ).conj().T
+        """
+        C = ((1-c1-cmu) * C #
+             + c1 * (np.outer(pc, pc)
+            + (1-hsig) * cc * (2 - cc) * C)  # THIS LAST MULTIPLICATION SHOULD BE @, MATLAB IS CRAP
+             + cmu
+             * (B@D@muBestZ)
+             @ np.diag(weights) @ (B@D@muBestZ).T
+            )
+
+         """
+        # print("FunctionEvaluations: {}".format(functionEvaluations))
+        # print("C after recalculing it")
+        # print(C)
+        #  Adapt step-size sigma
         sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
-        print(pc)
-        print("ta indo")
-        print(C, sep ='\n')
-        print("sigma: {}".format(sigma))
+
+        # np.set_printoptions(suppress=True)
+
         # Update B and D from C
         if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
             eigenval = counteval
-            C = np.triu(C) + np.triu(C, 1).transpose()  # enforce symmetry
+            # print("C before enforce symmetry")
+            # print(C)
+            C = np.triu(C) + np.triu(C, 1).conj().T  # enforce symmetry
+            """
+            print("C DENTRO DE UPDATE B AND D")
             print("Printando C")
             print(C)
+            """
+            # print("C after enforce symmetry")
+            # print(C)
             D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
-            D = np.sqrt(D)
-            D = np.diag(D)
-            print(D)
+            # D = np.diag(D) # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
+            D = np.diag(np.sqrt(D))
+            # print("a")
+            # print(D)
         """
-        B gerado pelo codigo octave, 1 iteracao
-        B = np.array( [[0.08593301,-0.10108926,-0.21398535,-0.35019453,-0.26865652,-0.86127476, 0.22588709,-0.12823207,-0.13062317,-0.11406452],
-             [0.25640928,0.30959661,0.09095404,0.23564353 - 0.55324854,0.04340897, -0.21684165,0.17249183,0.63859745,-0.00202542],
-             [-0.91364655,0.23131616,0.12633141,0.05073973,-0.09143203,-0.1418061, 0.13422063,-0.00855985,0.07474959,0.01499503],
-             [0.10746432,0.58020693,0.07776466,0.29538235,-0.28749164,-0.10712404, 0.32333695,0.03863157,-0.66977326,-0.04737131],
-             [-0.20620055,-0.05423032,-0.24290624,-0.18610232,-0.43713118,0.25816523,-0.70204984,-0.45557591,0.12373651,-0.09477599],
-             [-0.11978686,0.19949327,-0.37530047,0.19342156,0.35393733,-0.13117093, -0.25857183,0.44020827,0.198088,0.09113986],
-             [0.07738266,0.15994291,0.73127329,-0.11950126,0.21469235,-0.21111772, -0.40437882,-0.27714145,0.16241311,0.25212318],
-             [-0.07006059,-0.55179252,0.04251006,0.66967286,-0.20764689,-0.16030521, -0.00338495,-0.07438135,-0.09503165,0.36177032],
-             [-0.11013216,-0.32556392,0.36873088,-0.305459,-0.33211458,0.16340759, 0.21209284,0.67007768,-0.17112332,-0.03130261],
-             [0.0260381,0.15810306,-0.22703874,-0.32236191,-0.12191409,0.20955028,0.10555724,0.13985939,-0.04129595,0.87852354]])
+        print("B")
+        print(B)
+        print("D")
+        print(D)
         """
         # TODO can implement flatfitness if later
-        #  Até aqui está funcionando corretamente.(provavelmente)
-        parents.printBest(nSize, parentsSize, penaltyMethod)
+        parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
 
 
 def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
@@ -2242,7 +2241,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     offspringsSize = parentsSize  # temporay?
     mu = parentsSize / 2  # mu is NOT offspringsSize.
     muList = [i + 1 for i in range(int(mu))]
-    weights = np.log(mu+1/2)-np.log(muList)  # muXone recombination weights
+    weights = np.log(mu+1/2)-np.log(muList).conj().T  # muXone recombination weights
     mu = np.floor(mu)
     # mu = int(mu)
     weights = weights/np.sum(weights)
@@ -2260,7 +2259,10 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     ps = np.zeros(nSize)  # evolutions paths for sigma
     B = np.eye(nSize)  # B defines de coordinate system
     D = np.eye(nSize)  # diagonal matrix D defines the scaling
-    C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
+    C = B @ D @ (B@D).conj().T
+    # C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
+    # print(C)
+    # exit("sai viado")
     eigenval = 0  # B and D update at counteval == 0
     chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
 
@@ -2282,17 +2284,8 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         """
         for i in range(parentsSize):
             arz = np.random.randn(nSize)  # standard normally distributed vector  (38)
-            arx = xmean + sigma * (np.dot(np.matmul(B, D), arz))  # add mutation N(m,sigma²C) (40)
-            if functionEvaluations > 10:
-                """
-                print("Conta (np.dot(B*D, arz))")
-                print((np.dot(B*D, arz)))
-                print("ArzLoop")
-                print(arz)
-                print("ArxLoop")
-                print(arx)
-                """
-            # arx = xmean + sigma * (np.dot(np.matmul(B, D), arz))
+            # arx = xmean + sigma * (np.dot(np.matmul(B, D), arz))  # add mutation N(m,sigma²C) (40)
+            arx = xmean + sigma * (B @ D @ arz)  # add mutation N(m,sigma²C) (40)
             arzAuxList.append(arz)
             arxAuxList.append(arx)
             # arx é  individuals[i].n
@@ -2302,17 +2295,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
             counteval = counteval + 1
         arz = np.vstack(arzAuxList)  # matrix nd.array with all values calculated above
         arx = np.vstack(arxAuxList)  # matrix nd.array with all values calculated above
-        if functionEvaluations > 10:
-            """
-            print("sigma")
-            print(sigma)
-            print("xmean")
-            print(xmean)
-            print("arz")
-            print(arz)
-            print("arx")
-            print(arx)
-            """
+
         # Evaluate function
         if strFunction[0] == "2":
             offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
@@ -2334,25 +2317,16 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
                 avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
                 offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
 
-    # Elitismo apenas ordena os filhos. esType == 1(pai não é levado em conta (ES ,))
+        # Elitismo apenas ordena os filhos. esType == 1(pai não é levado em conta (ES ,))
         # Sort individuals
         if hasConstraints:
             parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound, hasConstraints)
         else:
             parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, -1, -1, -1, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound, hasConstraints)
 
-        # parents.elitismForRosenbrockCMAES(offsprings, parentsSize, offspringsSize, nSize)
 
-        # Individuals are sorted
-        # print(arx)
-        """
-        for i in range(parentsSize):  # TODO Individuos armazenados em LINHA, não em COLUNAS, como no octave !! ATENCAO
-            for j in range(nSize):
-                arx[i][j] = parents.individuals[i].n[j]
-                arz[i][j] = parents.individuals[i].arz[j]  #
-        """
+        # Individuals stored in columns
 
-        # arxB4 = np.copy(arx)
         arz = arz.T
         arx = arx.T
         for j in range(parentsSize):  # TODO Individuos armazenados em COLUNA, não em LINHAS, como no octave !! ATENCAO
@@ -2361,76 +2335,25 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
                 arz[i][j] = parents.individuals[j].arz[i]  #
             # del offsprings.individuals[i].n[nSize:]
 
-        # print(arx)
-        # print(arz)
-        # xmeans = []
-        # zmeans = []
-        # weights = list(weights)
         # del offsprings.individuals[0].n[nSize:]  # delete the unused part of an list TODO seria bom fazer isso para todos os atributos de individuos, após a inicialização da população ser feita
-        """
-        ### INICIO Primeiro jeito de fazer, manualmente
-        for j in range(nSize):
-            somaX = 0
-            somaZ = 0
-            for i in range(int(mu)):
-                # print(np.dot(np.asarray(offsprings.individuals[i].n), weights)
-                somaX = offsprings.individuals[i].n[j] * weights[i] + somaX
-                somaZ = offsprings.individuals[i].arz[j] * weights[i] + somaZ
-                # xmeans = np.dot(np.asarray(offsprings.individuals[i].n), weights, xmeans)
-            xmeans.append(somaX)
-            zmeans.append(somaZ)
-        ### FIM Primeiro jeito de fazer, manualmente
-        """
-        # print("Xmean x zmean por individuos\n")
-        #print("{}\n{}".format(xmeans, zmeans))
 
-        ### INICIO Segundo jeito de fazer, com numpy
-        # arx = np.asarray(arx)
-        # arz = np.asarray(arz)
-        """
-        # If individuals are stored in lines, muBestX and Z has to be tranposed
-        muBestX = np.delete(arx, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
-        muBestZ = np.delete(arz, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
-        xmean = np.dot(muBestX.transpose(), weights)  # xmean is one array with nSize positions
-        zmean = np.dot(muBestZ.transpose(), weights)  # zmeanis one array with nSize positions
-        """
         # Individuals already stored in columns, no need to tranpose
         muBestX = np.delete(arx, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
         muBestZ = np.delete(arz, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
         xmean = np.matmul(muBestX, weights)  # xmean is one array with nSize positions
         zmean = np.matmul(muBestZ, weights)  # zmeanis one array with nSize positions
-        # xmeanTest = np.dot(arx[0:mu].transpose(), weights)  # works too, without needing to slice the arx vec
-        """
-        print("zmean")
-        print(zmean)
-        print("xmean")
-        print(xmean)
-        """
-        ### FIM Segundo jeito de fazer, com numpy
-        # print("{}\n{}".format(xmean, zmean))
-        # TODO Testar essa conta, com os mesmos valores do octave. TESTADO, CALCUCLO ABAIXO FUNCIONANDO PARA OS VALORES DA 1 ITERACAO DO OCTAVE
+
         ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.matmul(B, zmean)  # Eq. 43
         hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
-        # TODO Testar essa conta, com os mesmos valores do octave. TESTADO, CALCUCLO ABAIXO FUNCIONANDO PARA OS VALORES DA 1 ITERACAO DO OCTAVE
         pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.matmul(np.matmul(B, D), zmean)  # Eq. 45
 
 
-        # Individuals already stored in columns, no need to tranpose
-        print("C before recalculing it")
-        print(C)
-        # TODO Testar essa conta, com os mesmos valores do octave. TESTADO, CALCUCLO ABAIXO FUNCIONANDO PARA OS VALORES DA 1 ITERACAO DO OCTAVE
-        Caux1 = (1-c1-cmu) * C
-        Caux2 = np.outer(pc, pc) + ((1-hsig) * cc * (2-cc) * C)
-        BDARGZ = np.matmul(np.matmul(B, D), muBestZ)
-        Caux3 = c1*Caux2
-        Caux4 = (cmu * BDARGZ)
-        Caux5 = np.matmul(np.diag(weights), BDARGZ.transpose())
-        Caux6 = np.matmul(Caux4, Caux5)
-        C = Caux1 + Caux3 + Caux6
-        # **************************************** NEW CALCULUS OF C (IM GONNA CRY)
-        # TODO: CONTA TESTADA E "FUNCIONANDO" PARA A SEGUNDA ITERACAO COM AS MATRIZES DO OCTAVE
-        # C = (1-c1-cmu) * C + c1 * (np.outer(pc,pc) + (1-hsig) * cc*(2-cc) * C) + cmu * (B@D@muBestZ) @ np.diag(weights) @ (B@D@muBestZ).T
 
+        # print("C before recalculing it")
+        # print(C)
+
+        C = (1-c1-cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * (B@D@muBestZ) @ np.diag(weights) @ (B@D@muBestZ).conj().T
+        """
         C = ((1-c1-cmu) * C #
              + c1 * (np.outer(pc, pc)
             + (1-hsig) * cc * (2 - cc) * C)  # THIS LAST MULTIPLICATION SHOULD BE @, MATLAB IS CRAP
@@ -2439,8 +2362,10 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
              @ np.diag(weights) @ (B@D@muBestZ).T
             )
 
-        print("C after recalculing it")
-        print(C)
+         """
+        # print("FunctionEvaluations: {}".format(functionEvaluations))
+        # print("C after recalculing it")
+        # print(C)
         #  Adapt step-size sigma
         sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
 
@@ -2449,532 +2374,24 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         # Update B and D from C
         if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
             eigenval = counteval
-            print("C before enforce symmetry")
-            print(C)
-            C = np.triu(C) + np.triu(C, 1).transpose()  # enforce symmetry
+            # print("C before enforce symmetry")
+            # print(C)
+            C = np.triu(C) + np.triu(C, 1).conj().T  # enforce symmetry
             """
             print("C DENTRO DE UPDATE B AND D")
             print("Printando C")
             print(C)
             """
-            print("C after enforce symmetry")
-            print(C)
+            # print("C after enforce symmetry")
+            # print(C)
             D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
             # D = np.diag(D) # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
             D = np.diag(np.sqrt(D))
             # print("a")
             # print(D)
-        """
-        print("B")
-        print(B)
-        print("D")
-        print(D)
-        """
+
         # TODO can implement flatfitness if later
         parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
-
-def ESCMALinha(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
-    strFunction = str(function)
-    esType = 1
-    crossoverProb = -1
-    np.random.seed(seed)
-    functionEvaluations = 0
-    # User defined parameters
-    sigma = 0.5
-    xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
-    # maxFE = 30
-    """
-    λ ≥ 2, population size, sample size, number of offspring, see (5).
-    µ ≤ λ parent number, number of (positively) selected search points in the population, number
-    of strictly positive recombination weights, see (6).
-    """
-    # Strategy parameters setting: Selection
-    parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
-    parentsSize = int(parentsSize)
-    mu = parentsSize / 2  # mu is NOT offspringsSize.
-    muList = [i + 1 for i in range(int(mu))]
-    weights = np.log(mu+1/2)-np.log(muList)  # muXone recombination weights
-    mu = np.floor(mu)
-    # mu = int(mu)
-    weights = weights/np.sum(weights)
-    mueff = np.power(sum(weights), 2) / np.sum(np.power(weights, 2))
-
-    # Strategy parameter setting: Adaptation
-    cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
-    cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
-    c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
-    cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
-    damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
-
-    # Initiliaze dynamic (internal) strategy parameters  and constants
-    pc = np.zeros(nSize) # evolutions paths for C
-    ps = np.zeros(nSize)  # evolutions paths for sigma
-    B = np.eye(nSize)  # B defines de coordinate system
-    D = np.eye(nSize)  # diagonal matrix D defines the scaling
-    C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
-    eigenval = 0  # B and D update at counteval == 0
-    chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
-
-    # CODIGO ANTIGO
-
-    # generatedOffspring = int(offspringsSize / parentsSize)  # TODO Verifiar isso depois
-    generatedOffspring = 1
-    offspringsSize = parentsSize
-    lowerBound = upperBound = truss = 0
-    if strFunction[0] == "2":  # solving trusses
-        truss, lowerBound, upperBound = initializeTruss(function)
-        nSize = truss.getDimension()
-        gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
-        penaltyCoefficients = [-1 for i in range(constraintsSize)]
-        avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
-        offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
-        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
-    else:
-        gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
-        penaltyCoefficients = [-1 for i in range(constraintsSize)]
-        avgObjFunc = 0  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function)  # Initialize parents population
-        offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
-        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize,
-                                               functionEvaluations)  # Evaluate parents
-
-    if penaltyMethod == 1:  # Padrao?  (not apm)
-        parents.sumViolations(parentsSize, gSize, hSize)
-    elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
-        parents.uniteConstraints(parentsSize, gSize, hSize)
-        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-    else:
-        print("Penalthy method not encountered")
-        sys.exit("Penalty method not encountered")
-    # parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
-    # FIM CODIGO ANTIGO
-
-    counteval = 0
-    while functionEvaluations < maxFE:
-        # Generate and evaluate lambda offspring
-        arzAuxList = []
-        arxAuxList = []
-        """
-        print("B")
-        print(B)
-        print("D")
-        print(D)
-        """
-        for i in range(parentsSize):
-            arz = np.random.randn(nSize)  # standard normally distributed vector  (38)
-            arx = xmean + sigma * (np.dot(np.matmul(B, D), arz))  # add mutation N(m,sigma²C) (40)
-            arx = xmean + sigma * (np.dot(B*D, arz))  # add mutation N(m,sigma²C) (40)
-            if functionEvaluations > 10:
-                """
-                print("Conta (np.dot(B*D, arz))")
-                print((np.dot(B*D, arz)))
-                print("ArzLoop")
-                print(arz)
-                print("ArxLoop")
-                print(arx)
-                """
-            # arx = xmean + sigma * (np.dot(np.matmul(B,D), arz))
-            arzAuxList.append(arz)
-            arxAuxList.append(arx)
-            # arx é  individuals[i].n
-            for j in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
-                offsprings.individuals[i].arz[j] = arz[j]
-                offsprings.individuals[i].n[j] = arx[j]
-            counteval = counteval + 1
-        # TODO Verificar np.stack ( no arquivo cmaestests.py)
-        arz = np.vstack(arzAuxList)  # matrix nd.array with all values calculated above
-        arx = np.vstack(arxAuxList)  # matrix nd.array with all values calculated above
-        if functionEvaluations > 10:
-            """
-            print("sigma")
-            print(sigma)
-            print("xmean")
-            print(xmean)
-            print("arz")
-            print(arz)
-            print("arx")
-            print(arx)
-            """
-        # Evaluate function
-        if strFunction[0] == "2":
-            offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
-            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
-        else:
-            offsprings.bounding(nSize, function, offspringsSize)
-            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations)
-        # Choose method of penalization
-        if penaltyMethod == 1:  # Deb penalization
-            offsprings.sumViolations(offspringsSize, gSize, hSize)
-        else:  # APM penalization
-            offsprings.uniteConstraints(offspringsSize, gSize, hSize)
-            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-            offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        # Elitismo apenas ordena os filhos. esType == 1(pai não é levado em conta (ES ,))
-        # Sort individuals
-        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
-        # Individuals are sorted
-        # print(arx)
-
-        for i in range(parentsSize):  # TODO Individuos armazenados em LINHA, não em COLUNAS, como no octave !! ATENCAO
-            for j in range(nSize):
-                arx[i][j] = parents.individuals[i].n[j]
-                arz[i][j] = parents.individuals[i].arz[j]  #
-        """
-
-        arxB4 = np.copy(arx)
-        for j in range(parentsSize):  # TODO Individuos armazenados em COLUNA, não em LINHAS, como no octave !! ATENCAO
-            for i in range(nSize):
-                arx[i][j] = parents.individuals[j].n[i]
-                arz[i][j] = parents.individuals[j].arz[i]  #
-            # del offsprings.individuals[i].n[nSize:]
-        """
-        # print(arx)
-        # print(arz)
-        # xmeans = []
-        # zmeans = []
-        # weights = list(weights)
-        # del offsprings.individuals[0].n[nSize:]  # delete the unused part of an list TODO seria bom fazer isso para todos os atributos de individuos, após a inicialização da população ser feita
-        """
-        ### INICIO Primeiro jeito de fazer, manualmente
-        for j in range(nSize):
-            somaX = 0
-            somaZ = 0
-            for i in range(int(mu)):
-                # print(np.dot(np.asarray(offsprings.individuals[i].n), weights)
-                somaX = offsprings.individuals[i].n[j] * weights[i] + somaX
-                somaZ = offsprings.individuals[i].arz[j] * weights[i] + somaZ
-                # xmeans = np.dot(np.asarray(offsprings.individuals[i].n), weights, xmeans)
-            xmeans.append(somaX)
-            zmeans.append(somaZ)
-        ### FIM Primeiro jeito de fazer, manualmente
-        """
-        # print("Xmean x zmean por individuos\n")
-        #print("{}\n{}".format(xmeans, zmeans))
-
-        ### INICIO Segundo jeito de fazer, com numpy
-        # arx = np.asarray(arx)
-        # arz = np.asarray(arz)
-
-        # If individuals are stored in lines, muBestX and Z has to be tranposed
-        muBestX = np.delete(arx, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
-        muBestZ = np.delete(arz, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
-        xmean = np.dot(muBestX.transpose(), weights)  # xmean is one array with nSize positions
-        zmean = np.dot(muBestZ.transpose(), weights)  # zmeanis one array with nSize positions
-        """
-        print("zmean")
-        print(zmean)
-        print("xmean")
-        print(xmean)
-        """
-        ### FIM Segundo jeito de fazer, com numpy
-        # print("{}\n{}".format(xmean, zmean))
-
-        ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.dot(B, zmean)  # Eq. 43
-        hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
-        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.dot(np.matmul(B, D), zmean)  # Eq. 45
-
-        # print(muBestZ)
-
-        # Individuo nas LINHAS. CONTA FUNCIONANDO.
-        Caux1 = (1-c1-cmu) * C
-        Caux2 = np.outer(pc, pc) + ((1-hsig) * cc * (2-cc) * C)
-        BDARGZ = np.matmul(np.matmul(B, D), muBestZ.T)
-        Caux3 = c1*Caux2
-        Caux4 = (cmu * BDARGZ)
-        Caux5 = np.matmul(np.diag(weights), BDARGZ.transpose())
-        Caux6 = np.matmul(Caux4, Caux5)
-        C = Caux1 + Caux3 + Caux6
-
-
-
-
-        # Linha acima,  TODO verificar multiplicacoes de matrizes feita com * e com np.matmul() (no codigo inteiro)
-        # Linha acima está "funcionando"(igual ao octave), TODO (PROVALMENTE SIM)não sei se deveria transpor isso (octave guarda cada individuo em uma coluna, já eu guardo em uma linha)
-        # Adapt step-size sigma
-
-        sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
-
-        # print("sigma: {}".format(sigma))
-
-        # Update B and D from C
-        np.set_printoptions(suppress=True)
-        if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
-            eigenval = counteval
-            C = np.triu(C) + np.triu(C, 1).transpose()  # enforce symmetry
-            """
-            print("C DENTRO DE UPDATE B AND D")
-            print("Printando C")
-            print(C)
-            """
-            D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
-            D = np.sqrt(D)
-            D = np.diag(D)
-            # print(D)
-        """
-        print("B")
-        print(B)
-        print("D")
-        print(D)
-        """
-        # TODO can implement flatfitness if later
-        #  Até aqui está funcionando corretamente.(provavelmente)
-        parents.printBest(nSize, parentsSize, penaltyMethod)
-
-
-def ESCMALinha1(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategy
-    strFunction = str(function)
-    esType = 1
-    crossoverProb = -1
-    np.random.seed(seed)
-    functionEvaluations = 0
-    # User defined parameters
-    sigma = 0.5
-    xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
-    # maxFE = 30
-    """
-    λ ≥ 2, population size, sample size, number of offspring, see (5).
-    µ ≤ λ parent number, number of (positively) selected search points in the population, number
-    of strictly positive recombination weights, see (6).
-    """
-    # Strategy parameters setting: Selection
-    parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
-    parentsSize = int(parentsSize)
-    mu = parentsSize / 2  # mu is NOT offspringsSize.
-    muList = [i + 1 for i in range(int(mu))]
-    weights = np.log(mu+1/2)-np.log(muList)  # muXone recombination weights
-    mu = np.floor(mu)
-    # mu = int(mu)
-    weights = weights/np.sum(weights)
-    mueff = np.power(sum(weights), 2) / np.sum(np.power(weights, 2))
-
-    # Strategy parameter setting: Adaptation
-    cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
-    cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
-    c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
-    cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
-    damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
-
-    # Initiliaze dynamic (internal) strategy parameters  and constants
-    pc = np.zeros(nSize) # evolutions paths for C
-    ps = np.zeros(nSize)  # evolutions paths for sigma
-    B = np.eye(nSize)  # B defines de coordinate system
-    D = np.eye(nSize)  # diagonal matrix D defines the scaling
-    AUX = (B * D)  # auxiliar tranpose matrix
-    AUX = AUX.transpose()
-    C = B * D * AUX  # covariance matrix
-    eigenval = 0  # B and D update at counteval == 0
-    chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
-
-    # CODIGO ANTIGO
-
-    # generatedOffspring = int(offspringsSize / parentsSize)  # TODO Verifiar isso depois
-    generatedOffspring = 1
-    offspringsSize = parentsSize
-    lowerBound = upperBound = truss = 0
-    if strFunction[0] == "2":  # solving trusses
-        truss, lowerBound, upperBound = initializeTruss(function)
-        nSize = truss.getDimension()
-        gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
-        penaltyCoefficients = [-1 for i in range(constraintsSize)]
-        avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function, True, lowerBound, upperBound)
-        offsprings = Population(offspringsSize, nSize, function, True, lowerBound, upperBound)
-        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
-    else:
-        gSize, hSize, constraintsSize = initializeConstraints(function)  # Initialize constraints
-        penaltyCoefficients = [-1 for i in range(constraintsSize)]
-        avgObjFunc = 0  # will be subscribed on 'calculatePenaltyCoefficients'
-        parents = Population(parentsSize, nSize, function)  # Initialize parents population
-        offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
-        functionEvaluations = parents.evaluate(parentsSize, function, nSize, gSize, hSize,
-                                               functionEvaluations)  # Evaluate parents
-
-    if penaltyMethod == 1:  # Padrao?  (not apm)
-        parents.sumViolations(parentsSize, gSize, hSize)
-    elif penaltyMethod == 2:  # // Adaptive Penalty Method ( APM )
-        parents.uniteConstraints(parentsSize, gSize, hSize)
-        avgObjFunc = parents.calculatePenaltyCoefficients(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        parents.calculateAllFitness(parentsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-    else:
-        print("Penalthy method not encountered")
-        sys.exit("Penalty method not encountered")
-    # parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
-    # FIM CODIGO ANTIGO
-
-    counteval = 0
-    while functionEvaluations < maxFE:
-        # Generate and evaluate lambda offspring
-        arzAuxList = []
-        arxAuxList = []
-        """
-        print("B")
-        print(B)
-        print("D")
-        print(D)
-        """
-        for i in range(parentsSize):
-            arz = np.random.randn(nSize)  # standard normally distributed vector  (38)
-            arx = xmean + sigma * (np.dot(B*D, arz))  # add mutation N(m,sigma²C) (40)
-            if functionEvaluations > 10:
-                """
-                print("Conta (np.dot(B*D, arz))")
-                print((np.dot(B*D, arz)))
-                print("ArzLoop")
-                print(arz)
-                print("ArxLoop")
-                print(arx)
-                """
-            # arx = xmean + sigma * (np.dot(np.matmul(B,D), arz))
-            arzAuxList.append(arz)
-            arxAuxList.append(arx)
-            # arx é  individuals[i].n
-            for j in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
-                offsprings.individuals[i].arz[j] = arz[j]
-                offsprings.individuals[i].n[j] = arx[j]
-            counteval = counteval + 1
-        # TODO Verificar np.stack ( no arquivo cmaestests.py)
-        arz = np.vstack(arzAuxList)  # matrix nd.array with all values calculated above
-        arx = np.vstack(arxAuxList)  # matrix nd.array with all values calculated above
-        if functionEvaluations > 10:
-            """
-            print("sigma")
-            print(sigma)
-            print("xmean")
-            print(xmean)
-            print("arz")
-            print(arz)
-            print("arx")
-            print(arx)
-            """
-        # Evaluate function
-        if strFunction[0] == "2":
-            offsprings.bounding(nSize, function, offspringsSize, lowerBound, upperBound)
-            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations, truss)
-        else:
-            offsprings.bounding(nSize, function, offspringsSize)
-            functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, gSize, hSize, functionEvaluations)
-        # Choose method of penalization
-        if penaltyMethod == 1:  # Deb penalization
-            offsprings.sumViolations(offspringsSize, gSize, hSize)
-        else:  # APM penalization
-            offsprings.uniteConstraints(offspringsSize, gSize, hSize)
-            avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-            offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
-        # Elitismo apenas ordena os filhos. esType == 1(pai não é levado em conta (ES ,))
-        # Sort individuals
-        parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound)
-        # Individuals are sorted
-        # print(arx)
-
-        for i in range(parentsSize):  # TODO Individuos armazenados em LINHA, não em COLUNAS, como no octave !! ATENCAO
-            for j in range(nSize):
-                arx[i][j] = parents.individuals[i].n[j]
-                arz[i][j] = parents.individuals[i].arz[j]  #
-        """
-
-        arxB4 = np.copy(arx)
-        for j in range(parentsSize):  # TODO Individuos armazenados em COLUNA, não em LINHAS, como no octave !! ATENCAO
-            for i in range(nSize):
-                arx[i][j] = parents.individuals[j].n[i]
-                arz[i][j] = parents.individuals[j].arz[i]  #
-            # del offsprings.individuals[i].n[nSize:]
-        """
-        # print(arx)
-        # print(arz)
-        # xmeans = []
-        # zmeans = []
-        # weights = list(weights)
-        # del offsprings.individuals[0].n[nSize:]  # delete the unused part of an list TODO seria bom fazer isso para todos os atributos de individuos, após a inicialização da população ser feita
-        """
-        ### INICIO Primeiro jeito de fazer, manualmente
-        for j in range(nSize):
-            somaX = 0
-            somaZ = 0
-            for i in range(int(mu)):
-                # print(np.dot(np.asarray(offsprings.individuals[i].n), weights)
-                somaX = offsprings.individuals[i].n[j] * weights[i] + somaX
-                somaZ = offsprings.individuals[i].arz[j] * weights[i] + somaZ
-                # xmeans = np.dot(np.asarray(offsprings.individuals[i].n), weights, xmeans)
-            xmeans.append(somaX)
-            zmeans.append(somaZ)
-        ### FIM Primeiro jeito de fazer, manualmente
-        """
-        # print("Xmean x zmean por individuos\n")
-        #print("{}\n{}".format(xmeans, zmeans))
-
-        ### INICIO Segundo jeito de fazer, com numpy
-        # arx = np.asarray(arx)
-        # arz = np.asarray(arz)
-
-        # If individuals are stored in lines, muBestX and Z has to be tranposed
-        muBestX = np.delete(arx, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
-        muBestZ = np.delete(arz, np.s_[int(mu):], 0)  # remove as linhas  de mu em diante da matrix arx
-        xmean = np.dot(muBestX.transpose(), weights)  # xmean is one array with nSize positions
-        zmean = np.dot(muBestZ.transpose(), weights)  # zmeanis one array with nSize positions
-        """
-        print("zmean")
-        print(zmean)
-        print("xmean")
-        print(xmean)
-        """
-
-        ### FIM Segundo jeito de fazer, com numpy
-        # print("{}\n{}".format(xmean, zmean))
-
-        ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.dot(B, zmean)  # Eq. 43
-        hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
-        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.dot(np.dot(B, D), zmean)  # Eq. 45
-
-        # C = (1 - c1 - cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose())))
-        # print(muBestZ)
-        # If individuals are stored in lines, muBestX and Z has to be tranposed
-        C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
-             + c1 * (np.outer(pc, pc)  # plus rank one update
-                     + (1-hsig) * cc*(2-cc) * C)  # minor correction
-             + cmu  # plus rank mu update
-             * np.matmul(np.matmul(np.matmul(B*D, muBestZ.transpose()), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ.transpose()))))
-        # print("C")
-        # print(C)
-        """
-        # Individuals already stored in columns, no need to tranpose
-        C = ((1 - c1 - cmu) * C  # regard old matrix % Eq. 47
-             + c1 * (np.outer(pc, pc)  # plus rank one update
-                     + (1-hsig) * cc*(2-cc) * C)  # minor correction
-             + cmu  # plus rank mu update
-             * np.matmul(np.matmul(np.matmul(B*D, muBestZ), np.diag(weights)), np.transpose(np.matmul(B*D, muBestZ))))
-        """
-        # Linha acima,  TODO verificar multiplicacoes de matrizes feita com * e com np.matmul() (no codigo inteiro)
-        # Linha acima está "funcionando"(igual ao octave), TODO (PROVALMENTE SIM)não sei se deveria transpor isso (octave guarda cada individuo em uma coluna, já eu guardo em uma linha)
-        sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
-        # print(pc)
-        # print("ta indo")
-        # print(C, sep ='\n')
-        # print("sigma: {}".format(sigma))
-
-        # Update B and D from C
-        np.set_printoptions(suppress=True)
-        if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
-            eigenval = counteval
-            C = np.triu(C) + np.triu(C, 1).transpose()  # enforce symmetry
-            """
-            print("C DENTRO DE UPDATE B AND D")
-            print("Printando C")
-            print(C)
-            """
-            D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
-            D = np.sqrt(D)
-            D = np.diag(D)
-            # print(D)
-        """
-        print("B")
-        print(B)
-        print("D")
-        print(D)
-        """
-        # TODO can implement flatfitness if later
-        parents.printBest(nSize, parentsSize, penaltyMethod)
 
 
 # noinspection PyShadowingNames
@@ -2999,7 +2416,7 @@ def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offs
     elif algorithm == "ESCMA":
         ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     elif algorithm == "ESCMATest":
-        ESCMATest(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma )
+        ESCMAColunaTests(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma )
     else:
         print("Algorithm not encountered")
         sys.exit("Algorithm not encountered")
@@ -3018,7 +2435,7 @@ def main():
     parser.add_argument("--parentsSize", "-u", type=int, default=50, help="µ is the parental population size")  # u from µ (mi) | µ ≈ λ/4
     parser.add_argument("--nSize", "-n", type=int, default=10, help="Search space dimension")
     parser.add_argument("--offspringsSize", "-l", type=int, default=50, help="λ is number of offsprings, offsprings population size")  # l from λ (lambda) | µ ≈ λ/4
-    parser.add_argument("--maxFE", "-m", type=int, default=15000, help="The max number of functions evaluations")
+    parser.add_argument("--maxFE", "-m", type=int, default=10000, help="The max number of functions evaluations")
     parser.add_argument("--crossoverProb", "-c", type=int, default=100, help="The crossover probability [0,100]")
     parser.add_argument("--esType", "-e", type=int, default=1, help="The type of ES. 0 for ES(µ + λ) or 1 for ES(µ , λ)")
     parser.add_argument("--globalSigma", "-g", type=int, default=0, help="If the σ parameter is global or not. 1 for global σ or 0 if not")
