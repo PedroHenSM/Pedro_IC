@@ -251,9 +251,9 @@ class Population(object):
                 valuesArraySize = truss.getNumberObjectives() + truss.getNumberConstraints()  # the length will be objFunction (1) + gSize
                 dimensionArray = eureka.new_doubleArray(truss.getDimension())  # creates an array
                 valuesArray = eureka.new_doubleArray(valuesArraySize)  # the length will be objFunct(1) + gSize
-                build_array(dimensionArray, self.individuals[i].n, truss.getDimension(), strFunction)  # transfers values to C++ array
+                build_array(dimensionArray, self.individuals[i].n, 0, truss.getDimension(), strFunction)  # transfers values to C++ array
                 valuesList = self.individuals[i].objectiveFunction + self.individuals[i].g  # concatenates the two lists
-                build_array(valuesArray, valuesList, valuesArraySize, strFunction)
+                build_array(valuesArray, valuesList, 0, valuesArraySize, strFunction)
                 truss.evaluation(dimensionArray, valuesArray)
                 # truss.evaluate(dimensionArray, valuesArray)
                 build_list(self.individuals[i].n, dimensionArray, 0, truss.getDimension(), strFunction)  # transfers values to python list
@@ -263,14 +263,14 @@ class Population(object):
                 eureka.delete_doubleArray(valuesArray)
 
             elif strFunction[0] == "8":  # no constraints cec2017 competition functions
-                funcNum = int(strFunction[1:])  #  gets all numbers exepect the first, in this case , the 8 is ignored
+                funcNum = int(strFunction[1:])  # gets all numbers exepect the first, in this case , the 8 is ignored
                 #  creates C++ arrays
                 xArray = cec17NoConstraints.new_doubleArray(nSize)  # creates an array with nSize dimension
                 objFuncArray = cec17NoConstraints.new_doubleArray(1)  # creates an array with 1 dimension (for objective function)
                 # tranfers values from individuals to C++ array for functions be evaluated
-                build_array(xArray, self.individuals[i].n, nSize, strFunction)  # transfers values from list to C++ array
-                # build_array(objFuncArray, self.individuals[i].objectiveFunction, 1, strFunction)
-                cec17NoConstraints.doubleArray_setitem(objFuncArray, 0, self.individuals[i].objectiveFunction[0])
+                build_array(xArray, self.individuals[i].n, 0, nSize, strFunction)  # transfers values from list to C++ array
+                build_array(objFuncArray, self.individuals[i].objectiveFunction, 0, 1, strFunction)
+                # cec17NoConstraints.doubleArray_setitem(objFuncArray, 0, self.individuals[i].objectiveFunction[0])
                 print("individuals[{}].n before evaluating: ".format(i))
                 print(self.individuals[i].n)
                 print("individuals[{}].objectiveFunction[0] before evaluating: ".format(i))
@@ -314,6 +314,27 @@ class Population(object):
                 print("Function not encountered")
                 sys.exit("Function not encountered")
         # print(self.individuals)
+        """
+        # Function that evaluates all population in one take
+        if strFunction[0] == "8":
+            print("Evaluating all population for once")
+            funcNum = int(strFunction[1:])  # gets all numbers exepect the first, in this case , the 8 is ignored
+            xArray = cec17NoConstraints.new_doubleArray(nSize*popSize)  # creates an array with nSize*popSize dimension
+            objFuncArray = cec17NoConstraints.new_doubleArray(popSize)  # creates an array with popSize dimension (for objectives functions)
+            for j in range(popSize):  # xArray and objFuncArray has values of the entire population
+                build_array(xArray, self.individuals[j].n, j*nSize, nSize, strFunction)
+                build_array(objFuncArray, self.individuals[j].objectiveFunction, j, 1, strFunction)
+
+            # Evaluates all population
+            cec17NoConstraints.cec17_test_func(xArray, objFuncArray, nSize, popSize, funcNum)
+
+            for j in range(popSize):
+                self.individuals[j].objectiveFunction[0] = cec17NoConstraints.doubleArray_getitem(objFuncArray, j)
+                # build_list(self.individuals[j].objectiveFunction)
+
+            cec17NoConstraints.delete_doubleArray(xArray)
+            cec17NoConstraints.delete_doubleArray(objFuncArray)
+        """
         return fe
 
     def sumViolations(self, popSize, gSize, hSize):
@@ -1098,13 +1119,17 @@ def populationPick(solution, flags, parentsSize):
 
 
 # Python function to pass values of a list to a C++ array
-def build_array(a, l, size, strFunction):
+def build_array(a, l, startIdx, size, strFunction):
     if strFunction[0] == "2":  # truss problems, utilizes eureka
         for i in range(size):
-            eureka.doubleArray_setitem(a, i, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
+            # eureka.doubleArray_setitem(a, i, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
+            eureka.doubleArray_setitem(a, startIdx, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
+            startIdx = startIdx + 1
     elif strFunction[0] == "8":  # cec2017NoConstraints problems, utilizes cec17NoConstraints
         for i in range(size):
-            cec17NoConstraints.doubleArray_setitem(a, i, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
+            # cec17NoConstraints.doubleArray_setitem(a, i, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
+            cec17NoConstraints.doubleArray_setitem(a, startIdx, l[i])
+            startIdx = startIdx + 1
 
 
 # Python function to pass values of a C++ array to a list
@@ -2449,10 +2474,10 @@ def main():
                         "Example: 225, is for the truss of 25 bars")
     parser.add_argument("--seed", "-s", type=int, default=1, help="Seed to be used")
     parser.add_argument("--penaltyMethod", "-p", type=int, default=1, help="Penalty method to be used. 1 for Deb Penalty or 2 for APM")
-    parser.add_argument("--parentsSize", "-u", type=int, default=10, help="µ is the parental population size")  # u from µ (mi) | µ ≈ λ/4
-    parser.add_argument("--nSize", "-n", type=int, default=2, help="Search space dimension")
+    parser.add_argument("--parentsSize", "-u", type=int, default=50, help="µ is the parental population size")  # u from µ (mi) | µ ≈ λ/4
+    parser.add_argument("--nSize", "-n", type=int, default=10, help="Search space dimension")
     parser.add_argument("--offspringsSize", "-l", type=int, default=50, help="λ is number of offsprings, offsprings population size")  # l from λ (lambda) | µ ≈ λ/4
-    parser.add_argument("--maxFE", "-m", type=int, default=150, help="The max number of functions evaluations")
+    parser.add_argument("--maxFE", "-m", type=int, default=20000, help="The max number of functions evaluations")
     parser.add_argument("--crossoverProb", "-c", type=int, default=100, help="The crossover probability [0,100]")
     parser.add_argument("--esType", "-e", type=int, default=1, help="The type of ES. 0 for ES(µ + λ) or 1 for ES(µ , λ)")
     parser.add_argument("--globalSigma", "-g", type=int, default=0, help="If the σ parameter is global or not. 1 for global σ or 0 if not")
