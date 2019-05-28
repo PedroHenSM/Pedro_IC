@@ -5,7 +5,7 @@
 */
 
 
-//#include <WINDOWS.H>      // by readME should't be commented, but..
+// #include <WINDOWS.H>      
 #include <stdio.h>
 #include <math.h>
 #include <malloc.h>
@@ -241,7 +241,14 @@ void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
 			f[i]+=300.0;
 			break;
 		case 4:	
+            printf("*******************Testing printf on c function\n");
+            printf("*******************Before evaluating\n");
+            printf("%f\n", f[i]);
 			rosenbrock_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
+            // f[i] = 666.99;
+            printf("*******************Testing printf on c function\n");
+            printf("*******************After evaluating\n");
+            printf("%f\n", f[i]);
 			f[i]+=400.0;
 			break;
 		case 5:

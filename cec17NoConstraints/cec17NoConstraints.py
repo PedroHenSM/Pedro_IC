@@ -112,6 +112,22 @@ def doubleArray_setitem(ary, index, value):
     return _cec17NoConstraints.doubleArray_setitem(ary, index, value)
 doubleArray_setitem = _cec17NoConstraints.doubleArray_setitem
 
+def new_longDoubleArray(nelements):
+    return _cec17NoConstraints.new_longDoubleArray(nelements)
+new_longDoubleArray = _cec17NoConstraints.new_longDoubleArray
+
+def delete_longDoubleArray(ary):
+    return _cec17NoConstraints.delete_longDoubleArray(ary)
+delete_longDoubleArray = _cec17NoConstraints.delete_longDoubleArray
+
+def longDoubleArray_getitem(ary, index):
+    return _cec17NoConstraints.longDoubleArray_getitem(ary, index)
+longDoubleArray_getitem = _cec17NoConstraints.longDoubleArray_getitem
+
+def longDoubleArray_setitem(ary, index, value):
+    return _cec17NoConstraints.longDoubleArray_setitem(ary, index, value)
+longDoubleArray_setitem = _cec17NoConstraints.longDoubleArray_setitem
+
 def new_doubleddArray(rows):
     return _cec17NoConstraints.new_doubleddArray(rows)
 new_doubleddArray = _cec17NoConstraints.new_doubleddArray
@@ -131,6 +147,14 @@ doubleddArray_setitem = _cec17NoConstraints.doubleddArray_setitem
 def doubleddArray_getitem(array, row, col):
     return _cec17NoConstraints.doubleddArray_getitem(array, row, col)
 doubleddArray_getitem = _cec17NoConstraints.doubleddArray_getitem
+
+def printDoubleArray(array, size):
+    return _cec17NoConstraints.printDoubleArray(array, size)
+printDoubleArray = _cec17NoConstraints.printDoubleArray
+
+def printLongDoubleArray(array, size):
+    return _cec17NoConstraints.printLongDoubleArray(array, size)
+printLongDoubleArray = _cec17NoConstraints.printLongDoubleArray
 INF = _cec17NoConstraints.INF
 EPS = _cec17NoConstraints.EPS
 E = _cec17NoConstraints.E

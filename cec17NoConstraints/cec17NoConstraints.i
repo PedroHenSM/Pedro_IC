@@ -2,6 +2,7 @@
 %module cec17NoConstraints
 %include "carrays.i" /* %array_functions(type,name) */
 %array_functions (double, doubleArray);
+%array_functions (long double, longDoubleArray);
 /* Creates an void array | array_functions(type,name) */
 /* %array_class(void,voidArray) Creates an void array for classes | array_class(type,name) */
 /* %typemap(in) void* = double*; */
@@ -42,9 +43,25 @@ double doubleddArray_getitem(double **array, int row, int col) {
     return array[row][col];
 }
 
+void printDoubleArray(double *array, int size){
+    int i;
+    for (i = 0; i < size; i++){
+        printf("%f ", array[i]);
+    }
+    printf("\n");
+}
+
+void printLongDoubleArray(long double *array, int size){
+    int i;
+    for (i = 0; i < size; i++){
+        printf("%Lf ", array[i]);
+    }
+    printf("\n");
+}
+
 /* Includes headers files or function declarations */
 
-/* #include <WINDOWS.H> */
+// #include <WINDOWS.H>
 #include <stdio.h>
 #include <math.h>
 #include <malloc.h>
@@ -132,6 +149,11 @@ void doubleddArray_setitem(double **array, int row, int col, double value);
 
 double doubleddArray_getitem(double **array, int row, int col);
 
+void printDoubleArray(double *array, int size);
+
+void printLongDoubleArray(long double *array, int size);
+
+// #include <WINDOWS.H>
 #include <stdio.h>
 #include <math.h>
 #include <malloc.h>

@@ -4,7 +4,7 @@
   Sep. 10th 2016
 */
 
-// #include <WINDOWS.H>    // by readME should't be commented, but..
+// #include <WINDOWS.H>    
 #include <stdio.h>
 #include <math.h>
 #include <malloc.h>
@@ -16,8 +16,8 @@ double *OShift,*M,*y,*z,*x_bound;
 int ini_flag=0,n_flag,func_flag,*SS;
 
 
-// void main() // original line
-int main() // this line doesn't exist on original file
+// void main()
+int main()
 {
 	int i,j,k,n,m,func_num;
 	double *f,*x;
@@ -42,7 +42,7 @@ int main() // this line doesn't exist on original file
 
 		for(k=0;k<n;k++)
 		{
-				fscanf(fpt,"%Lf",&x[k]);
+				fscanf(fpt,"%f",&x[k]);
 				/*printf("%Lf\n",x[k]);*/
 		}
 
@@ -60,7 +60,7 @@ int main() // this line doesn't exist on original file
 			cec17_test_func(x, f, n,m,func_num);
 			for (j = 0; j < 2; j++)
 			{
-				printf(" f%d(x[%d]) = %Lf,",func_num,j+1,f[j]);
+				printf(" f%d(x[%d]) = %f,",func_num,j+1,f[j]);
 			}
 			printf("\n");
 		}
@@ -73,7 +73,7 @@ int main() // this line doesn't exist on original file
 	free(M);
 	free(OShift);
 	free(x_bound);
-    return 0; // this line doesn't exist on original file
+    return 0;
 }
 
 

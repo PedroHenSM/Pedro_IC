@@ -18,8 +18,8 @@ setup(name=name,
 
 """
 ***COMPILING***
-swig -python -c++ -o _eureka_module.cc eureka.i
-python setupeureka.py build_ext --inplace
+swig -python -c++ -o _cec17NoConstraints_module.cc cec17NoConstraints.i
+python setupcec17NoConstraints.py build_ext --inplace
 
 ***IMPORTING***
 import sys
