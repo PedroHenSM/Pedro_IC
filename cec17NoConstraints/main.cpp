@@ -42,8 +42,8 @@ int main()
 
 		for(k=0;k<n;k++)
 		{
-				fscanf(fpt,"%f",&x[k]);
-				/*printf("%Lf\n",x[k]);*/
+				fscanf(fpt,"%lf",&x[k]);
+				/*printf("%lf\n",x[k]);*/
 		}
 
 		fclose(fpt);
@@ -51,7 +51,7 @@ int main()
 			for (j = 0; j < n; j++)
 			{
 				x[1*n+j]=0.0;
-				/*printf("%Lf\n",x[1*n+j]);*/
+				/*printf("%lf\n",x[1*n+j]);*/
 			}
 		
 		
@@ -60,7 +60,7 @@ int main()
 			cec17_test_func(x, f, n,m,func_num);
 			for (j = 0; j < 2; j++)
 			{
-				printf(" f%d(x[%d]) = %f,",func_num,j+1,f[j]);
+				printf(" f%d(x[%d]) = %lf,",func_num,j+1,f[j]);
 			}
 			printf("\n");
 		}

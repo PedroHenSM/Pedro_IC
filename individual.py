@@ -271,6 +271,8 @@ class Population(object):
                 build_array(xArray, self.individuals[i].n, 0, nSize, strFunction)  # transfers values from list to C++ array
                 build_array(objFuncArray, self.individuals[i].objectiveFunction, 0, 1, strFunction)
                 # cec17NoConstraints.doubleArray_setitem(objFuncArray, 0, self.individuals[i].objectiveFunction[0])
+
+                """
                 print("individuals[{}].n before evaluating: ".format(i))
                 print(self.individuals[i].n)
                 print("individuals[{}].objectiveFunction[0] before evaluating: ".format(i))
@@ -280,26 +282,30 @@ class Population(object):
                 cec17NoConstraints.printDoubleArray(xArray, nSize)
                 print("Array with objectiveFunction of individuals before evaluating(C structure):")
                 cec17NoConstraints.printDoubleArray(objFuncArray, 1)
+                """
 
                 # EVALUATE FUNCTION
                 # parameters of cec17_test_func(x, objFunc, dimension, population_size, number of function)
 
                 cec17NoConstraints.cec17_test_func(xArray, objFuncArray, nSize, 1, funcNum)
 
+                """
                 print("Array with values of individuals after evaluating(C structure):")
                 cec17NoConstraints.printDoubleArray(xArray, nSize)
                 print("Array with objectiveFunction of individuals after evaluating(C structure):")
                 cec17NoConstraints.printDoubleArray(objFuncArray, 1)
+                """
 
                 # transfers values back to individuals
                 build_list(self.individuals[i].n, xArray, 0, nSize, strFunction)  # transfers project variables
                 self.individuals[i].objectiveFunction[0] = cec17NoConstraints.doubleArray_getitem(objFuncArray, 0)  # transfers objective function
+                """
                 print("individuals[{}].n after evaluating: ".format(i))
                 print(self.individuals[i].n)
                 print("individuals[{}].objectiveFunction[0] after evaluating: ".format(i))
                 print(self.individuals[i].objectiveFunction[0])
 
-                """
+
                 print("Array with values of individuals after evaluating(C structure):")
                 cec17NoConstraints.printDoubleArray(xArray, nSize)
                 print("Array with objectiveFunction of individuals after evaluating(C structure):")
@@ -1547,8 +1553,10 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
     hasConstraints = False
     if strFunction[0] == "1" or strFunction[0] == "2":
         hasConstraints = True
+    if strFunction[0] == "8":
+        maxFE = nSize * 10000
     CR = 0.9
-    F = 0.5
+    F = 0.6
     functionEvaluations = 0
     generatedOffspring = int(offspringsSize / parentsSize)
     lowerBound = upperBound = truss = 0
@@ -1634,12 +1642,18 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
         else:
             parents.DESelection(offsprings, generatedOffspring, parentsSize, nSize, -1, -1, -1, penaltyMethod, hasConstraints)
 
-        parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
-        # parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
+        # parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
+
+        parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
         # print("Ta rodando o dE")
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
         # weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
         # print("Weigth: {:e}".format(weight))
+    # parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
+    if strFunction[0] == "8":
+        best = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
+        # parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
+        best.objectiveFunction[0] = best.objectiveFunction[0] - 100 * int(strFunction[1:])
     parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
 
 
@@ -2519,15 +2533,15 @@ def main():
     # ES µ ≈ λ/4
     parser = argparse.ArgumentParser(description="Evolutionary Algorithms")
     parser.add_argument("--algorithm", "-a", type=str, default="DE", help="Algorithm to be used (GA, ES or DE)")
-    parser.add_argument("--function", "-f", type=int, default=81, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
+    parser.add_argument("--function", "-f", type=int, default=84, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
                         "For the truss problem, the first digit must be 2, followed by the number of the bars in the problem. "
                         "Example: 225, is for the truss of 25 bars")
     parser.add_argument("--seed", "-s", type=int, default=1, help="Seed to be used")
     parser.add_argument("--penaltyMethod", "-p", type=int, default=1, help="Penalty method to be used. 1 for Deb Penalty or 2 for APM")
     parser.add_argument("--parentsSize", "-u", type=int, default=50, help="µ is the parental population size")  # u from µ (mi) | µ ≈ λ/4
-    parser.add_argument("--nSize", "-n", type=int, default=2, help="Search space dimension")
+    parser.add_argument("--nSize", "-n", type=int, default=10, help="Search space dimension")
     parser.add_argument("--offspringsSize", "-l", type=int, default=50, help="λ is number of offsprings, offsprings population size")  # l from λ (lambda) | µ ≈ λ/4
-    parser.add_argument("--maxFE", "-m", type=int, default=150, help="The max number of functions evaluations")
+    parser.add_argument("--maxFE", "-m", type=int, default=10000, help="The max number of functions evaluations")
     parser.add_argument("--crossoverProb", "-c", type=int, default=100, help="The crossover probability [0,100]")
     parser.add_argument("--esType", "-e", type=int, default=1, help="The type of ES. 0 for ES(µ + λ) or 1 for ES(µ , λ)")
     parser.add_argument("--globalSigma", "-g", type=int, default=0, help="If the σ parameter is global or not. 1 for global σ or 0 if not")

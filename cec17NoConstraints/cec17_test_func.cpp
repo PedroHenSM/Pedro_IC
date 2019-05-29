@@ -123,7 +123,7 @@ void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
 				printf("\nError: there is insufficient memory available!\n");
 			for (i=0; i<nx*nx; i++)
 			{
-				fscanf(fpt,"%Lf",&M[i]);
+				fscanf(fpt,"%lf",&M[i]);
 			}
 		}
 		else
@@ -133,7 +133,7 @@ void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
 				printf("\nError: there is insufficient memory available!\n");
 			for (i=0; i<cf_num*nx*nx; i++)
 			{
-				fscanf(fpt,"%Lf",&M[i]);
+				fscanf(fpt,"%lf",&M[i]);
 			}
 		}
 		fclose(fpt);
@@ -153,7 +153,7 @@ void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
 			printf("\nError: there is insufficient memory available!\n");
 			for(i=0;i<nx;i++)
 			{
-				fscanf(fpt,"%Lf",&OShift[i]);
+				fscanf(fpt,"%lf",&OShift[i]);
 			}
 		}
 		else
@@ -165,13 +165,13 @@ void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
 			{
 				for (j=0;j<nx;j++)
 				{
-					fscanf(fpt,"%Lf",&OShift[i*nx+j]);
+					fscanf(fpt,"%lf",&OShift[i*nx+j]);
 				}
 				fscanf(fpt,"%*[^\n]%*c"); 
 			}
 			for (j=0;j<nx;j++)
 			{
-				fscanf(fpt,"%Lf",&OShift[(cf_num-1)*nx+j]);
+				fscanf(fpt,"%lf",&OShift[(cf_num-1)*nx+j]);
 			}
 				
 		}
@@ -241,14 +241,7 @@ void cec17_test_func(double *x, double *f, int nx, int mx,int func_num)
 			f[i]+=300.0;
 			break;
 		case 4:	
-            printf("*******************Testing printf on c function\n");
-            printf("*******************Before evaluating\n");
-            printf("%f\n", f[i]);
 			rosenbrock_func(&x[i*nx],&f[i],nx,OShift,M,1,1);
-            // f[i] = 666.99;
-            printf("*******************Testing printf on c function\n");
-            printf("*******************After evaluating\n");
-            printf("%f\n", f[i]);
 			f[i]+=400.0;
 			break;
 		case 5:
