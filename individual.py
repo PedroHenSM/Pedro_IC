@@ -2497,8 +2497,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         xmean = np.matmul(muBestX, weights)  # xmean is one array with nSize positions
         zmean = np.matmul(muBestZ, weights)  # zmeanis one array with nSize positions
 
-        ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.matmul(B, zmean)  # Eq. 43
-        hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/parentsSize)))/chinN < 1.4 + 2/(nSize + 1) else False  # causing runtime warning, divide by zero encountered in double_scalars
+
         """
         val1 = np.linalg.norm(ps)
         print(cs)
@@ -2516,19 +2515,52 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         else:
             False
         """
-        # hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/parentsSize)))/chinN < 1.4 + 2/(nSize + 1) else False
-        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.matmul(np.matmul(B, D), zmean)  # Eq. 45
+        """
+        if counteval == 5232:
+            print("Before recalculating pc, pc and hsig Function 81 with dimension=2")
+            print("pc")
+            print(pc)
+            print("hsig")
+            print(hsig)
+            print("B")
+            print(B)
+            print("D")
+            print(D)
+            print("zmean")
+            print(zmean)
+        """
+        # ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.matmul(B, zmean)  # Eq. 43
+        ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * B@zmean  # Eq. 43
+        hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/parentsSize)))/chinN < 1.4 + 2/(nSize + 1) else False  # causing runtime warning, divide by zero encountered in double_scalars
+        # pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.matmul(np.matmul(B, D), zmean)  # Eq. 45
+        pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * B@D@zmean
 
 
-        # print("C before recalculing it")
-        # print(C)
-
+        print("C before recalculing it")
+        print(C)
+        """
+        if counteval == 5232:
+            #C = np.array([[ 6.69277207e-17, -2.90547383e-17], [-2.90547383e-17,  1.26132761e-17]])
+            #D = np.array([[1.11022302e-16, 0.00000000e+00], [0.00000000e+00, 9.32802179e-09]])
+            print("After recalculating pc, pc and hsig Function 81 with dimension=2")
+            print("pc")
+            print(pc)
+            print("hsig")
+            print(hsig)
+            print("B")
+            print(B)
+            print("D")
+            print(D)
+            print("zmean")
+            print(zmean)
+        """
         C = (1-c1-cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * (B@D@muBestZ) @ np.diag(weights) @ (B@D@muBestZ).conj().T
         cIsComplex = np.iscomplexobj(C)
 
-        # print("FunctionEvaluations: {}".format(functionEvaluations))
-        # print("C after recalculing it")
-        # print(C)
+        print("FunctionEvaluations: {}".format(functionEvaluations))
+        print("Counteteval: {}", format(counteval))
+        print("C after recalculing it")
+        print(C)
         #  Adapt step-size sigma
         sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
 
@@ -2537,26 +2569,35 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         # Update B and D from C
         if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
             eigenval = counteval
+            print("wAHAHAHAHAHAHAHHAHAAHAHAHAH")
             # print("C before enforce symmetry")
             # print(C)
             C = np.triu(C) + np.triu(C, 1).conj().T  # enforce symmetry
-            """
+
+            if counteval == 5226:
+                print("opa")
+                # C = np.array([[6.692772069701224e-17, -2.905473829588391e-17], [-2.905473829588391e-17, 1.2613276063351564e-17]]) # all decimals
+                # C = np.array([[ 6.69277207e-17, -2.90547383e-17], [-2.90547383e-17,  1.26132761e-17]]) # "rounded"
             print("C DENTRO DE UPDATE B AND D")
             print("Printando C")
             print(C)
-            """
+
             # print("C after enforce symmetry")
             # print(C)
+            print("D before recalculating")
+            print(D)
             D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
+            print("D after recalculating")
             print(D)
-            D = np.diag(D)  # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
-            print(D)
+            # D = np.diag(D)  # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
             D = np.diag(np.sqrt(D))
+            print("D after recalculating(after sqrt, final D)")
+            print(D)
             # print("a")
             # print(D)
 
         # TODO can implement flatfitness if later
-
+        """
         if cIsComplex:  # save the best result and restart the process NOTE: Only works for problems with no constraints
             deg = deg + 1
             tempInd = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
@@ -2602,7 +2643,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
             print(C)
             eigenval = 0  # B and D update at counteval == 0
             chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
-
+        """
         # print(functionEvaluations)
         # parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
 
