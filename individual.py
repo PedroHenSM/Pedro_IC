@@ -7,8 +7,8 @@ Created on Sun May 20 17:53:50 2018
 """
 from scipy.linalg import eig
 import sys
-# sys.path.insert(0, "eureka")
-# sys.path.insert(0, "cec17NoConstraints")
+sys.path.append("eureka")
+sys.path.append("cec17NoConstraints")
 # sys.path.append("..")
 import eureka
 import cec17NoConstraints
@@ -70,6 +70,50 @@ class Individual(object):
             self.violationSum = individual.violationSum
         elif penaltyMethod == 2:  # APM
             self.fitness = individual.fitness
+
+    def isObjectiveFunctionEqual(self, individual):
+        if self.objectiveFunction[0] != individual.objectiveFunction[0]:
+            return False
+        return True
+
+    def printIndividual(self, nSize, parentsSize, penaltyMethod, hasConstraints):
+        if hasConstraints:
+            if penaltyMethod == 1:  # not apm
+                # print("Violation\t{:e}\tObjectiveFunction\t{:e}\t".format(best.violationSum, best.objectiveFunction[0]), end = " ")
+                print("{:}\t{:}\t".format(self.violationSum, self.objectiveFunction[0]), end=" ")
+                for i in range(nSize):
+                    print("{}\t".format(self.n[i]), end=" ")
+                print("")
+            elif penaltyMethod == 2:  # APM
+                # print("Fitness\t{:e}\tObjectiveFunction\t{:e}\t".format(best.fitness, best.objectiveFunction[0]), end = " ")
+                if self.fitness == self.objectiveFunction[0]:
+                    print("{:}\t{:}\t".format(self.fitness, self.objectiveFunction[0]), end=" ")
+                    for i in range(nSize):
+                        print("{}\t".format(self.n[i]), end=" ")
+                    print("")
+
+                """
+                if best.fitness == best.objectiveFunction[0]:
+                    print("Fitness == objectiveFunction")
+                """
+        else:
+            print("{:}\t".format(self.objectiveFunction[0]), end=" ")
+            for i in range(nSize):
+                print("{}\t".format(self.n[i]), end=" ")
+            print("")
+
+    def printFO(self, parentsSize, penaltyMethod, hasConstraints):
+        if hasConstraints:
+            if penaltyMethod == 1:  # not apm
+                # print("Violation\t{:e}\tObjectiveFunction\t{:e}\n".format(best.violationSum, best.objectiveFunction[0]))
+                print("{}\t{}".format(self.violationSum, self.objectiveFunction[0]), end="\n")
+            elif penaltyMethod == 2:  # APM
+                if self.fitness == self.objectiveFunction[0]:
+                    print("Fitness\t{:e}\tObjectiveFunction\t{:e}\n".format(self.fitness, self.objectiveFunction[0]))
+                    # if best.fitness == best.objectiveFunction[0]:
+                    #  print("Fitness == objectiveFunction")
+        else:
+            print("{}".format(self.objectiveFunction[0]), end="\n")
 
     def __repr__(self):
         return str(self.__dict__)
@@ -268,6 +312,7 @@ class Population(object):
                 xArray = cec17NoConstraints.new_doubleArray(nSize)  # creates an array with nSize dimension
                 objFuncArray = cec17NoConstraints.new_doubleArray(1)  # creates an array with 1 dimension (for objective function)
                 # tranfers values from individuals to C++ array for functions be evaluated
+                # print(self.individuals[i].n)
                 build_array(xArray, self.individuals[i].n, 0, nSize, strFunction)  # transfers values from list to C++ array
                 build_array(objFuncArray, self.individuals[i].objectiveFunction, 0, 1, strFunction)
                 # cec17NoConstraints.doubleArray_setitem(objFuncArray, 0, self.individuals[i].objectiveFunction[0])
@@ -605,7 +650,7 @@ class Population(object):
                     # if best.fitness == best.objectiveFunction[0]:
                     #  print("Fitness == objectiveFunction")
         else:
-            print("{}".format(best.objectiveFunction[0]), end="\n")
+            print("{}".format(best.objectiveFunction[0]), end="\t")
 
     def DESelection(self, offsprings, generatedOffspring, parentsSize, nSize, gSize, hSize, constraintsSize, penaltyMethod, hasConstraints):
         if hasConstraints:
@@ -1184,6 +1229,7 @@ def build_array(a, l, startIdx, size, strFunction):
     elif strFunction[0] == "8":  # cec2017NoConstraints problems, utilizes cec17NoConstraints
         for i in range(size):
             # cec17NoConstraints.doubleArray_setitem(a, i, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
+            # print("transfering element l[{}] = {}".format(i, l[i]))
             cec17NoConstraints.doubleArray_setitem(a, startIdx, l[i])
             startIdx = startIdx + 1
 
@@ -1644,7 +1690,7 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
 
         # parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
 
-        parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
+        # parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
         # print("Ta rodando o dE")
         # weight = parents.calculateTrussWeight(parentsSize, penaltyMethod, bars)
         # weight = parents.calculateTrussWeightGroupingBest(parentsSize, penaltyMethod, bars, grouping, function)
@@ -2253,6 +2299,8 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     hasConstraints = False
     if strFunction[0] == "1" or strFunction[0] == "2":
         hasConstraints = True
+    if strFunction[0] == "8":
+        maxFE = nSize * 10000
     functionEvaluations = 0
     # User defined parameters\
 
@@ -2301,7 +2349,6 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     if strFunction[0] == "2":  # solving trusses
         truss, lowerBound, upperBound = initializeTruss(function)
         nSize = truss.getDimension()
-        print("nSize{}".format(nSize))
         gSize, hSize, constraintsSize = initializeConstraintsTrusses(truss)
         penaltyCoefficients = [-1 for i in range(constraintsSize)]
         avgObjFunc = -1  # will be subscribed on 'calculatePenaltyCoefficients'
@@ -2332,7 +2379,6 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
             print("Penalthy method not encountered")
             sys.exit("Penalty method not encountered")
 
-
     # User defined parameters
     sigma = 0.5
     xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
@@ -2349,10 +2395,11 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     mu = parentsSize / 2  # mu is NOT offspringsSize.
     muList = [i + 1 for i in range(int(mu))]
     weights = np.log(mu+1/2)-np.log(muList).conj().T  # muXone recombination weights
+    # weights = np.log(mu+1/2) - np.log(1:mu).conj().T
     mu = np.floor(mu)
     # mu = int(mu)
     weights = weights/np.sum(weights)
-    mueff = np.power(sum(weights), 2) / np.sum(np.power(weights, 2))
+    mueff = np.power(np.sum(weights), 2) / np.sum(np.power(weights, 2))
 
     # Strategy parameter setting: Adaptation
     cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
@@ -2369,26 +2416,19 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
     C = B @ D @ (B@D).conj().T
     # C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
     # print(C)
-    # exit("sai viado")
     eigenval = 0  # B and D update at counteval == 0
     chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
-
-
-
+    hsig = False
     # parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
     # FIM CODIGO ANTIGO
-
+    tempBestInd = Individual()  # in case of covariance matrix degenerates
+    deg = 0
     counteval = 0
     while functionEvaluations < maxFE:
         # Generate and evaluate lambda offspring
         arzAuxList = []
         arxAuxList = []
-        """
-        print("B")
-        print(B)
-        print("D")
-        print(D)
-        """
+
         for i in range(parentsSize):
             arz = np.random.randn(nSize)  # standard normally distributed vector  (38)
             # arx = xmean + sigma * (np.dot(np.matmul(B, D), arz))  # add mutation N(m,sigma²C) (40)
@@ -2399,7 +2439,15 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
             for j in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
                 offsprings.individuals[i].arz[j] = arz[j]
                 offsprings.individuals[i].n[j] = arx[j]
+                complexxx = np.iscomplexobj(offsprings.individuals[i].n)
             counteval = counteval + 1
+        # sys.exit("ah vei")
+        """
+        if complexxx:
+            print("degenerou individuo, wtf")
+            sys.exit("eh..")
+            counteval = counteval + 1
+        """
         arz = np.vstack(arzAuxList)  # matrix nd.array with all values calculated above
         arx = np.vstack(arxAuxList)  # matrix nd.array with all values calculated above
 
@@ -2431,7 +2479,6 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         else:
             parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, -1, -1, -1, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound, hasConstraints)
 
-
         # Individuals stored in columns
 
         arz = arz.T
@@ -2451,28 +2498,37 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
         zmean = np.matmul(muBestZ, weights)  # zmeanis one array with nSize positions
 
         ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.matmul(B, zmean)  # Eq. 43
-        hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/nSize)))/chinN < 1.4 + 2/(nSize + 1) else False
+        hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/parentsSize)))/chinN < 1.4 + 2/(nSize + 1) else False  # causing runtime warning, divide by zero encountered in double_scalars
+        """
+        val1 = np.linalg.norm(ps)
+        print(cs)
+        exp = 2*counteval/parentsSize
+        # val2 = np.sqrt(1-(1-cs)**exp)
+        val2 = np.sqrt(1-np.power((1-cs), (2*counteval/parentsSize)))
+        print("val1 = {}".format(val1))
+        print("val2 = {}".format(val2))
+        val3 = chinN
+        val = float(val1) / (val2)
+        print("val = {}".format(val))
+        val = val / val3
+        if val < 1.4+2/(nSize+1):
+            hsig = True
+        else:
+            False
+        """
+        # hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/parentsSize)))/chinN < 1.4 + 2/(nSize + 1) else False
         pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.matmul(np.matmul(B, D), zmean)  # Eq. 45
-
 
 
         # print("C before recalculing it")
         # print(C)
 
         C = (1-c1-cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * (B@D@muBestZ) @ np.diag(weights) @ (B@D@muBestZ).conj().T
-        """
-        C = ((1-c1-cmu) * C #
-             + c1 * (np.outer(pc, pc)
-            + (1-hsig) * cc * (2 - cc) * C)  # THIS LAST MULTIPLICATION SHOULD BE @, MATLAB IS CRAP
-             + cmu
-             * (B@D@muBestZ)
-             @ np.diag(weights) @ (B@D@muBestZ).T
-            )
+        cIsComplex = np.iscomplexobj(C)
 
-         """
-        print("FunctionEvaluations: {}".format(functionEvaluations))
-        print("C after recalculing it")
-        print(C)
+        # print("FunctionEvaluations: {}".format(functionEvaluations))
+        # print("C after recalculing it")
+        # print(C)
         #  Adapt step-size sigma
         sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
 
@@ -2492,13 +2548,83 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
             # print("C after enforce symmetry")
             # print(C)
             D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
-            # D = np.diag(D) # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
+            print(D)
+            D = np.diag(D)  # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
+            print(D)
             D = np.diag(np.sqrt(D))
             # print("a")
             # print(D)
 
         # TODO can implement flatfitness if later
-        parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
+
+        if cIsComplex:  # save the best result and restart the process NOTE: Only works for problems with no constraints
+            deg = deg + 1
+            tempInd = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
+            # sys.exit("degenerou,v lw fdlw")
+            if tempBestInd.objectiveFunction[0] == -1:  # not initialized, no need to compare objective function
+                tempBestInd.copyIndividual(tempInd, nSize, 1, -1, -1, -1, globalSigma, penaltyMethod)
+            else:  # compares which one is better
+                if tempInd.objectiveFunction[0] < tempBestInd.objectiveFunction[0]:  # new individual is better than the old one
+                    tempBestInd.copyIndividual(tempInd, nSize, 1, -1, -1, -1, globalSigma, penaltyMethod)
+
+            parents = Population(parentsSize, nSize, function)  # Initialize parents population
+            offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
+            functionEvaluations = parents.evaluate(parentsSize, function, nSize, -1, -1, functionEvaluations)
+            # User redefined parameters
+            sigma = 0.5
+            xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
+            # Strategy parameters setting: Selection
+            parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
+            parentsSize = int(parentsSize)
+            offspringsSize = parentsSize  # temporay?
+            mu = parentsSize / 2  # mu is NOT offspringsSize.
+            muList = [i + 1 for i in range(int(mu))]
+            weights = np.log(mu+1/2)-np.log(muList).conj().T  # muXone recombination weights
+            mu = np.floor(mu)
+            # mu = int(mu)
+            weights = weights/np.sum(weights)
+            mueff = np.power(sum(weights), 2) / np.sum(np.power(weights, 2))
+
+            # Strategy parameter setting: Adaptation
+            cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
+            cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
+            c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
+            cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
+            damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
+
+            # Initiliaze dynamic (internal) strategy parameters  and constants
+            pc = np.zeros(nSize)  # evolutions paths for C
+            ps = np.zeros(nSize)  # evolutions paths for sigma
+            B = np.eye(nSize)  # B defines de coordinate system
+            D = np.eye(nSize)  # diagonal matrix D defines the scaling
+            C = B @ D @ (B@D).conj().T
+            # C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
+            print(C)
+            eigenval = 0  # B and D update at counteval == 0
+            chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
+
+        # print(functionEvaluations)
+        # parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
+
+    tempInd = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
+    if tempBestInd.objectiveFunction[0] != -1:  #was used
+        if strFunction[0] == "8":
+            # parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
+            tempInd.objectiveFunction[0] = tempInd.objectiveFunction[0] - 100 * int(strFunction[1:])
+            tempBestInd.objectiveFunction[0] = tempBestInd.objectiveFunction[0] - 100 * int(strFunction[1:])
+
+        # tempInd = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)  # best after finishing the evolution
+        if tempBestInd.objectiveFunction[0] < tempInd.objectiveFunction[0]:  # new individual is better than the old one
+            # tempBestInd.printIndividual(nSize, parentsSize, penaltyMethod, hasConstraints)
+            tempBestInd.printFO(parentsSize, penaltyMethod, hasConstraints)
+    else:
+        if strFunction[0] == "8":
+            # print("right?")
+            # parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
+            tempInd.objectiveFunction[0] = tempInd.objectiveFunction[0] - 100 * int(strFunction[1:])
+        # tempInd.printIndividual(nSize, parentsSize, penaltyMethod, hasConstraints)
+        tempInd.printFO(parentsSize, penaltyMethod, hasConstraints)
+    # print(deg)
 
 
 # noinspection PyShadowingNames
@@ -2516,7 +2642,7 @@ def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offs
         DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
         # DERobson(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize)
         end = timer()
-        print("{} seconds".format(end - start), end="")
+        # print("{} seconds".format(end - start), end="")
     elif algorithm == "ES":  # Evolution Strategy
         ES(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma)
     elif algorithm == "ESCMA":
@@ -2532,14 +2658,14 @@ def main():
     # function,seed,penaltyMethod,parentsSize,nSize,offspringsSize,maxFE,crossoverProb,esType,globalSigma
     # ES µ ≈ λ/4
     parser = argparse.ArgumentParser(description="Evolutionary Algorithms")
-    parser.add_argument("--algorithm", "-a", type=str, default="DE", help="Algorithm to be used (GA, ES or DE)")
-    parser.add_argument("--function", "-f", type=int, default=84, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
+    parser.add_argument("--algorithm", "-a", type=str, default="ESCMA", help="Algorithm to be used (GA, ES or DE)")
+    parser.add_argument("--function", "-f", type=int, default=81, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
                         "For the truss problem, the first digit must be 2, followed by the number of the bars in the problem. "
                         "Example: 225, is for the truss of 25 bars")
     parser.add_argument("--seed", "-s", type=int, default=1, help="Seed to be used")
     parser.add_argument("--penaltyMethod", "-p", type=int, default=1, help="Penalty method to be used. 1 for Deb Penalty or 2 for APM")
     parser.add_argument("--parentsSize", "-u", type=int, default=50, help="µ is the parental population size")  # u from µ (mi) | µ ≈ λ/4
-    parser.add_argument("--nSize", "-n", type=int, default=10, help="Search space dimension")
+    parser.add_argument("--nSize", "-n", type=int, default=2, help="Search space dimension")
     parser.add_argument("--offspringsSize", "-l", type=int, default=50, help="λ is number of offsprings, offsprings population size")  # l from λ (lambda) | µ ≈ λ/4
     parser.add_argument("--maxFE", "-m", type=int, default=10000, help="The max number of functions evaluations")
     parser.add_argument("--crossoverProb", "-c", type=int, default=100, help="The crossover probability [0,100]")
@@ -2574,9 +2700,15 @@ def main():
     # Demais - 15 000
     # args.seed = 2
     # readTrussInput()
-    algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma, args.windowSize)
-    # print(args)
 
+    # algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma, args.windowSize)
+    # print(args)
+    algorithms = ["DE", "ESCMA"]
+    # print(algorithms)
+    if args.seed == 1:
+        print("DE\tESCMA")
+    for i in algorithms:
+        algorithm(i, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma, args.windowSize)
 
 if __name__ == '__main__':
     main()
