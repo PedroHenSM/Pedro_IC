@@ -78,6 +78,7 @@ function xmin=purecmaes
         ps = (1-cs)*ps + (sqrt(cs*(2-cs)*mueff)) * (B * zmean); % Eq. 43
         hsig = norm(ps)/sqrt(1-(1-cs)^(2*counteval/lambda))/chiN < 1.4+2/(N+1);
         pc = (1-cc)*pc + hsig * sqrt(cc*(2-cc)*mueff) * (B*D*zmean); % Eq. 45
+
         
         % Adapt covariance matrix C
         C = (1-c1-cmu) * C ... % regard old matrix % Eq. 47
@@ -86,7 +87,7 @@ function xmin=purecmaes
         + cmu ... % plus rank mu update
         * (B*D*arz(:,arindex(1:mu))) ...
         * diag(weights) * (B*D*arz(:,arindex(1:mu)))';
-        
+
         % Adapt step-size sigma
         sigma = sigma * exp((cs/damps)*(norm(ps)/chiN - 1)); % Eq. 44
 
