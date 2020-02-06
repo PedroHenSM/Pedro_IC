@@ -7,11 +7,14 @@ Created on Sun May 20 17:53:50 2018
 """
 from scipy.linalg import eig
 import sys
-sys.path.append("eureka")
-sys.path.append("cec17NoConstraints")
+# sys.path.append("eureka")
+sys.path.append("cec20/NoConstraints")
+sys.path.append("cec20/NoConstraints/C version")
+# sys.path.append("cec17NoConstraints")
 # sys.path.append("..")
 import eureka
 import cec17NoConstraints
+import cec20NoConstraints
 import argparse
 import numpy as np
 import operator as op
@@ -181,9 +184,7 @@ class Population(object):
 					"""
 					# print(values)
 					values.append(np.random.uniform(lowerBound, upperBound))
-				elif strFunction[0] == "8":  # cec17NoConstraints
-					# print("Initializing cec2017 no constraints functions")
-					# print(values)
+				elif strFunction[0] == "8" or strFunction[0] == "7":  # cec17NoConstraints and cec20NoConstraints
 					values.append(np.random.uniform(-100,100))  # search range is [-100,100] for all functions
 				elif strFunction[0] == "9": # Functions with no constraints
 					if function == 91:  # Rosenbrock Function
@@ -305,7 +306,22 @@ class Population(object):
 				build_list(self.individuals[i].g, valuesArray, 1, valuesArraySize, strFunction)
 				eureka.delete_doubleArray(dimensionArray)
 				eureka.delete_doubleArray(valuesArray)
-
+			
+			elif strFunction[0] == "7":	# no constraints cec2020 competition functions
+				funcNum = int(strFunction[1:])	# gets all numbers except the first, in this case, the 7 is ignored
+				# 	creates C arrays
+				xArray = cec20NoConstraints.new_doubleArray(nSize)	# creates an array with nSize Dimension
+				objFuncArray = cec20NoConstraints.new_doubleArray(1)	# creates an array with 1 dimension, for(objective function)
+				build_array(xArray, self.individuals[i].n, 0, nSize, strFunction)	# transfers values form list to C array
+				build_array(objFuncArray, self.individuals[i].objectiveFunction, 0, 1, strFunction)
+				# test_func(x, f, dimension, population_size,func_num);
+				cec20NoConstraints.cec20_test_func(xArray, objFuncArray, nSize, 1, funcNum)
+				# transfers values back to individuals
+				build_list(self.individuals[i].n, xArray, 0, nSize, strFunction)  # transfers project variables
+				self.individuals[i].objectiveFunction[0] = cec20NoConstraints.doubleArray_getitem(objFuncArray, 0)  # transfers objective function
+				# clean mess
+				cec20NoConstraints.delete_doubleArray(xArray)
+				cec20NoConstraints.delete_doubleArray(objFuncArray)
 			elif strFunction[0] == "8":  # no constraints cec2017 competition functions
 				funcNum = int(strFunction[1:])  # gets all numbers except the first, in this case , the 8 is ignored
 				#  creates C++ arrays
@@ -567,7 +583,7 @@ class Population(object):
 		elif strFunction[0] == "2":  # Truss problems
 			nMin = lowerBound
 			nMax = upperBound
-		elif strFunction[0] == "8":  # cec2017NoConstraints problems
+		elif strFunction[0] == "8" or strFunction[0] == "7":  # cec2017NoConstraints or cec2020NoConstraints problems
 			nMin = -100
 			nMax = 100
 		elif strFunction[0] == "9":
@@ -1226,6 +1242,10 @@ def build_array(a, l, startIdx, size, strFunction):
 			# eureka.doubleArray_setitem(a, i, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
 			eureka.doubleArray_setitem(a, startIdx, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
 			startIdx = startIdx + 1
+	elif strFunction[0] == "7":  # cec2020NoConstraints problems, utilizes cec20NoConstraints
+		for i in range(size):
+			cec20NoConstraints.doubleArray_setitem(a, startIdx, l[i])
+			startIdx = startIdx + 1
 	elif strFunction[0] == "8":  # cec2017NoConstraints problems, utilizes cec17NoConstraints
 		for i in range(size):
 			# cec17NoConstraints.doubleArray_setitem(a, i, l[i])  # sets on array "a" at idx "i" the value of "l[i]"
@@ -1240,6 +1260,10 @@ def build_list(l, a, startIdx, size, strFunction):
 	if strFunction[0] == "2":  # truss problems, utilizes eureka
 		for i in range(size):
 			l[i] = eureka.doubleArray_getitem(a, startIdx)  # Gets item of array "a" at idx "idxStart"
+			startIdx = startIdx + 1
+	elif strFunction[0] == "7":# cec2020NoConstraints problems, utilizes cec20NoConstraints
+		for i in range(size):
+			l[i] = cec20NoConstraints.doubleArray_getitem(a, startIdx)
 			startIdx = startIdx + 1
 	elif strFunction[0] == "8":  # cec2017NoConstraints problems, utilizes cec17NoConstraints
 		for i in range(size):
@@ -1601,6 +1625,17 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
 	hasConstraints = False
 	if strFunction[0] == "1" or strFunction[0] == "2":
 		hasConstraints = True
+	if strFunction[0] == "7":	# cec2020 no constraints competition
+		if(nSize == 5):	
+			maxFE = 50000
+		elif (nSize == 10):
+			maxFE = 1000000
+		elif (nSize == 15):
+			maxFE = 3000000
+		elif (nSize == 20):
+			maxFE = 10000000
+		else:
+			print("Dimension not defined")
 	if strFunction[0] == "8":
 		maxFE = nSize * 10000
 	CR = 0.9
@@ -1678,9 +1713,9 @@ def DE(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE,
 				offsprings.bounding(nSize, function, offspringsSize, hasConstraints)
 				functionEvaluations = offsprings.evaluate(offspringsSize, function, nSize, -1, -1, functionEvaluations)
 		if hasConstraints:
-			if penaltyMethod == 1:  # Not apm
+			if penaltyMethod == 1:  # Deb method
 				offsprings.sumViolations(offspringsSize, gSize, hSize)
-			elif penaltyMethod == 2:
+			elif penaltyMethod == 2:	# APM
 				offsprings.uniteConstraints(offspringsSize, gSize, hSize)
 				avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
 				offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
@@ -2302,6 +2337,17 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 	hasConstraints = False
 	if strFunction[0] == "1" or strFunction[0] == "2":
 		hasConstraints = True
+	if strFunction[0] == "7":	# cec2020 no constraints competition
+		if(nSize == 5):	
+			maxFE = 50000
+		elif (nSize == 10):
+			maxFE = 1000000
+		elif (nSize == 15):
+			maxFE = 3000000
+		elif (nSize == 20):
+			maxFE = 10000000
+		else:
+			print("Dimension not defined")
 	if strFunction[0] == "8":
 		maxFE = nSize * 10000
 	functionEvaluations = 0
@@ -2392,10 +2438,18 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 	of strictly positive recombination weights, see (6).
 	"""
 	# Strategy parameters setting: Selection
-	parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
+	# TESTAR BLOCO ABAIXO
+	# offspringsSize = 4 + np.floor(3 * np.log(nSize))  # LAMBDA parentsSize is biased on nSize
+	# offspringsSize = int(offspringsSize)
+	# mu = offspringsSize / 2
+	# parentsSize = mu  # temporay?
+	# TESTAR BLOCO ACIMA
+	# BLOCO ABAIXO ESTAVA ATIVO 06/02/2020
+	parentsSize = 4 + np.floor(3 * np.log(nSize))  # LAMBDA parentsSize is biased on nSize
 	parentsSize = int(parentsSize)
 	offspringsSize = parentsSize  # temporay?
 	mu = parentsSize / 2  # mu is NOT offspringsSize.
+	# BLOCO ACIMA ESTAVA ATIVO 06/02/2020
 	muList = [i + 1 for i in range(int(mu))]
 	weights = np.log(mu+1/2)-np.log(muList).conj().T  # muXone recombination weights
 	# weights = np.log(mu+1/2) - np.log(1:mu).conj().T
@@ -2443,13 +2497,13 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 				offsprings.individuals[i].n[j] = arx[j]
 				complexxx = np.iscomplexobj(offsprings.individuals[i].n)
 			counteval = counteval + 1
-		# sys.exit("ah vei")
-		"""
+		# sys.exit("ah")
+		
 		if complexxx:
 			print("degenerou individuo, wtf")
 			sys.exit("eh..")
 			counteval = counteval + 1
-		"""
+		
 		arz = np.vstack(arzAuxList)  # matrix nd.array with all values calculated above
 		arx = np.vstack(arxAuxList)  # matrix nd.array with all values calculated above
 
@@ -2538,48 +2592,35 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 		pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * B@D@zmean
 
 		# All lines commented with 5 '#' were active on on jan-2020
-		# # # # # print("C before recalculing it")
-		# # # # # print(C)
-		"""
-		if counteval == 5232:
-			#C = np.array([[ 6.69277207e-17, -2.90547383e-17], [-2.90547383e-17,  1.26132761e-17]])
-			#D = np.array([[1.11022302e-16, 0.00000000e+00], [0.00000000e+00, 9.32802179e-09]])
-			print("After recalculating pc, pc and hsig Function 81 with dimension=2")
-			print("pc")
-			print(pc)
-			print("hsig")
-			print(hsig)
-			print("B")
-			print(B)
-			print("D")
-			print(D)
-			print("zmean")
-			print(zmean)
-		"""
+		print("C before recalculing it")
+		print(C)
+		
+
 		C = (1-c1-cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * (B@D@muBestZ) @ np.diag(weights) @ (B@D@muBestZ).conj().T
 		cIsComplex = np.iscomplexobj(C)
+		cIsNan= np.isnan(C)
+		cIsInf = np.isinf(C)
+		print("FunctionEvaluations: {}".format(functionEvaluations))
+		print("cIsComplex: {}".format(cIsComplex))
+		print("cIsNan: {}".format(cIsNan))
+		print("cIsInf: {}".format(cIsInf))
 
-		# # # # # print("FunctionEvaluations: {}".format(functionEvaluations))
-		# # # # # print("Counteteval: {}", format(counteval))
-		# # # # # print("C after recalculing it")
-		# # # # # print(C)
+		#print("Counteteval: {}", format(counteval))
+		print("C after recalculing it")
+		print(C)
 		#  Adapt step-size sigma
 		sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
-
 		# np.set_printoptions(suppress=True)
 
 		# Update B and D from C
 		if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
 			eigenval = counteval
-			# # # # # print("wAHAHAHAHAHAHAHHAHAAHAHAHAH")
 			# print("C before enforce symmetry")
 			# print(C)
 			C = np.triu(C) + np.triu(C, 1).conj().T  # enforce symmetry
 
 			# # # # # if counteval == 5226:
 			# # # # # 	print("opa")
-				# C = np.array([[6.692772069701224e-17, -2.905473829588391e-17], [-2.905473829588391e-17, 1.2613276063351564e-17]]) # all decimals
-				# C = np.array([[ 6.69277207e-17, -2.90547383e-17], [-2.90547383e-17,  1.26132761e-17]]) # "rounded"
 			# # # # # print("C DENTRO DE UPDATE B AND D")
 			# # # # # print("Printando C")
 			# # # # # print(C)
@@ -2588,9 +2629,13 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 			# print(C)
 			# # # # # print("D before recalculating")
 			# # # # # print(D)
-			D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector  # B está dando diferente do MATLAB, deve ser por ser autovetor
-			# # # # # print("D after recalculating")
-			# # # # # print(D)
+			D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector
+			if(np.any(D<=0)):
+				print("D after recalculating")
+				print(D)
+				tempInd = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
+				tempInd.printFO(parentsSize, penaltyMethod, hasConstraints)
+				sys.exit("Existe valores negativos em D")
 			# D = np.diag(D)  # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
 			D = np.diag(np.sqrt(D))
 			# # # print("D after recalculating(after sqrt, final D)")
@@ -2704,13 +2749,13 @@ def main():
 	# ES µ ≈ λ/4
 	parser = argparse.ArgumentParser(description="Evolutionary Algorithms")
 	parser.add_argument("--algorithm", "-a", type=str, default="ESCMA", help="Algorithm to be used (GA, ES, DE or ESCMA)")
-	parser.add_argument("--function", "-f", type=int, default=91, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
+	parser.add_argument("--function", "-f", type=int, default=71, help="Truss to be solved (10, 25, 60, 72 or 942 bars). "
 						"For the truss problem, the first digit must be 2, followed by the number of the bars in the problem. "
 						"Example: 225, is for the truss of 25 bars")
 	parser.add_argument("--seed", "-s", type=int, default=1, help="Seed to be used")
 	parser.add_argument("--penaltyMethod", "-p", type=int, default=1, help="Penalty method to be used. 1 for Deb Penalty or 2 for APM")
 	parser.add_argument("--parentsSize", "-u", type=int, default=50, help="µ is the parental population size")  # u from µ (mi) | µ ≈ λ/4
-	parser.add_argument("--nSize", "-n", type=int, default=2, help="Search space dimension")
+	parser.add_argument("--nSize", "-n", type=int, default=5, help="Search space dimension")
 	parser.add_argument("--offspringsSize", "-l", type=int, default=50, help="λ is number of offsprings, offsprings population size")  # l from λ (lambda) | µ ≈ λ/4
 	parser.add_argument("--maxFE", "-m", type=int, default=10000, help="The max number of functions evaluations")
 	parser.add_argument("--crossoverProb", "-c", type=int, default=100, help="The crossover probability [0,100]")
@@ -2745,7 +2790,8 @@ def main():
 	# Demais - 15 000
 	# args.seed = 2
 	# readTrussInput()
-
+	# F1-F5 and F8-F10: D = 5, 10, 15,20
+	# F6 and F7: D = 10, 15, 20
 	algorithm(args.algorithm, args.function, args.seed, args.penaltyMethod, args.parentsSize, args.nSize, args.offspringsSize, args.maxFE, args.crossoverProb, args.esType, args.globalSigma, args.windowSize)
 	print(args)
 	# algorithms = ["DE", "ESCMA"]
