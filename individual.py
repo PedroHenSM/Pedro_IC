@@ -2335,6 +2335,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 	crossoverProb = -1
 	np.random.seed(seed)
 	hasConstraints = False
+	generatedOffspring = 1
 	if strFunction[0] == "1" or strFunction[0] == "2":
 		hasConstraints = True
 	if strFunction[0] == "7":	# cec2020 no constraints competition
@@ -2351,26 +2352,28 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 	if strFunction[0] == "8":
 		maxFE = nSize * 10000
 	functionEvaluations = 0
-	# User defined parameters\
+
+	# User defined parameters
+	sigma = 0.5 # coordinate wise standard deviation (step-size)
+	xmean = np.random.randn(nSize)  # objective variables initial point
 
 	"""
 	λ ≥ 2, population size, sample size, number of offspring, see (5).
 	µ ≤ λ parent number, number of (positively) selected search points in the population, number
 	of strictly positive recombination weights, see (6).
-	sigma = 0.5
-	xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
-	# maxFE = 30
+	"""
 
 	# Strategy parameters setting: Selection
-	parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
-	parentsSize = int(parentsSize)
-	mu = parentsSize / 2  # mu is NOT offspringsSize.
+	# parentsSize = 4 + np.floor(3 * np.log(nSize))  # population size (λ), offsprings number (same as parents)
+	# parentsSize = int(parentsSize)
+	parentsSize = nSize * 4 # population size, offsprings number (same as parents)
+	offspringsSize = parentsSize 
+	mu = parentsSize / 2   # number of parents selected (selected search points in the population)
 	muList = [i + 1 for i in range(int(mu))]
-	weights = np.log(mu+1/2)-np.log(muList)  # muXone recombination weights
-	mu = np.floor(mu)
-	# mu = int(mu)
-	weights = weights/np.sum(weights)
-	mueff = np.power(sum(weights), 2) / np.sum(np.power(weights, 2))
+	weights = np.log(mu+1/2)-np.log(muList).conj().T  # muXone recombination weights
+	mu = np.floor(mu) # number of parents selected (µ)(selected search points in the population)
+	weights = weights/np.sum(weights) # normalize recombination weights array
+	mueff = np.power(np.sum(weights), 2) / np.sum(np.power(weights, 2)) # variance-effective size of mu
 
 	# Strategy parameter setting: Adaptation
 	cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
@@ -2384,16 +2387,11 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 	ps = np.zeros(nSize)  # evolutions paths for sigma
 	B = np.eye(nSize)  # B defines de coordinate system
 	D = np.eye(nSize)  # diagonal matrix D defines the scaling
-	C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
+	C = B @ D @ (B@D).conj().T # covariance matrix
 	eigenval = 0  # B and D update at counteval == 0
 	chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
-	"""
 
-	# CODIGO ANTIGO
-
-	# generatedOffspring = int(offspringsSize / parentsSize)  # TODO Verifiar isso depois
-	generatedOffspring = 1
-	offspringsSize = parentsSize
+	# Initialize Individuals
 	lowerBound = upperBound = truss = 0
 	if strFunction[0] == "2":  # solving trusses
 		truss, lowerBound, upperBound = initializeTruss(function)
@@ -2415,7 +2413,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 		else:  # Functions with no constraints
 			parents = Population(parentsSize, nSize, function)  # Initialize parents population
 			offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
-			functionEvaluations = parents.evaluate(parentsSize, function, nSize, -1, -1, functionEvaluations)
+			# functionEvaluations = parents.evaluate(parentsSize, function, nSize, -1, -1, functionEvaluations)
 	# Choose method of penalization
 	if hasConstraints:
 		if penaltyMethod == 1:  # Padrao?  (not apm)
@@ -2428,81 +2426,23 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 			print("Penalthy method not encountered")
 			sys.exit("Penalty method not encountered")
 
-	# User defined parameters
-	sigma = 0.5
-	xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
-	# maxFE = 30
-	"""
-	λ ≥ 2, population size, sample size, number of offspring, see (5).
-	µ ≤ λ parent number, number of (positively) selected search points in the population, number
-	of strictly positive recombination weights, see (6).
-	"""
-	# Strategy parameters setting: Selection
-	# TESTAR BLOCO ABAIXO
-	# offspringsSize = 4 + np.floor(3 * np.log(nSize))  # LAMBDA parentsSize is biased on nSize
-	# offspringsSize = int(offspringsSize)
-	# mu = offspringsSize / 2
-	# parentsSize = mu  # temporay?
-	# TESTAR BLOCO ACIMA
-	# BLOCO ABAIXO ESTAVA ATIVO 06/02/2020
-	parentsSize = 4 + np.floor(3 * np.log(nSize))  # LAMBDA parentsSize is biased on nSize
-	parentsSize = int(parentsSize)
-	offspringsSize = parentsSize  # temporay?
-	mu = parentsSize / 2  # mu is NOT offspringsSize.
-	# BLOCO ACIMA ESTAVA ATIVO 06/02/2020
-	muList = [i + 1 for i in range(int(mu))]
-	weights = np.log(mu+1/2)-np.log(muList).conj().T  # muXone recombination weights
-	# weights = np.log(mu+1/2) - np.log(1:mu).conj().T
-	mu = np.floor(mu)
-	# mu = int(mu)
-	weights = weights/np.sum(weights)
-	mueff = np.power(np.sum(weights), 2) / np.sum(np.power(weights, 2))
-
-	# Strategy parameter setting: Adaptation
-	cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
-	cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
-	c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
-	cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
-	damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
-	# Initiliaze dynamic (internal) strategy parameters  and constants
-	pc = np.zeros(nSize) # evolutions paths for C
-	ps = np.zeros(nSize)  # evolutions paths for sigma
-	B = np.eye(nSize)  # B defines de coordinate system
-	D = np.eye(nSize)  # diagonal matrix D defines the scaling
-	C = B @ D @ (B@D).conj().T
-	# C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
-	# print(C)
-	eigenval = 0  # B and D update at counteval == 0
-	chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
-	hsig = False
-	# parents.initializeEvolutionStrategy(offsprings, nSize, parentsSize, offspringsSize, globalSigma)
-	# FIM CODIGO ANTIGO
 	tempBestInd = Individual()  # in case of covariance matrix degenerates
-	deg = 0
-	counteval = 0
 	while functionEvaluations < maxFE:
-		# Generate and evaluate lambda offspring
 		arzAuxList = []
 		arxAuxList = []
 
+		# Generate and evaluate lambda offspring
 		for i in range(parentsSize):
 			arz = np.random.randn(nSize)  # standard normally distributed vector  (38)
-			# arx = xmean + sigma * (np.dot(np.matmul(B, D), arz))  # add mutation N(m,sigma²C) (40)
 			arx = xmean + sigma * (B @ D @ arz)  # add mutation N(m,sigma²C) (40)
 			arzAuxList.append(arz)
 			arxAuxList.append(arx)
-			# arx é  individuals[i].n
-			for j in range(nSize):  # Copies arx to individual[].n TODO This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
+			# TODO Use the vector on individuals used on others ES, instead of using individuals.arz
+			for j in range(nSize):  # Copies arx to individual[].n TODO: This can be done as offsprings.individuals[k].n = [i for i in arx] ?!
 				offsprings.individuals[i].arz[j] = arz[j]
 				offsprings.individuals[i].n[j] = arx[j]
 				complexxx = np.iscomplexobj(offsprings.individuals[i].n)
-			counteval = counteval + 1
-		# sys.exit("ah")
-		
-		if complexxx:
-			print("degenerou individuo, wtf")
-			sys.exit("eh..")
-			counteval = counteval + 1
+			# counteval = counteval + 1 # TODO: Pode ser removido (equivalente ao functionsEvaluations)
 		
 		arz = np.vstack(arzAuxList)  # matrix nd.array with all values calculated above
 		arx = np.vstack(arxAuxList)  # matrix nd.array with all values calculated above
@@ -2528,18 +2468,16 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 				avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
 				offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
 
-		# Elitismo apenas ordena os filhos. esType == 1(pai não é levado em conta (ES ,))
-		# Sort individuals
+		# Sort offsprings and put then on parents 
 		if hasConstraints:
 			parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound, hasConstraints)
 		else:
 			parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, -1, -1, -1, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound, hasConstraints)
 
-		# Individuals stored in columns
-
+		#  Stored individuals , just like matlab code
 		arz = arz.T
 		arx = arx.T
-		for j in range(parentsSize):  # TODO Individuos armazenados em COLUNA, não em LINHAS, como no octave !! ATENCAO
+		for j in range(parentsSize):
 			for i in range(nSize):
 				arx[i][j] = parents.individuals[j].n[i]
 				arz[i][j] = parents.individuals[j].arz[i]  #
@@ -2548,82 +2486,46 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 		# del offsprings.individuals[0].n[nSize:]  # delete the unused part of an list TODO seria bom fazer isso para todos os atributos de individuos, após a inicialização da população ser feita
 
 		# Individuals already stored in columns, no need to tranpose
-		muBestX = np.delete(arx, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
-		muBestZ = np.delete(arz, np.s_[int(mu):], 1)  # remove as colunas  de mu em diante da matrix arx
-		xmean = np.matmul(muBestX, weights)  # xmean is one array with nSize positions
-		zmean = np.matmul(muBestZ, weights)  # zmeanis one array with nSize positions
+		muBestX = np.delete(arx, np.s_[int(mu):], 1)  # Remove columns after mu index (Select mu individuals)
+		muBestZ = np.delete(arz, np.s_[int(mu):], 1)  # Remove columns after mu index (Select mu individuals)
+		xmean = np.matmul(muBestX, weights)  # xmean is one array with nSize positions. Recombination Eq. 42
+		zmean = np.matmul(muBestZ, weights)  # zmeanis one array with nSize positions. == Dˆ-1*B’*(xmean-xold)/sigma
 
-
-		"""
-		val1 = np.linalg.norm(ps)
-		print(cs)
-		exp = 2*counteval/parentsSize
-		# val2 = np.sqrt(1-(1-cs)**exp)
-		val2 = np.sqrt(1-np.power((1-cs), (2*counteval/parentsSize)))
-		print("val1 = {}".format(val1))
-		print("val2 = {}".format(val2))
-		val3 = chinN
-		val = float(val1) / (val2)
-		print("val = {}".format(val))
-		val = val / val3
-		if val < 1.4+2/(nSize+1):
-			hsig = True
-		else:
-			False
-		"""
-		"""
-		if counteval == 5232:
-			print("Before recalculating pc, pc and hsig Function 81 with dimension=2")
-			print("pc")
-			print(pc)
-			print("hsig")
-			print(hsig)
-			print("B")
-			print(B)
-			print("D")
-			print(D)
-			print("zmean")
-			print(zmean)
-		"""
-		# ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * np.matmul(B, zmean)  # Eq. 43
+		# Cumulation: Updatte evolution paths
 		ps = (1-cs)*ps + (np.sqrt(cs*(2-cs)*mueff)) * B@zmean  # Eq. 43
-		hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*counteval/parentsSize)))/chinN < 1.4 + 2/(nSize + 1) else False  # causing runtime warning, divide by zero encountered in double_scalars
-		# pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * np.matmul(np.matmul(B, D), zmean)  # Eq. 45
-		pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * B@D@zmean
+		hsig = True if np.linalg.norm(ps) / np.sqrt(1-np.power((1-cs), (2*functionEvaluations/parentsSize)))/chinN < 1.4 + 2/(nSize + 1) else False
+		pc = (1-cc)*pc + hsig * np.sqrt(cc*(2-cc)*mueff) * B@D@zmean # Eq. 45
 
-		# All lines commented with 5 '#' were active on on jan-2020
-		print("C before recalculing it")
-		print(C)
+		# print("C before recalculing it")
+		# print(C)
+
+		# Adapt covariance matrix C. Eq. 47
+		# C = (1-c1-cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * (B@D@muBestZ) @ np.diag(weights) @ (B@D@muBestZ).conj().T # Eq. 47
+		C = ((1-c1-cmu) * C + # regard old matrix
+			c1 * (np.outer(pc, pc) + # plus rank on update
+			(1-hsig) * cc*(2-cc) * C) + # minor correction
+			cmu *  # plus rank mu update
+			(B@D@muBestZ) @ np.diag(weights) @ (B@D@muBestZ).conj().T)
+
+		# cIsComplex = np.iscomplexobj(C)
+		# cIsNan= np.isnan(C)
+		# cIsInf = np.isinf(C)
+		# print("cIsComplex: {}".format(cIsComplex))
+		# print("cIsNan: {}".format(cIsNan))
+		# print("cIsInf: {}".format(cIsInf))
 		
+		# print("C after recalculing it")
+		# print(C)
 
-		C = (1-c1-cmu) * C + c1 * (np.outer(pc, pc) + (1-hsig) * cc*(2-cc) * C) + cmu * (B@D@muBestZ) @ np.diag(weights) @ (B@D@muBestZ).conj().T
-		cIsComplex = np.iscomplexobj(C)
-		cIsNan= np.isnan(C)
-		cIsInf = np.isinf(C)
-		print("FunctionEvaluations: {}".format(functionEvaluations))
-		print("cIsComplex: {}".format(cIsComplex))
-		print("cIsNan: {}".format(cIsNan))
-		print("cIsInf: {}".format(cIsInf))
-
-		#print("Counteteval: {}", format(counteval))
-		print("C after recalculing it")
-		print(C)
 		#  Adapt step-size sigma
-		sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1))  # Adapt sigma step-size Eq. 44
-		# np.set_printoptions(suppress=True)
+		sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1)) # Eq. 44
 
 		# Update B and D from C
-		if counteval - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
-			eigenval = counteval
+		if functionEvaluations - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
+			eigenval = functionEvaluations
 			# print("C before enforce symmetry")
 			# print(C)
 			C = np.triu(C) + np.triu(C, 1).conj().T  # enforce symmetry
-
-			# # # # # if counteval == 5226:
-			# # # # # 	print("opa")
-			# # # # # print("C DENTRO DE UPDATE B AND D")
-			# # # # # print("Printando C")
-			# # # # # print(C)
 
 			# print("C after enforce symmetry")
 			# print(C)
@@ -2631,19 +2533,22 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 			# # # # # print(D)
 			D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector
 			if(np.any(D<=0)):
-				print("D after recalculating")
+				print("D when it has negative values in it")
 				print(D)
+				print(arx)
 				tempInd = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
+				parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
 				tempInd.printFO(parentsSize, penaltyMethod, hasConstraints)
 				sys.exit("Existe valores negativos em D")
 			# D = np.diag(D)  # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
-			D = np.diag(np.sqrt(D))
-			# # # print("D after recalculating(after sqrt, final D)")
-			# # # print(D)
-			# print("a")
+			D = np.diag(np.sqrt(D)) # D containts standard deviations now
+
+			# print("D after recalculating(after sqrt, final D)")
+			# print(D)
 			# print(D)
 
-		# TODO can implement flatfitness if later
+		# TODO: can implement flatfitness if later
+		
 		"""
 		if cIsComplex:  # save the best result and restart the process NOTE: Only works for problems with no constraints
 			deg = deg + 1
@@ -2715,8 +2620,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 		tempInd.printFO(parentsSize, penaltyMethod, hasConstraints)
 		
 	# print(deg)
-
-
+	
 # noinspection PyShadowingNames
 def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize):
 	if algorithm == "GA":  # Genetic Algorithm
