@@ -191,16 +191,18 @@ class Population(object):
 						# print("Initializing Rosenbrock Function")
 						values.append(np.random.uniform(-5, 10))
 				else:
-					print("Function not encountered")  # sys.exit("Function not encountered")
+					sys.exit("Function not encountered, exiting")
+					# print("Function not encountered")  
 			if initalizeValues:  # intialize values(n) with gaussian distribution
 				print("Entrou aqui")
 				s = get_truncated_normal(mu, sigma, lowerBound, upperBound).rvs(nSize)
 				s = s.tolist()
 				for it in range(nSize):
 					values.append(s[it])
-			else:  # not initializing values
-				for it in range(nSize):
-					values.append(-1)
+			# else:  # not initializing values
+			# 	for it in range(nSize):
+			# 		print("AH FILHA DA PUTA")
+			# 		values.append(-1)
 			self.individuals.append(Individual(values))
 
 	def __iter__(self):
@@ -239,21 +241,6 @@ class Population(object):
 			if strFunction[0] == "1":  # "Normal constrained" problems (functions to be minimized)
 				if function == 11:
 					Functions.C01(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
-					# noinspection SpellCheckingInspection
-					"""
-						cLib.C01.restype = None  # void
-						# Seta 4 param( ponteiros para float) e 4 ultimos param (inteiros)
-						cLib.C01.argtypes = (ctypes.POINTER(ctypes.c_float),ctypes.POINTER(ctypes.c_float),ctypes.POINTER( ctypes.c_float),ctypes.POINTER(ctypes.c_float),  ctypes.c_int,ctypes.c_int, ctypes.c_int,ctypes.c_int)
-						nParam = (ctypes.c_float * nSize) (*(self.individuals[i].n))
-						objFuncParam = (ctypes.c_float * nSize)(*(self.individuals[i].objectiveFunction))
-						gParam = (ctypes.c_float * nSize)(*(self.individuals[i].g))
-						hParam = (ctypes.c_float * nSize)(*(self.individuals[i].h))
-						cLib.C01(nParam, objFuncParam, gParam, hParam, nSize, 1, gSize, hSize)
-						self.individuals[i].n = [x for x in nParam]  # copia array
-						self.individuals[i].objectiveFunction = [x for x in objFuncParam]
-						self.individuals[i].g = [x for x in gParam]  # copia array
-						self.individuals[i].h = [x for x in hParam]  # copia array
-					"""
 				elif function == 12:
 					Functions.C02(self.individuals[i].n, self.individuals[i].objectiveFunction, self.individuals[i].g, self.individuals[i].h, nSize, 1, gSize, hSize)
 				elif function == 13:
@@ -312,6 +299,7 @@ class Population(object):
 				# 	creates C arrays
 				xArray = cec20NoConstraints.new_doubleArray(nSize)	# creates an array with nSize Dimension
 				objFuncArray = cec20NoConstraints.new_doubleArray(1)	# creates an array with 1 dimension, for(objective function)
+				# print(self.individuals[i].n)
 				build_array(xArray, self.individuals[i].n, 0, nSize, strFunction)	# transfers values form list to C array
 				build_array(objFuncArray, self.individuals[i].objectiveFunction, 0, 1, strFunction)
 				# test_func(x, f, dimension, population_size,func_num);
@@ -329,6 +317,7 @@ class Population(object):
 				objFuncArray = cec17NoConstraints.new_doubleArray(1)  # creates an array with 1 dimension (for objective function)
 				# tranfers values from individuals to C++ array for functions be evaluated
 				# print(self.individuals[i].n)
+				
 				build_array(xArray, self.individuals[i].n, 0, nSize, strFunction)  # transfers values from list to C++ array
 				build_array(objFuncArray, self.individuals[i].objectiveFunction, 0, 1, strFunction)
 				# cec17NoConstraints.doubleArray_setitem(objFuncArray, 0, self.individuals[i].objectiveFunction[0])
@@ -856,6 +845,8 @@ class Population(object):
 
 		else:  # Function has no constraints
 			# Elitism for ES Type 1 ( ES ,), will work just for CMAES, for testing
+			print("ta caidnoa qui neh")
+			
 			for i in range(parentsSize):  # copies all individuals from offsprings to parents
 				self.copyIndividual(i, i, offsprings, nSize, 1, 0, 0, 0, 0, 0)
 
@@ -2329,6 +2320,23 @@ def ESCMAColunaTests(function, seed, penaltyMethod, parentsSize, nSize, offsprin
 		parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
 
 
+def initilaizeCMAESParemeters(cc, cs, c1, cmu, damps, pc, ps, B, D, C, eigenval, chinN):
+	# Strategy parameter setting: Adaptation
+	cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
+	cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
+	c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
+	cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
+	damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
+
+	# Initiliaze dynamic (internal) strategy parameters and constants
+	pc = np.zeros(nSize) # evolutions paths for C
+	ps = np.zeros(nSize)  # evolutions paths for sigma
+	B = np.eye(nSize)  # B defines de coordinate system
+	D = np.eye(nSize)  # diagonal matrix D defines the scaling
+	C = B @ D @ (B@D).conj().T # covariance matrix
+	eigenval = 0  # B and D update at counteval == 0
+	chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
+
 def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma):  # Evolution Strategykj
 	strFunction = str(function)
 	esType = 1
@@ -2352,7 +2360,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 	if strFunction[0] == "8":
 		maxFE = nSize * 10000
 	functionEvaluations = 0
-
+	maxFE = 110000
 	# User defined parameters
 	sigma = 0.5 # coordinate wise standard deviation (step-size)
 	xmean = np.random.randn(nSize)  # objective variables initial point
@@ -2382,7 +2390,7 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 	cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
 	damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
 
-	# Initiliaze dynamic (internal) strategy parameters  and constants
+	# Initiliaze dynamic (internal) strategy parameters and constants
 	pc = np.zeros(nSize) # evolutions paths for C
 	ps = np.zeros(nSize)  # evolutions paths for sigma
 	B = np.eye(nSize)  # B defines de coordinate system
@@ -2427,14 +2435,24 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 			sys.exit("Penalty method not encountered")
 
 	tempBestInd = Individual()  # in case of covariance matrix degenerates
+	# bestOfEachPopulation = 0  # selects the best individual among all populations
+	bestOfEachPopulation = Individual()  # selects the best individual among all populations
+	deg = 0
 	while functionEvaluations < maxFE:
 		arzAuxList = []
 		arxAuxList = []
-
+		complexIdx = 0
 		# Generate and evaluate lambda offspring
 		for i in range(parentsSize):
 			arz = np.random.randn(nSize)  # standard normally distributed vector  (38)
+			# print("Arz: {}".format(arz))
 			arx = xmean + sigma * (B @ D @ arz)  # add mutation N(m,sigma²C) (40)
+			# print("B@D@arz: {}".format(B @ D @ arz))
+			# print("Arx: {}".format(arx))
+			# if np.any(arx  > 1000000):
+			# 	print(arx)
+			# 	print("deg: {}".format(deg))
+			# 	sys.exit("explodiu")
 			arzAuxList.append(arz)
 			arxAuxList.append(arx)
 			# TODO Use the vector on individuals used on others ES, instead of using individuals.arz
@@ -2442,8 +2460,15 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 				offsprings.individuals[i].arz[j] = arz[j]
 				offsprings.individuals[i].n[j] = arx[j]
 				complexxx = np.iscomplexobj(offsprings.individuals[i].n)
+				# if complexxx:
+				# 	complexIdx = i
+					# print(offsprings.individuals[complexIdx].n)
 			# counteval = counteval + 1 # TODO: Pode ser removido (equivalente ao functionsEvaluations)
-		
+
+		if complexxx:
+			# print("offsprings.[{}]:".format(complexIdx))
+			
+			sys.exit("Complex number in individuals")
 		arz = np.vstack(arzAuxList)  # matrix nd.array with all values calculated above
 		arx = np.vstack(arxAuxList)  # matrix nd.array with all values calculated above
 
@@ -2468,11 +2493,16 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 				avgObjFunc = offsprings.calculatePenaltyCoefficients(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
 				offsprings.calculateAllFitness(offspringsSize, constraintsSize, penaltyCoefficients, avgObjFunc)
 
-		# Sort offsprings and put then on parents 
+		# if(bestOfEachPopulation != 0):
+		print("The value of bestOfEachPopulation.objFunction ONDE VOCE MUDA CARA 1: {}".format(bestOfEachPopulation.objectiveFunction[0]))
+
+		# Sort offsprings and put then (all) on parents 
 		if hasConstraints:
 			parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, gSize, hSize, constraintsSize, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound, hasConstraints)
 		else:
 			parents.elitismES(offsprings, parentsSize, offspringsSize, nSize, -1, -1, -1, globalSigma, esType, generatedOffspring, penaltyMethod, strFunction, truss, lowerBound, upperBound, hasConstraints)
+		# if(bestOfEachPopulation != 0):
+		print("The value of bestOfEachPopulation.objFunction ONDE VOCE MUDA CARA 2: {}".format(bestOfEachPopulation.objectiveFunction[0]))
 
 		#  Stored individuals , just like matlab code
 		arz = arz.T
@@ -2520,6 +2550,27 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 		#  Adapt step-size sigma
 		sigma = sigma * np.exp((cs/damps) * (np.linalg.norm(ps)/chinN - 1)) # Eq. 44
 
+		# First population
+		if(bestOfEachPopulation.objectiveFunction[0] == -1):
+		# if(bestOfEachPopulation == 0):
+			print("tá entrandoa qui o porra")
+			bestOfEachPopulation = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
+		else:
+			# print("The value of bestOfEachPopulation.objFunction before calculating the new presentBest: {}".format(bestOfEachPopulation.objectiveFunction[0]))
+			presentBest = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
+			# print("The value of bestOfEachPopulation.objFunction just after calculating the new presentBest: {}".format(bestOfEachPopulation.objectiveFunction[0]))
+			if(presentBest.objectiveFunction[0] < bestOfEachPopulation.objectiveFunction[0]):
+				print("The value of bestOfEachPopulation.objFunction: {}".format(bestOfEachPopulation.objectiveFunction[0]))
+				print("The value of presentBest.objFunction: {}".format(presentBest.objectiveFunction[0]))
+				if hasConstraints:
+					print("has constraints, need to implement")
+				else:
+					print("ah bao")
+					# bestOfEachPopulation.copyIndividual(presentBest, nSize, 1, -1, -1, -1, -1, -1)
+					bestOfEachPopulation.copyIndividual(presentBest, nSize, 1, 0, 0, 0, 0, 0)
+					print("The value of bestOfEachPopulation.objFunction after being exchange with presentBest: {}".format(bestOfEachPopulation.objectiveFunction[0]))
+					print("finalizou uma geracao")
+
 		# Update B and D from C
 		if functionEvaluations - eigenval > parentsSize / (c1 + cmu) / nSize / 10:  # to achieve 0(N^2)
 			eigenval = functionEvaluations
@@ -2531,95 +2582,92 @@ def ESCMAColuna(function, seed, penaltyMethod, parentsSize, nSize, offspringsSiz
 			# print(C)
 			# # # # # print("D before recalculating")
 			# # # # # print(D)
-			D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector
-			if(np.any(D<=0)):
-				print("D when it has negative values in it")
-				print(D)
-				print(arx)
-				tempInd = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
-				parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
-				tempInd.printFO(parentsSize, penaltyMethod, hasConstraints)
-				sys.exit("Existe valores negativos em D")
-			# D = np.diag(D)  # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
-			D = np.diag(np.sqrt(D)) # D containts standard deviations now
+			# np.linalg returns eigenvalues (D) as an array
+			D, B = np.linalg.eig(C)  # eigen decomposition, B == normalized eigenvector 
+			if(np.any(D<=0)): # degenerates
+				deg = deg + 1
+				print("Degenerou {} vezes".format(deg))
+				# print("D has negative values in it")
+				# print(D)
+				# print(arx)
+				currentBest = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
+				# tempBestInd already exists 
+				if(tempBestInd.objectiveFunction[0] != -1):
+					print("The value of tempBestInd.objFunction: {}".format(tempBestInd.objectiveFunction[0]))
+					print("The value of currentBest.objFunction: {}".format(currentBest.objectiveFunction[0]))
+					# print("The values of tempBestInd.n: {}".format(tempBestInd.n))
+					# current individual is better than tempBestInd, it becames tempBestInd
+					if(currentBest.objectiveFunction[0] <= tempBestInd.objectiveFunction[0]):
+						if hasConstraints:
+							print("has constraints, need to implement")
+						else:
+							print("New better than older")
+							tempBestInd.copyIndividual(currentBest, nSize, 1, -1, -1, -1, -1, -1)
+				else: # First times it degenaretes current best is the 
+					tempBestInd.copyIndividual(currentBest, nSize, 1, -1, -1, -1, -1, -1)
+					
+				# parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
+				# tempBestInd.printFO(parentsSize, penaltyMethod, hasConstraints)
+				
+				
+				# User defined parameters
+				sigma = 0.5 # coordinate wise standard deviation (step-size)
+				xmean = np.random.randn(nSize)  # objective variables initial point
 
+				# Strategy parameter setting: Adaptation
+				cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
+				cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
+				c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
+				cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
+				damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
+
+				# Initiliaze dynamic (internal) strategy parameters and constants
+				pc = np.zeros(nSize) # evolutions paths for C
+				ps = np.zeros(nSize)  # evolutions paths for sigma
+				B = np.eye(nSize)  # B defines de coordinate system
+				D = np.eye(nSize)  # diagonal matrix D defines the scaling
+				C = B @ D @ (B@D).conj().T # covariance matrix
+				# eigenval = 0  # B and D update at counteval == 0 #TODO: Verify is eigenval need to be 0 again.
+				chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
+				# print("D after restartring it(after sqrt, final D)")
+				# print(D)
+				# sys.exit("Existe valores negativos em D")
+			else:
+				D = np.diag(np.sqrt(D)) # D containts standard deviations now
+			# DdiagSqrt = np.diag(np.sqrt(D)) # D containts standard deviations now
+			# Ddiag = np.diag(D)  # function above returns D as a diagonal matrix, (on octave), and on python return just a array. Transforms array on diag matrix
+			# if(deg > 0):
+			# 	print(D)
+			# 	print(DdiagSqrt)
+			# 	print(Ddiag)
+			# 	sys.exit("pronto")
 			# print("D after recalculating(after sqrt, final D)")
-			# print(D)
+			
 			# print(D)
 
 		# TODO: can implement flatfitness if later
-		
-		"""
-		if cIsComplex:  # save the best result and restart the process NOTE: Only works for problems with no constraints
-			deg = deg + 1
-			tempInd = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
-			# sys.exit("degenerou,v lw fdlw")
-			if tempBestInd.objectiveFunction[0] == -1:  # not initialized, no need to compare objective function
-				tempBestInd.copyIndividual(tempInd, nSize, 1, -1, -1, -1, globalSigma, penaltyMethod)
-			else:  # compares which one is better
-				if tempInd.objectiveFunction[0] < tempBestInd.objectiveFunction[0]:  # new individual is better than the old one
-					tempBestInd.copyIndividual(tempInd, nSize, 1, -1, -1, -1, globalSigma, penaltyMethod)
 
-			parents = Population(parentsSize, nSize, function)  # Initialize parents population
-			offsprings = Population(offspringsSize, nSize, function)  # Initialize offsprings population
-			functionEvaluations = parents.evaluate(parentsSize, function, nSize, -1, -1, functionEvaluations)
-			# User redefined parameters
-			sigma = 0.5
-			xmean = np.random.randn(nSize)  # np.random.randn(nSize, 1)
-			# Strategy parameters setting: Selection
-			parentsSize = 4 + np.floor(3 * np.log(nSize))  # parentsSize is biased on nSize
-			parentsSize = int(parentsSize)
-			offspringsSize = parentsSize  # temporay?
-			mu = parentsSize / 2  # mu is NOT offspringsSize.
-			muList = [i + 1 for i in range(int(mu))]
-			weights = np.log(mu+1/2)-np.log(muList).conj().T  # muXone recombination weights
-			mu = np.floor(mu)
-			# mu = int(mu)
-			weights = weights/np.sum(weights)
-			mueff = np.power(sum(weights), 2) / np.sum(np.power(weights, 2))
 
-			# Strategy parameter setting: Adaptation
-			cc = (4+mueff / nSize) / (nSize+4 + 2*mueff/nSize) # time constant for cumulation for C
-			cs = (mueff+2) / (nSize+mueff+5)  # t-const for cumulation for sigma control
-			c1 = 2 / (np.power(nSize + 1.3, 2) + mueff)  # learning rate for rank one update of C
-			cmu = np.minimum(1 - c1, 2 * (mueff - 2 + 1/mueff)/(np.power(nSize+2, 2) + 2*mueff/2))  # and for rank-mu update
-			damps = 1 + 2*np.maximum(0, np.sqrt((mueff -1) / (nSize + 1)) -1 ) + cs  # damping for sigma
 
-			# Initiliaze dynamic (internal) strategy parameters  and constants
-			pc = np.zeros(nSize)  # evolutions paths for C
-			ps = np.zeros(nSize)  # evolutions paths for sigma
-			B = np.eye(nSize)  # B defines de coordinate system
-			D = np.eye(nSize)  # diagonal matrix D defines the scaling
-			C = B @ D @ (B@D).conj().T
-			# C = np.matmul(np.matmul(B, D), np.matmul(B, D).transpose())  #  covariance matrix
-			print(C)
-			eigenval = 0  # B and D update at counteval == 0
-			chinN = nSize**(0.5) * (1-1/(4*nSize)+1 / (21*np.power(nSize, 2)))  # expectation of ||N(0,I)|| == norm(randn(N,1))
-		"""
 		# print(functionEvaluations)
 		# parents.printBest(nSize, parentsSize, penaltyMethod, hasConstraints)
 
-	tempInd = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
-	if tempBestInd.objectiveFunction[0] != -1:  # was used | tempBestInd will be used if covariance matrix degenarates
-		if strFunction[0] == "8":
-			# parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
-			tempInd.objectiveFunction[0] = tempInd.objectiveFunction[0] - 100 * int(strFunction[1:])
-			tempBestInd.objectiveFunction[0] = tempBestInd.objectiveFunction[0] - 100 * int(strFunction[1:])
+	bestFromCurrentPopulation = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)
+	# best individual from current is better than the best individuals of previous populations
+	# print("The value of tempBestInd.objFunction: {}".format(tempBestInd.objectiveFunction[0]))
+	# print("The value of bestFromCurrentPopulation.objFunction: {}".format(bestFromCurrentPopulation.objectiveFunction[0]))
+	if (bestFromCurrentPopulation.objectiveFunction[0] < tempBestInd.objectiveFunction[0]):
+		if hasConstraints:
+			print("Need to implement, todo")
+		else:
+			tempBestInd.copyIndividual(bestFromCurrentPopulation, nSize, 1, -1, -1, -1, -1, -1)
+	# Prints objective function of the best individual
+	print("Best individual (based on actual and previous populations)")
+	tempBestInd.printFO(parentsSize, penaltyMethod, hasConstraints)
+	# print("Best individual among all populations (bestOfEachPopulation)")
+	# bestOfEachPopulation.printFO(parentsSize, penaltyMethod, hasConstraints)
 
-		# tempInd = bestIndividual(parents, parentsSize, penaltyMethod, hasConstraints)  # best after finishing the evolution
-		if tempBestInd.objectiveFunction[0] < tempInd.objectiveFunction[0]:  # new individual is better than the old one
-			# tempBestInd.printIndividual(nSize, parentsSize, penaltyMethod, hasConstraints)
-			tempBestInd.printFO(parentsSize, penaltyMethod, hasConstraints)
-	else:
-		if strFunction[0] == "8":
-			# print("right?")
-			# parents.printBestFO(parentsSize, penaltyMethod, hasConstraints)
-			tempInd.objectiveFunction[0] = tempInd.objectiveFunction[0] - 100 * int(strFunction[1:])
-		# tempInd.printIndividual(nSize, parentsSize, penaltyMethod, hasConstraints)
-		# Prints objective function of the best individual
-		tempInd.printFO(parentsSize, penaltyMethod, hasConstraints)
 		
-	# print(deg)
 	
 # noinspection PyShadowingNames
 def algorithm(algorithm, function, seed, penaltyMethod, parentsSize, nSize, offspringsSize, maxFE, crossoverProb, esType, globalSigma, windowSize):
